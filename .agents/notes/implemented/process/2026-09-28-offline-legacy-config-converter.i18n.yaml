@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-28-offline-legacy-config-converter.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-09-28-offline-legacy-config-converter.md
+/agent-note-offline-legacy-configuration-converter:
+  en: 431175c714f3d2e5
+  zh: 171832899602d8d0
+/agent-note-offline-legacy-configuration-converter/problem:
+  en: b2f5f45c854c41cc
+  zh: baf2f1efa2764618
+/agent-note-offline-legacy-configuration-converter/decision:
+  en: 3bf39f8c1896617f
+  zh: 7c7805a2b1fdf315
+/agent-note-offline-legacy-configuration-converter/alternatives-considered:
+  en: ce6e9ced0c42025a
+  zh: ac505fcce8cb5073
+/agent-note-offline-legacy-configuration-converter/consequences:
+  en: 6af99fea258f9084
+  zh: bfcd15c63aff83cc
+/agent-note-offline-legacy-configuration-converter/verification:
+  en: 6d8c0d6e1a090ae3
+  zh: c92696c283ef90ab

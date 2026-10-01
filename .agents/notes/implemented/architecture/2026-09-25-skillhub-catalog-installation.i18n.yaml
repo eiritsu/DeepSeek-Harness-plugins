@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-25-skillhub-catalog-installation.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-25-skillhub-catalog-installation.md
+/agent-note-skillhub-skill-installation:
+  en: 1b95908ceedeaa6d
+  zh: eb7405cfd26b9c62
+/agent-note-skillhub-skill-installation/problem:
+  en: 5e87380cf7a21160
+  zh: de883b962098f9bf
+/agent-note-skillhub-skill-installation/decision:
+  en: 6a77baf3aaaaf04c
+  zh: 10ab111074e310d7
+/agent-note-skillhub-skill-installation/alternatives-considered:
+  en: 389e6a2610d73022
+  zh: 1e53784b4520d9b4
+/agent-note-skillhub-skill-installation/consequences:
+  en: bc88a887342351ad
+  zh: dba553b6107aeb91
+/agent-note-skillhub-skill-installation/testing:
+  en: 773e0e0cba811f61
+  zh: 8a3cf7ced63ad5ec

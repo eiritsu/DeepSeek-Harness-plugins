@@ -1,0 +1,23 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo"
+  },
+  "files": ["src/archive.ts", "src/index.ts", "src/routes.ts", "src/session-log.ts", "src/sqlite-backup.ts", "src/zip.ts"],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/schemastery" },
+    { "path": "../../attachment/attachment" },
+    { "path": "../../util/brand" },
+    { "path": "../../util/atomic-write" },
+    { "path": "../../core/session" },
+    { "path": "../../session/session-format" },
+    { "path": "../../session/session-persistence" },
+    { "path": "../../session/session-format-v3-to-v4" },
+    { "path": "../../session/session-format-catalog" },
+    { "path": "../../workspace/workspace" },
+    { "path": "../../client/connection/tsconfig.host.json" }
+  ]
+}

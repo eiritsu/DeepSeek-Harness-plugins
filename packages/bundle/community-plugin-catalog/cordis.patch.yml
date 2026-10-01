@@ -1,0 +1,4 @@
+# Opt-in Community Plugin Catalog. No default profile includes this bundle.
+- insert:
+    - id: community-plugin-catalog
+      name: '@deepseek-ai/dsh-community-plugin-catalog'

@@ -1,0 +1,18 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
+  "include": ["src"],
+  "exclude": ["src/client"],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../core/agent/tsconfig.json" },
+    { "path": "../../core/agent-loop/tsconfig.json" },
+    { "path": "../../core/session/tsconfig.json" },
+    { "path": "../../session/session-projection/tsconfig.json" },
+    { "path": "../../core/system-prompt/tsconfig.json" },
+    { "path": "../../core/tools/tsconfig.json" },
+    { "path": "../attachment/tsconfig.json" },
+    { "path": "../../credentials/credentials/tsconfig.json" },
+    { "path": "../../llm/llm/tsconfig.json" }
+  ]
+}

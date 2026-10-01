@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-28-tools-connections-bundle.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-28-tools-connections-bundle.md
+/agent-note-tools-and-connections-providers-as-an-optional-bundle:
+  en: 455efcdaed89dfd3
+  zh: 6364923284dd0a1d
+/agent-note-tools-and-connections-providers-as-an-optional-bundle/problem:
+  en: 06bc85f3439e4e57
+  zh: b0ae9a8ed5d4269b
+/agent-note-tools-and-connections-providers-as-an-optional-bundle/decision:
+  en: 0941b36ed4687f10
+  zh: 143b7a77b1cf4292
+/agent-note-tools-and-connections-providers-as-an-optional-bundle/alternatives-considered:
+  en: c55dfe9702323533
+  zh: 44c859e69efb6853
+/agent-note-tools-and-connections-providers-as-an-optional-bundle/consequences:
+  en: 61d9c1d52e865008
+  zh: a9c889496ee8e62d

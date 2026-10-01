@@ -1,0 +1,8 @@
+- insert:
+    - id: model-catalog
+      name: '@deepseek-ai/dsh-model-catalog'
+      config:
+        catalogURL: https://models.dev/catalog.json?type=all
+        refreshIntervalMs: 86400000
+        requestTimeoutMs: 15000
+        maxResponseBytes: 8388608

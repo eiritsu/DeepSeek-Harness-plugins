@@ -1,0 +1,18 @@
+# The Desktop app bundle patch: the Electron-only layer over dsh-base and
+# dsh-web-app. It is applied after both, so its id-targeted row wins over the
+# shared layers. No shipped profile other than the Desktop template selects
+# this bundle, so ordinary web, headless, ACP, SDK, and minimal profiles keep
+# writing JSONL session logs.
+
+# The base layer writes sessions as JSONL under dshHomePath('sessions'). The
+# Desktop app keeps them in one SQLite database under dshHomePath('desktop').
+# Exactly one backend may register ctx.sessionPersistence, so the JSONL row is
+# disabled in the same layer that inserts SQLite.
+- id: session-persistence-jsonl
+  disabled: true
+
+- insert:
+    - id: session-persistence-sqlite
+      name: '@deepseek-ai/dsh-session-persistence-sqlite'
+      config:
+        path: !!js dshHomePath('desktop', 'dsh-desktop.sqlite')

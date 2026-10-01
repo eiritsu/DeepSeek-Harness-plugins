@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-26-github-code-search-tool.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-26-github-code-search-tool.md
+/agent-note-github-code-search-as-an-optional-tool:
+  en: 8c1b8272e700af6f
+  zh: f6a6a0e17fb04442
+/agent-note-github-code-search-as-an-optional-tool/problem:
+  en: 5cefb08ce3684d78
+  zh: 5713816fdac5f003
+/agent-note-github-code-search-as-an-optional-tool/decision:
+  en: ea599066c7e9bcbf
+  zh: 7604510b36880655
+/agent-note-github-code-search-as-an-optional-tool/alternatives-considered:
+  en: 9d770ca57cc438f9
+  zh: 2e2020384deb1a34
+/agent-note-github-code-search-as-an-optional-tool/consequences:
+  en: 447f1f859bc304a0
+  zh: 8948283d1e7ba463

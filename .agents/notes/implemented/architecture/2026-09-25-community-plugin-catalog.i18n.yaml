@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-25-community-plugin-catalog.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-25-community-plugin-catalog.md
+/agent-note-community-catalog-delegates-installation-to-plugin-manager:
+  en: 268bf7f08b8a8481
+  zh: 0d70a0041077cf84
+/agent-note-community-catalog-delegates-installation-to-plugin-manager/problem:
+  en: 63229631eff5010c
+  zh: 9050414696528a99
+/agent-note-community-catalog-delegates-installation-to-plugin-manager/decision:
+  en: aa7770f839b79a9e
+  zh: 05ca3390fbbe43f8
+/agent-note-community-catalog-delegates-installation-to-plugin-manager/alternatives-considered:
+  en: c013c18170b52104
+  zh: 93fd50dcc3744ee4
+/agent-note-community-catalog-delegates-installation-to-plugin-manager/consequences:
+  en: 9418247efd9b2d30
+  zh: ae26441c91e0f56a

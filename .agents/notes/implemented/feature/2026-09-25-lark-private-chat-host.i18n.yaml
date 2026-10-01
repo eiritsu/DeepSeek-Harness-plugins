@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-25-lark-private-chat-host.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-25-lark-private-chat-host.md
+/agent-note-lark-private-chat-host-ingress:
+  en: c83f2a032d229be3
+  zh: a5e2454800409fee
+/agent-note-lark-private-chat-host-ingress/problem:
+  en: f6a27d6e77548c43
+  zh: 32be310f152f77a7
+/agent-note-lark-private-chat-host-ingress/decision:
+  en: e2f47cc78c9aefd1
+  zh: 7330bc60653aa2cb
+/agent-note-lark-private-chat-host-ingress/alternatives-considered:
+  en: c84521a41a109888
+  zh: ebd1174d0ee468d1
+/agent-note-lark-private-chat-host-ingress/consequences:
+  en: ed53b93f103875ee
+  zh: d593411a49e898a8

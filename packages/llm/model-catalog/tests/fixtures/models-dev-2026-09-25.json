@@ -1,0 +1,33 @@
+{
+  "models": {
+    "zhipuai/glm-5.3-flash": {
+      "id": "zhipuai/glm-5.3-flash",
+      "name": "GLM-5.3-Flash",
+      "reasoning": true,
+      "modalities": { "input": ["text", "image", "video", "pdf"] },
+      "limit": { "context": 1000000, "output": 131072 }
+    }
+  },
+  "providers": {
+    "zhipuai": {
+      "id": "zhipuai",
+      "models": {
+        "glm-5.3-flash": {
+          "reasoning": true,
+          "reasoning_options": [{ "type": "effort", "values": ["low", "high", "max"] }]
+        }
+      }
+    },
+    "custom-channel": {
+      "id": "custom-channel",
+      "models": {
+        "glm-5.3-flash": {
+          "reasoning": true,
+          "modalities": { "input": ["text"] },
+          "limit": { "context": 8192, "output": 2048 },
+          "reasoning_options": [{ "type": "effort", "values": ["low"] }]
+        }
+      }
+    }
+  }
+}

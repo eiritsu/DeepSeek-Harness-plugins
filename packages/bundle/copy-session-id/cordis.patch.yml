@@ -1,0 +1,4 @@
+# Optional Session-header action; the package supplies its Node and Client faces.
+- insert:
+    - id: ui-copy-session-id
+      name: '@deepseek-ai/dsh-copy-session-id'

@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-25-office-attachment-extraction.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-25-office-attachment-extraction.md
+/agent-note-optional-office-attachment-extraction:
+  en: 7f146c568c7a328c
+  zh: 27700269a44272e9
+/agent-note-optional-office-attachment-extraction/problem:
+  en: bb8b5b7b1f5e8589
+  zh: 8257990515d69d8b
+/agent-note-optional-office-attachment-extraction/decision:
+  en: e238cff1f01c1bb5
+  zh: a5d4bf0178683ef1
+/agent-note-optional-office-attachment-extraction/alternatives-considered:
+  en: 79d4bdd17c22fd85
+  zh: 1ce7a980546d19c5
+/agent-note-optional-office-attachment-extraction/consequences:
+  en: 1d33b0b5a09479d7
+  zh: b77813df4b911197
+/agent-note-optional-office-attachment-extraction/verification:
+  en: 27c3849a233360f2
+  zh: c0418b35e3bfd2b3

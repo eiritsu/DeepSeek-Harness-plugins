@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-01-file-recognizer-office-bundle-detail-page.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-01-file-recognizer-office-bundle-detail-page.md
+/agent-note-file-recognizer-office-bundle-detail-page:
+  en: 7a725394b0cfc2ff
+  zh: 5134cfcda174568d
+/agent-note-file-recognizer-office-bundle-detail-page/problem:
+  en: 1942200e12d52238
+  zh: 21ff813b3f48393a
+/agent-note-file-recognizer-office-bundle-detail-page/decision:
+  en: 686f99cd9876ac56
+  zh: adf86601c68681e1
+/agent-note-file-recognizer-office-bundle-detail-page/alternatives-considered:
+  en: 8976e308863ecd8b
+  zh: 36c82d1acf54bddb
+/agent-note-file-recognizer-office-bundle-detail-page/consequences:
+  en: 1e97f9eb399efaed
+  zh: 70a88b5996ff104b

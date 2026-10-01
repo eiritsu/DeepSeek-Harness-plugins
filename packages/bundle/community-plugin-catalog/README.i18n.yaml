@@ -1,0 +1,49 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/bundle/community-plugin-catalog/README.md
+/:
+  en: f220c575d482f739
+  zh: 93fa7bd158cf970f
+/dsh-community-plugin-catalog:
+  en: ace0a65cbfa3559a
+  zh: 216d125093374744
+/dsh-community-plugin-catalog/summary:
+  en: 4fb43bbdaa337c33
+  zh: 2c6d4d74be4f044f
+/dsh-community-plugin-catalog/table-of-contents:
+  en: 23386452a66b2fbd
+  zh: d67fc9c1c52b974e
+/dsh-community-plugin-catalog/use-this-package:
+  en: a2cc0d72463f536d
+  zh: dfe90c8a14b76e54
+/dsh-community-plugin-catalog/use-this-package/configuration:
+  en: a8c0ec178a8defdf
+  zh: 5f83c8e0d9c730ec
+/dsh-community-plugin-catalog/understand-the-implementation:
+  en: 07ff8b0e8393d997
+  zh: f6eb0d5f8e86d302
+/dsh-community-plugin-catalog/further-exploration:
+  en: 7c5905f3c1a61ddb
+  zh: e80465f35ac93fcf
+/dsh-community-plugin-catalog/further-exploration/dev-note:
+  en: df0729b390e48d08
+  zh: 35b7ddf58aedd912
+/dsh-community-plugin-catalog/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/dsh-community-plugin-catalog/model-experience/browser-only-directory:
+  en: bd957d785ad9a496
+  zh: 4421fac1d87d4650
+/dsh-community-plugin-catalog/model-experience/browser-only-directory/what-the-model-sees:
+  en: 43c3a5332ecad66c
+  zh: 9a7b353255132139
+/dsh-community-plugin-catalog/model-experience/browser-only-directory/token-effect:
+  en: 8c0adc9a22bd8bc2
+  zh: b0d853af16f87d80
+/dsh-community-plugin-catalog/model-experience/browser-only-directory/kv-cache-effect:
+  en: 79e228ca489699c5
+  zh: ac14762aafd9f14a
+/dsh-community-plugin-catalog/known-limitations-and-deferred-work:
+  en: 9bd11230073bfe89
+  zh: ed0c982c2df4fd43

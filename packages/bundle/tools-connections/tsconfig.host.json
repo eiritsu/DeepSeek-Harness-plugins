@@ -1,0 +1,17 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types",
+    "disableSourceOfProjectReferenceRedirect": true
+  },
+  "include": ["src/index.ts", "src/provider.ts", "src/host/**/*.ts"],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/loader" },
+    { "path": "../../credentials/credentials" },
+    { "path": "../../web/web" },
+    { "path": "../../core/tools" },
+    { "path": "../../util/values" }
+  ]
+}

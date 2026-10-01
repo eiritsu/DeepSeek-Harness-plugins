@@ -1,0 +1,7 @@
+# Optional Lark/Feishu private-chat Host plugin and Settings Client.
+- insert:
+    - id: lark
+      name: '@deepseek-ai/dsh-lark-integration'
+      config:
+        enabled: false
+        cliEnabled: false

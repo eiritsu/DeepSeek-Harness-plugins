@@ -1,0 +1,62 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 760px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.header { display: flex; align-items: flex-start; justify-content: space-between; }
+.title { margin: 0; font-size: 18px; font-weight: 600; }
+.description, .hint, .message { margin: 6px 0 0; color: var(--dsw-alias-label-tertiary); font-size: 13px; line-height: 20px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.primary, .secondary {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.primary { background: var(--dsw-alias-fill-l2); }
+.secondary { background: transparent; }
+.primary:disabled, .secondary[aria-disabled='true'] { cursor: wait; opacity: 0.55; }
+.secondary input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.secondary:focus-within { outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary)); outline-offset: 2px; }
+.message { color: var(--dsw-alias-label-primary); }
+.sqliteImport { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 0.5px solid var(--dsw-alias-border-l2); }
+.sqliteImport h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.secondaryButton, .fileSelect select {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+}
+.secondaryButton { cursor: pointer; }
+.secondaryButton:disabled { cursor: wait; opacity: 0.55; }
+.fileSelect { display: inline-flex; align-items: center; gap: 8px; color: var(--dsw-alias-label-secondary); font-size: 13px; }
+.path { margin: 0; color: var(--dsw-alias-label-tertiary); font: 12px/18px ui-monospace, monospace; overflow-wrap: anywhere; }
+.sqliteImport h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.secondaryButton, .fileSelect select {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  color: var(--dsw-alias-label-primary);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+}
+.secondaryButton { cursor: pointer; }
+.secondaryButton:disabled { cursor: wait; opacity: 0.55; }
+.fileSelect { display: inline-flex; align-items: center; gap: 8px; color: var(--dsw-alias-label-secondary); font-size: 13px; }
+.path { margin: 0; color: var(--dsw-alias-label-tertiary); font: 12px/18px ui-monospace, monospace; overflow-wrap: anywhere; }

@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-09-26-lark-source-attribution.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-09-26-lark-source-attribution.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-09-26-lark-source-attribution:
+  en: 7d1752c5b8616681
+  zh: f1f9065c5d1d920d
+/2026-09-26-lark-source-attribution/summary:
+  en: 25a6a31c106e718e
+  zh: 1a3cf7202dbba37a
+/2026-09-26-lark-source-attribution/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-09-26-lark-source-attribution/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-09-26-lark-source-attribution/compatibility:
+  en: f0dcea1a04c7ce8a
+  zh: 47a1b786afac3630
+/2026-09-26-lark-source-attribution/verification:
+  en: 954acd42b4d20d3f
+  zh: c33556f7a3ad9f94
+/2026-09-26-lark-source-attribution/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

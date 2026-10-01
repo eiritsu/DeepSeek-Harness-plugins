@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/bundle/session-message-edit-resend/README.md
+/:
+  en: 9d21119f3e56ee51
+  zh: 1d33aafc19bdc848
+/deepseek-ai-dsh-session-message-edit-resend:
+  en: 9fabd1126072aab3
+  zh: 67029fa35c8c1ee3
+/deepseek-ai-dsh-session-message-edit-resend/summary:
+  en: de8b6e8b78b50ca8
+  zh: 241d301a1cc1c98f
+/deepseek-ai-dsh-session-message-edit-resend/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 884a1e36f38bdf7f
+/deepseek-ai-dsh-session-message-edit-resend/use-this-package:
+  en: 7d7b452d49e92f8f
+  zh: e1eec7811c4146f9
+/deepseek-ai-dsh-session-message-edit-resend/understand-the-implementation:
+  en: d73aec1a03e3d8bc
+  zh: 1011ab656b6fac50
+/deepseek-ai-dsh-session-message-edit-resend/further-exploration:
+  en: 7db475d998daf7bc
+  zh: 855b8f3f30218da0
+/deepseek-ai-dsh-session-message-edit-resend/model-experience:
+  en: 215e7ba838619b7b
+  zh: 215e7ba838619b7b
+/deepseek-ai-dsh-session-message-edit-resend/model-experience/edited-and-resent-user-turn:
+  en: 556ae4bfcc0d5d2d
+  zh: fb88c8a69bd43238
+/deepseek-ai-dsh-session-message-edit-resend/model-experience/edited-and-resent-user-turn/what-the-model-sees:
+  en: e3d3fb5d1d8d4b76
+  zh: 1cd33c7ace435d9e
+/deepseek-ai-dsh-session-message-edit-resend/model-experience/edited-and-resent-user-turn/token-effect:
+  en: 04b5cbfa6dc3e9f3
+  zh: de6bc662ed60ed03
+/deepseek-ai-dsh-session-message-edit-resend/model-experience/edited-and-resent-user-turn/kv-cache-effect:
+  en: 843880b2569ebafb
+  zh: 403f3606c12bcd1d
+/deepseek-ai-dsh-session-message-edit-resend/known-limitations-and-deferred-work:
+  en: 4f3a8a0aec16886f
+  zh: 752ad6924ec76dc7
+/deepseek-ai-dsh-session-message-edit-resend/known-limitations-and-deferred-work/dev-note:
+  en: 6f03d460633c3497
+  zh: 9ee8d51fc2c0ef5b

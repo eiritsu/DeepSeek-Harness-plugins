@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/bundle/turn-process-shimmer/README.md
+/:
+  en: c18b33d2b12ff642
+  zh: 2df541d2d8f04e25
+/deepseek-ai-dsh-turn-process-shimmer:
+  en: ae2b8a99f1cec466
+  zh: 6702446cd66912a0
+/deepseek-ai-dsh-turn-process-shimmer/summary:
+  en: 258b1451a21c4b04
+  zh: e322bbf9f7b46857
+/deepseek-ai-dsh-turn-process-shimmer/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f629b4f1a564678d
+/deepseek-ai-dsh-turn-process-shimmer/use-this-package:
+  en: e76c8856268282d0
+  zh: 37de266b6ba514a3
+/deepseek-ai-dsh-turn-process-shimmer/understand-the-implementation:
+  en: 04ea87a479df65cb
+  zh: 1a366ac84060f621
+/deepseek-ai-dsh-turn-process-shimmer/further-exploration:
+  en: f380b713ca7c5b89
+  zh: 0d69a1c7b548a2a8
+/deepseek-ai-dsh-turn-process-shimmer/model-experience:
+  en: d8507d7d7a1c63ed
+  zh: 12b68168540a44df
+/deepseek-ai-dsh-turn-process-shimmer/model-experience/kv-cache-effect:
+  en: cb496d3f95167723
+  zh: 75c1427c55a6d720
+/deepseek-ai-dsh-turn-process-shimmer/known-limitations-and-deferred-work:
+  en: cd97152de9c656fe
+  zh: c364ba02fd757271
+/deepseek-ai-dsh-turn-process-shimmer/known-limitations-and-deferred-work/dev-note:
+  en: 0a1253c6f7b5e8b9
+  zh: 9f56528562c7c914

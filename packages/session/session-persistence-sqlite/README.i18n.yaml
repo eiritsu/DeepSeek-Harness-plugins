@@ -1,0 +1,49 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/session/session-persistence-sqlite/README.md
+/:
+  en: 7e96353ce9519e46
+  zh: 9715cd69261228e0
+/deepseek-ai-dsh-session-persistence-sqlite:
+  en: 22cf683fb8ec6976
+  zh: c4c0244b1b7340bd
+/deepseek-ai-dsh-session-persistence-sqlite/summary:
+  en: 32ab4984cc50e1a7
+  zh: 04abc0377ecff6ef
+/deepseek-ai-dsh-session-persistence-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 725b47765ee8f30b
+/deepseek-ai-dsh-session-persistence-sqlite/use-this-package:
+  en: 8b2e0f9b967b893a
+  zh: c1c67544974f03ad
+/deepseek-ai-dsh-session-persistence-sqlite/use-this-package/minimal-configuration:
+  en: 46f8abaffcfc6fdd
+  zh: 84d333030740121c
+/deepseek-ai-dsh-session-persistence-sqlite/understand-the-implementation:
+  en: 25d76a3d288f309f
+  zh: e1cc8885d81ab624
+/deepseek-ai-dsh-session-persistence-sqlite/further-exploration:
+  en: 0c8a9089ad5dfa4a
+  zh: 990b96a615519414
+/deepseek-ai-dsh-session-persistence-sqlite/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-session-persistence-sqlite/model-experience/resumed-conversation-history:
+  en: 062875aab7f3f138
+  zh: c7285918227e6f5c
+/deepseek-ai-dsh-session-persistence-sqlite/model-experience/resumed-conversation-history/what-the-model-sees:
+  en: fca929b967bcea57
+  zh: 16d0e23b4520b3ad
+/deepseek-ai-dsh-session-persistence-sqlite/model-experience/resumed-conversation-history/token-effect:
+  en: cde6d8fd1b49da97
+  zh: a89c3ec2d70ef87d
+/deepseek-ai-dsh-session-persistence-sqlite/model-experience/resumed-conversation-history/kv-cache-effect:
+  en: 2458241572982d2e
+  zh: 53772bb5905d4f92
+/deepseek-ai-dsh-session-persistence-sqlite/known-limitations-and-deferred-work:
+  en: 081bb3b976c435ec
+  zh: 13b0a46adc422fad
+/deepseek-ai-dsh-session-persistence-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: e88aeb617ffb74ea

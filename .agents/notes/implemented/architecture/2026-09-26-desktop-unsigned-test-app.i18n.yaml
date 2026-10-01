@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-26-desktop-unsigned-test-app.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-26-desktop-unsigned-test-app.md
+/agent-note-isolated-unsigned-macos-test-application:
+  en: d5e366101894ae5d
+  zh: 8baa4646c8e0a2fd
+/agent-note-isolated-unsigned-macos-test-application/problem:
+  en: 9b6f4ca8f4e79305
+  zh: 308dca9a23672ded
+/agent-note-isolated-unsigned-macos-test-application/decision:
+  en: a009d8832c6ac86c
+  zh: ae28875ee0b2219d
+/agent-note-isolated-unsigned-macos-test-application/alternatives-considered:
+  en: bb48cbcb2370cf70
+  zh: 1785c3775bcb8680
+/agent-note-isolated-unsigned-macos-test-application/consequences:
+  en: cd9c1fa1658fd454
+  zh: 519f7d5a5f8a3413
+/agent-note-isolated-unsigned-macos-test-application/verification:
+  en: 8190205b1e159cb1
+  zh: 6f772ed04d4b89d6

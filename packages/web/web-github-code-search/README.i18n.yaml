@@ -1,0 +1,49 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/web/web-github-code-search/README.md
+/:
+  en: df0f9e43ee0423ea
+  zh: d251a9b454b7e11b
+/deepseek-ai-dsh-web-github-code-search:
+  en: 43d21d8ee38e342a
+  zh: 6dc30a1f514bd79d
+/deepseek-ai-dsh-web-github-code-search/summary:
+  en: eebd8ddf8f5475b8
+  zh: 8d51defd0480387a
+/deepseek-ai-dsh-web-github-code-search/table-of-contents:
+  en: 465143009dfd28d2
+  zh: f8026041592ad8bf
+/deepseek-ai-dsh-web-github-code-search/use-this-package:
+  en: 1e8ac1cd9209dafb
+  zh: 43a0dbc1e6dbb547
+/deepseek-ai-dsh-web-github-code-search/understand-the-implementation:
+  en: 951d22e3cc6c8255
+  zh: 74cf287a632b1ed0
+/deepseek-ai-dsh-web-github-code-search/further-exploration:
+  en: b5075802cbb208b2
+  zh: 393eda456ab45fb7
+/deepseek-ai-dsh-web-github-code-search/behavior:
+  en: b439e91a9ffc12f3
+  zh: edac1912710641f1
+/deepseek-ai-dsh-web-github-code-search/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-web-github-code-search/model-experience/github-code-search:
+  en: b58c9ecb731ff948
+  zh: b58c9ecb731ff948
+/deepseek-ai-dsh-web-github-code-search/model-experience/github-code-search/what-the-model-sees:
+  en: 6f4538642696bef1
+  zh: 5ac663abf56cce8d
+/deepseek-ai-dsh-web-github-code-search/model-experience/github-code-search/token-effect:
+  en: 7cb070746825c4b0
+  zh: 7bbaf37d79f1b990
+/deepseek-ai-dsh-web-github-code-search/model-experience/github-code-search/kv-cache-effect:
+  en: c424a135866c017e
+  zh: de24acc7157e00a9
+/deepseek-ai-dsh-web-github-code-search/known-limitations-and-deferred-work:
+  en: 2222c0bb3639c5c3
+  zh: 3c7ad9ecb68df099
+/deepseek-ai-dsh-web-github-code-search/known-limitations-and-deferred-work/dev-note:
+  en: 7c261b266dd5b687
+  zh: a48830c6a945c0b0

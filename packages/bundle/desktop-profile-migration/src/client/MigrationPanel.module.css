@@ -1,0 +1,8 @@
+.panel { display: grid; gap: 12px; max-width: 760px; }
+.panel h2,.panel p { margin: 0; }
+.panel p { color: var(--dsw-alias-label-secondary); font-size: 13px; line-height: 20px; }
+.choices { display: grid; gap: 8px; margin: 0; padding: 12px 14px; border: 1px solid var(--dsw-alias-separator-primary); border-radius: var(--dsw-radius-sm); }
+.choices legend { padding: 0 4px; color: var(--dsw-alias-label-secondary); font-size: 12px; }
+.choice { display: flex; align-items: center; gap: 9px; min-height: 32px; color: var(--dsw-alias-label-primary); font-size: 13px; }
+.choice input { width: 16px; height: 16px; margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }

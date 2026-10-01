@@ -1,0 +1,4 @@
+# Optional profile configuration and Skill backup page.
+- insert:
+    - id: configuration-and-skills-backup
+      name: '@deepseek-ai/dsh-configuration-and-skills-backup'

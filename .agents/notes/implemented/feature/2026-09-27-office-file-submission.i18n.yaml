@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-27-office-file-submission.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-27-office-file-submission.md
+/agent-note-explicit-office-file-submission:
+  en: 3ea49a180eacce2c
+  zh: e41f2ccb64028aaf
+/agent-note-explicit-office-file-submission/problem:
+  en: d5a629156329677d
+  zh: afc04be42cf78c15
+/agent-note-explicit-office-file-submission/decision:
+  en: af5531ef94e5b704
+  zh: e1278ca552928d97
+/agent-note-explicit-office-file-submission/alternatives-considered:
+  en: 44c970cef9216c9d
+  zh: fff83a05a34193cd
+/agent-note-explicit-office-file-submission/consequences:
+  en: b9bf2cc63bbc5e0e
+  zh: 65e25f00eb4e61cd
+/agent-note-explicit-office-file-submission/verification:
+  en: 3f4448618efaa766
+  zh: 2f4b4da98f8306d7

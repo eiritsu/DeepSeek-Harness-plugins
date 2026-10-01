@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/experimental/computer-use-cua-native/README.md
+/:
+  en: c1d942b966afe53e
+  zh: 4990b45472237a3c
+/deepseek-ai-dsh-experimental-computer-use-cua-native:
+  en: cf6c83c7730678d4
+  zh: 23348c099e08c398
+/deepseek-ai-dsh-experimental-computer-use-cua-native/summary:
+  en: d8ccfd781bae6f23
+  zh: 2f3b864d25ddface
+/deepseek-ai-dsh-experimental-computer-use-cua-native/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 3cca7bfb7c4fba53
+/deepseek-ai-dsh-experimental-computer-use-cua-native/use-this-package:
+  en: bbff250eba0f1b89
+  zh: b20a47f82d8ab6e0
+/deepseek-ai-dsh-experimental-computer-use-cua-native/use-this-package/install-into-a-profile:
+  en: e5087078c74f85c8
+  zh: 4161af17a112ba42
+/deepseek-ai-dsh-experimental-computer-use-cua-native/use-this-package/what-you-get:
+  en: f2c5eae56bafb295
+  zh: 64c804af1b6f2bb4
+/deepseek-ai-dsh-experimental-computer-use-cua-native/understand-the-implementation:
+  en: 74ec39c6c06cb590
+  zh: 19bfe49939d5b27d
+/deepseek-ai-dsh-experimental-computer-use-cua-native/further-exploration:
+  en: bda565ac1f3eba62
+  zh: 8b15dfea0e08b76b
+/deepseek-ai-dsh-experimental-computer-use-cua-native/model-experience:
+  en: 637c651bee38a38a
+  zh: 1e12ba4005c4bc03
+/deepseek-ai-dsh-experimental-computer-use-cua-native/model-experience/kv-cache-effect:
+  en: 6af9644e01ec0aaf
+  zh: ba3460d8ae4ba91c
+/deepseek-ai-dsh-experimental-computer-use-cua-native/known-limitations-and-deferred-work:
+  en: 348cd395fe55d5e3
+  zh: 8ca901a1a3c2342a
+/deepseek-ai-dsh-experimental-computer-use-cua-native/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: e88aeb617ffb74ea

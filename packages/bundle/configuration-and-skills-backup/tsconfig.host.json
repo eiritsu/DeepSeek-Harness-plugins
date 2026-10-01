@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
+  "include": ["src/index.ts", "src/archive.ts", "src/operations.ts", "src/routes.ts", "src/types.ts"],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../boot/app-boot/tsconfig.json" },
+    { "path": "../../boot/config-editor/tsconfig.json" },
+    { "path": "../../boot/plugin-manager/tsconfig.json" },
+    { "path": "../../client/connection/tsconfig.host.json" },
+    { "path": "../../settings/settings/tsconfig.json" },
+    { "path": "../../util/home-paths/tsconfig.json" }
+  ]
+}

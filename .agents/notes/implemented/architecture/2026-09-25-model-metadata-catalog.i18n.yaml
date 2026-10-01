@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-25-model-metadata-catalog.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-25-model-metadata-catalog.md
+/agent-note-provider-neutral-model-metadata:
+  en: 18edf0414d1074c2
+  zh: 9f9de10df540310e
+/agent-note-provider-neutral-model-metadata/problem:
+  en: 1486f62efbd14122
+  zh: b96069669575bf7f
+/agent-note-provider-neutral-model-metadata/decision:
+  en: 8c09f7bc920a1349
+  zh: 52d38edc7d6a5224
+/agent-note-provider-neutral-model-metadata/alternatives-considered:
+  en: cb9a17586288dc3a
+  zh: 5b3d3f473e058c42
+/agent-note-provider-neutral-model-metadata/consequences:
+  en: 3a015b3de57e002c
+  zh: 4daf8107bee3ac70

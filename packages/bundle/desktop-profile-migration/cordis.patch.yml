@@ -1,0 +1,4 @@
+# Optional Desktop-only page for an explicit one-time bundle selection migration.
+- insert:
+    - id: desktop-profile-migration
+      name: '@deepseek-ai/dsh-desktop-profile-migration-bundle'

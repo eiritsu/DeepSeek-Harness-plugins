@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-27-configuration-and-skills-backup.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-27-configuration-and-skills-backup.md
+/agent-note-configuration-and-skills-backup:
+  en: 4d3bb193f4c0a39a
+  zh: 535b0f5ac2b707c2
+/agent-note-configuration-and-skills-backup/problem:
+  en: 3fd6eb491db4654d
+  zh: d7cb0698b4d1e825
+/agent-note-configuration-and-skills-backup/decision:
+  en: 0ccdd770344e4c64
+  zh: 9089fa3d920d9435
+/agent-note-configuration-and-skills-backup/alternatives-considered:
+  en: 83cd4fea19a539f0
+  zh: c42a4150ea8eb9bd
+/agent-note-configuration-and-skills-backup/consequences:
+  en: 0f56b6b77cf614dc
+  zh: 5590340fa33455bf
+/agent-note-configuration-and-skills-backup/verification:
+  en: f76c2da5fe711fc2
+  zh: 9480337fd90cf168

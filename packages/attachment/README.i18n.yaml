@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/attachment/README.md
+/:
+  en: f00512cbc47cc703
+  zh: eafbceda437aa5be
+/attachment-durable-attachment-capability-family:
+  en: 10d0411d511b2bcf
+  zh: e1638ec309de04cc
+/attachment-durable-attachment-capability-family/summary:
+  en: 940c922a83a561f4
+  zh: 9e870669046f076d
+/attachment-durable-attachment-capability-family/table-of-contents:
+  en: 1eb35b015a6c423f
+  zh: a8a3dceee2c9e943
+/attachment-durable-attachment-capability-family/packages:
+  en: 6b2452a4b81e3797
+  zh: 0acad5a525c11820
+/attachment-durable-attachment-capability-family/related-documentation:
+  en: 266c2248482f594e
+  zh: ad5a2668505373a0
+/attachment-durable-attachment-capability-family/dev-note:
+  en: 5de1d6304e00c58f
+  zh: 8d8225361cfa29e5

@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-27-standalone-desktop-profile-migration.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-27-standalone-desktop-profile-migration.md
+/agent-note-self-contained-desktop-profile-migration-bundle:
+  en: 4e2eb30b8e6e2f8a
+  zh: 64eb737a6c72f3a7
+/agent-note-self-contained-desktop-profile-migration-bundle/problem:
+  en: f9504c7d4f74ac74
+  zh: 043640c6d9f81d78
+/agent-note-self-contained-desktop-profile-migration-bundle/decision:
+  en: 6552ca4935582bb0
+  zh: acc24d25fb0b3304
+/agent-note-self-contained-desktop-profile-migration-bundle/alternatives-considered:
+  en: 40c81ad02fe6a83f
+  zh: fa2910f32dbf90fe
+/agent-note-self-contained-desktop-profile-migration-bundle/consequences:
+  en: 7a0859e163fd9eec
+  zh: 12160450cf24b18f
+/agent-note-self-contained-desktop-profile-migration-bundle/verification:
+  en: ec79bfc62e70f5e6
+  zh: 91566020e57b6b48

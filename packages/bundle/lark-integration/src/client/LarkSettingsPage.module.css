@@ -1,0 +1,255 @@
+/** Layout for the Lark bundle detail page; constrained content width and a narrow-screen fallback
+ * shared by every bundle detail page so the official authorization CTA and form fields stay
+ * legible, with explicit status banners that distinguish an unfinished OAuth from a real
+ * connection failure.
+ *
+ * Every colour, border, and fill below names a `--dsw-alias-*` token defined in
+ * `packages/client/ui-theme/src/styles/design-platform.css`; both light and dark themes
+ * define the same names, so the page follows the active theme without a dark-mode branch. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 720px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.section {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.section h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+/* Vertical stack of form fields with a button row underneath; used by the
+ * existing-app branch where two long fields would otherwise sit side by side
+ * inside the same flex row as the action button. */
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.label {
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-layer-1);
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-sm);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* The banner states which of the three things is true — off, waiting for the
+ * user, or a real failure — so its border and badge carry the severity. */
+.statusBanner {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.statusBanner[data-tone='pending'] {
+  border-color: var(--dsw-alias-state-warn-primary);
+}
+
+.statusBanner[data-tone='error'] {
+  border-color: var(--dsw-alias-state-error-primary);
+}
+
+.statusHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.statusLabel { color: var(--dsw-alias-label-primary); }
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: var(--dsw-radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-bg-layer-2);
+  border: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.statusBanner[data-tone='pending'] .statusBadge {
+  color: var(--dsw-alias-state-warn-primary);
+  border-color: var(--dsw-alias-state-warn-primary);
+}
+
+.statusBanner[data-tone='error'] .statusBadge {
+  color: var(--dsw-alias-state-error-primary);
+  border-color: var(--dsw-alias-state-error-primary);
+}
+
+.statusReason {
+  margin: 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.paths {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.paths legend {
+  padding: 0 0 4px;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pathOption {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  padding: 8px 0;
+  color: var(--dsw-alias-label-primary);
+}
+
+.pathOption input { margin: 2px 0 0; }
+.pathOption span { display: grid; gap: 4px; min-width: 0; }
+
+.pathOption small {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The card that holds the official-authorization step. */
+.authorizeCallout {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.authorizeHeading {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--dsw-alias-label-primary);
+}
+
+.authorizeCallout .flow {
+  align-items: stretch;
+}
+
+/* The primary authorization action: the anchor restates `Button` variant `md`
+ * metrics so it sits level with the buttons beside it. */
+.authorizeLink {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 36px;
+  max-width: 100%;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--dsw-radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+  text-decoration: none;
+  color: var(--dsw-alias-label-primary-foreground);
+  background: var(--dsw-alias-button-primary-fill);
+  overflow-wrap: anywhere;
+}
+
+.authorizeLink:hover {
+  background: var(--dsw-alias-button-primary-hover);
+}
+
+/* Cancelling discards a half-finished authorization, so it keeps the `outline`
+ * Button's shape in the error token. `.page` scopes it above `Button`'s own
+ * `.outline` rules; the focus ring is left to the theme's global rule. */
+.page .dangerCancel {
+  color: var(--dsw-alias-state-error-primary);
+  border: 1px solid var(--dsw-alias-state-error-primary);
+}
+
+.page .dangerCancel:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover-danger);
+}
+
+.advanced {
+  display: grid;
+  gap: 12px;
+  border-top: 0.5px solid var(--dsw-alias-border-l2);
+  padding-top: 10px;
+}
+
+.advanced summary {
+  color: var(--dsw-alias-label-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+@media (max-width: 560px) {
+  .page { max-width: 100%; }
+  .authorizeCallout .flow { flex-direction: column; align-items: stretch; }
+  .authorizeLink { width: 100%; }
+}

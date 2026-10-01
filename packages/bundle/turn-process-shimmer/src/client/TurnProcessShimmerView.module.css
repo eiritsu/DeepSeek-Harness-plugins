@@ -1,0 +1,110 @@
+/* Brand-blue running-text shimmer for the turn-process label.
+   Disabled when the user prefers reduced motion, showing a static
+   brand-blue text gradient instead. */
+
+.root {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: calc(33px + var(--dsh-content-font-delta, 0px));
+  padding: 0 0 8px;
+  border: none;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l2);
+  background: none;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+  text-align: left;
+  transition: color 100ms ease;
+}
+
+.root:disabled {
+  cursor: default;
+}
+
+.root:not(:disabled):hover {
+  color: var(--dsw-alias-label-primary);
+}
+
+.root:not([data-open]) {
+  margin-bottom: 8px;
+}
+
+/* Brand-blue text with a sweeping gradient shimmer on the running label. */
+.labelShimmer {
+  color: var(--dsw-static-deepseek-500);
+  background: linear-gradient(
+    90deg,
+    var(--dsw-static-deepseek-500) 0%,
+    var(--dsw-static-deepseek-500) 40%,
+    var(--dsw-static-deepseek-200) 50%,
+    var(--dsw-static-deepseek-500) 60%,
+    var(--dsw-static-deepseek-500) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shimmer 1.8s linear infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+.chevron {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  color: var(--dsw-alias-label-caption);
+  transition: transform 100ms ease;
+}
+
+.root[data-open] .chevron {
+  transform: rotate(180deg);
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--dsh-content-font-size-secondary, 13px);
+  line-height: calc(24px + var(--dsh-content-font-delta, 0px));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+  Prefers-reduced-motion: disable the sweep and show a fixed
+  static brand-blue text gradient instead.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .chevron {
+    transition: none;
+  }
+
+  .labelShimmer {
+    animation: none;
+    background-size: 100% 100%;
+    background: linear-gradient(
+      90deg,
+      var(--dsw-static-deepseek-500) 0%,
+      var(--dsw-static-deepseek-500) 40%,
+      var(--dsw-static-deepseek-200) 50%,
+      var(--dsw-static-deepseek-500) 60%,
+      var(--dsw-static-deepseek-500) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+}

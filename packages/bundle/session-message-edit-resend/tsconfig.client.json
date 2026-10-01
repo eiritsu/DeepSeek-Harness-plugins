@@ -1,0 +1,34 @@
+{
+  "extends": "../../../tsconfig.base.client.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "lib/types", "tsBuildInfoFile": "lib/tsconfig.client.tsbuildinfo" },
+  "files": [
+    "src/client/index.ts",
+    "src/client/MessageEditAction.tsx",
+    "src/client/replacement-message.ts",
+    "src/client/EditComposerNotice.tsx",
+    "src/client/edit-surface.ts",
+    "src/client/submit.ts",
+    "src/client/locales.ts",
+    "src/client/css-modules.d.ts",
+    "src/css-modules.d.ts",
+    "src/projection.ts",
+    "src/types.ts"
+  ],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../api/remotes/tsconfig.client.json" },
+    { "path": "../../client/locale/tsconfig.client.json" },
+    { "path": "../../client/ui-chat/tsconfig.client.json" },
+    { "path": "../../client/ui-conversation/tsconfig.client.json" },
+    { "path": "../../client/ui-primitives" },
+    { "path": "../../client/ui-renderer" },
+    { "path": "../../client/ui-session" },
+    { "path": "../../client/ui-slots" },
+    { "path": "../../client/store" },
+    { "path": "../../session/session-projection" },
+    { "path": "../../core/session" },
+    { "path": "../../llm/llm" },
+    { "path": "../../typert/protocol" },
+    { "path": "../../util/brand" }
+  ]
+}

@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-26-independent-feature-profile-bundles.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-26-independent-feature-profile-bundles.md
+/agent-note-optional-feature-integrations-remain-independent-profile-bundles:
+  en: 8ee50e3b005d2ef4
+  zh: 08665df8a5593755
+/agent-note-optional-feature-integrations-remain-independent-profile-bundles/problem:
+  en: d969229fa6817566
+  zh: 98f4caa656178c1a
+/agent-note-optional-feature-integrations-remain-independent-profile-bundles/decision:
+  en: 9078a60cc8f55bf1
+  zh: 4c8a3185f2cc57c2
+/agent-note-optional-feature-integrations-remain-independent-profile-bundles/alternatives-considered:
+  en: 25556f578f31c1e9
+  zh: e7f45a9063984301
+/agent-note-optional-feature-integrations-remain-independent-profile-bundles/consequences:
+  en: c544c905d2f09b78
+  zh: ea1160a8ac3cc965
+/agent-note-optional-feature-integrations-remain-independent-profile-bundles/verification:
+  en: fe7e779f15354ed3
+  zh: 270511e6233d3585

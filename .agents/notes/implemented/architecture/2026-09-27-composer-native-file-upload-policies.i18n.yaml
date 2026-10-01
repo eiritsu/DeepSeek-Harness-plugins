@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-27-composer-native-file-upload-policies.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-27-composer-native-file-upload-policies.md
+/agent-note-native-file-uploads-in-the-conversation-composer:
+  en: 48623360a94750de
+  zh: 8861bf9f4d05d5ca
+/agent-note-native-file-uploads-in-the-conversation-composer/problem:
+  en: 3e26c20fdcfa9997
+  zh: 5d3ce2544aa93355
+/agent-note-native-file-uploads-in-the-conversation-composer/decision:
+  en: 4f770b54f84f917c
+  zh: 2176da48304a1cbd
+/agent-note-native-file-uploads-in-the-conversation-composer/alternatives-considered:
+  en: 6f6e2ab2bce6c1c3
+  zh: d30f0382b2d12921
+/agent-note-native-file-uploads-in-the-conversation-composer/consequences:
+  en: 919b34950967c807
+  zh: d06afb27f4ba27ee

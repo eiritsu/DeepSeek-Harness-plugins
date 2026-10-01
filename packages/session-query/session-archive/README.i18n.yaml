@@ -1,0 +1,40 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/session-query/session-archive/README.md
+/:
+  en: 0b3a93268ed29943
+  zh: e6da9062303502b3
+/session-archive:
+  en: 7816270cfc482cc9
+  zh: 09c66ccb011fbb92
+/session-archive/summary:
+  en: 6ae1a3f29b10179f
+  zh: 09d2652a7278fecd
+/session-archive/table-of-contents:
+  en: d32a3f9a2f3d30d7
+  zh: 00c3270a8db61ad1
+/session-archive/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/session-archive/use-this-package/installation:
+  en: b0624cdd7e65ddea
+  zh: 03306f0f3e7c8d12
+/session-archive/use-this-package/transfer-limits:
+  en: 02ad105f5cc89fea
+  zh: ec8ee6c0bbe3b083
+/session-archive/use-this-package/offline-sqlite-conversion:
+  en: d241a7cca9e53886
+  zh: 25faa72337955019
+/session-archive/use-this-package/restore-behavior:
+  en: fda1260af755bbb5
+  zh: e9b806e0a578340a
+/session-archive/further-exploration:
+  en: cab3a91da50290ce
+  zh: 8438631d5e2ad9ba
+/session-archive/known-limitations-and-deferred-work:
+  en: c22aa1048bb8091b
+  zh: 091217ea7f3dbe7c
+/session-archive/dev-note:
+  en: d21d4584f77e1c4b
+  zh: 949850b39b633d06

@@ -1,0 +1,4 @@
+# Optional edit-and-resend action for the latest completed ordinary user turn.
+- insert:
+    - id: session-message-edit-resend
+      name: '@deepseek-ai/dsh-session-message-edit-resend'

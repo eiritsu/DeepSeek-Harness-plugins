@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-28-runtime-model-metadata-fallback.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-28-runtime-model-metadata-fallback.md
+/agent-note-runtime-model-metadata-fallback:
+  en: 2cc1b2607d3fe93b
+  zh: b8aa6e4c28d2799d
+/agent-note-runtime-model-metadata-fallback/problem:
+  en: c5b09d994d3b3803
+  zh: 6755e419087d1410
+/agent-note-runtime-model-metadata-fallback/decision:
+  en: a9b3035edfa252a0
+  zh: d062e2220134d7c4
+/agent-note-runtime-model-metadata-fallback/alternatives-considered:
+  en: 7a785e2f530c73a2
+  zh: e04233a42d48adb7
+/agent-note-runtime-model-metadata-fallback/consequences:
+  en: 4d6450c14c8ef332
+  zh: c292cbe171773f66

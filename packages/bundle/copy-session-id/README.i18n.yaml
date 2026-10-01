@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/bundle/copy-session-id/README.md
+/:
+  en: b2cd22d10c2c263f
+  zh: 925b39ba930ba90e
+/deepseek-ai-dsh-copy-session-id:
+  en: 2de1e26e9aae07cc
+  zh: 2c547c6445e7ce69
+/deepseek-ai-dsh-copy-session-id/summary:
+  en: ce2e03e7d8df8b06
+  zh: d82a5844cd1b96c6
+/deepseek-ai-dsh-copy-session-id/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f629b4f1a564678d
+/deepseek-ai-dsh-copy-session-id/use-this-package:
+  en: 627c9d2e96dfca49
+  zh: a6512cf2256c7585
+/deepseek-ai-dsh-copy-session-id/understand-the-implementation:
+  en: 5aa8b0858397e7ca
+  zh: 2053249e303a1f3e
+/deepseek-ai-dsh-copy-session-id/further-exploration:
+  en: caf17469b659120b
+  zh: d6d70d704858e1ef
+/deepseek-ai-dsh-copy-session-id/model-experience:
+  en: 7428c91a85695485
+  zh: 7b2e08183a8ce241
+/deepseek-ai-dsh-copy-session-id/model-experience/kv-cache-effect:
+  en: cb496d3f95167723
+  zh: 75c1427c55a6d720
+/deepseek-ai-dsh-copy-session-id/known-limitations-and-deferred-work:
+  en: b5909efae4c308f1
+  zh: ff1272e4b0d19683
+/deepseek-ai-dsh-copy-session-id/known-limitations-and-deferred-work/dev-note:
+  en: 0a1253c6f7b5e8b9
+  zh: 9f56528562c7c914

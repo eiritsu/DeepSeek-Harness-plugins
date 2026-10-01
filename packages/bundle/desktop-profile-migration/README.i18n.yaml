@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/bundle/desktop-profile-migration/README.md
+/:
+  en: 22f9638a2cc31b57
+  zh: eff2263461d96eeb
+/deepseek-ai-dsh-desktop-profile-migration-bundle:
+  en: fb5b54cea67a34c9
+  zh: d6107c55d0afdd4f
+/deepseek-ai-dsh-desktop-profile-migration-bundle/summary:
+  en: d7a556b9bec907bd
+  zh: c51b4f36843f61c6
+/deepseek-ai-dsh-desktop-profile-migration-bundle/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 0f5b0a0c767af81e
+/deepseek-ai-dsh-desktop-profile-migration-bundle/use-this-package:
+  en: bdef6fba37fc5ea9
+  zh: 0b8dfea7d9245579
+/deepseek-ai-dsh-desktop-profile-migration-bundle/understand-the-implementation:
+  en: 89df39221e723414
+  zh: 6cd2235339b1bf87
+/deepseek-ai-dsh-desktop-profile-migration-bundle/further-exploration:
+  en: 5f458f83f9c8ff9e
+  zh: 8df4f9260e966c86
+/deepseek-ai-dsh-desktop-profile-migration-bundle/model-experience:
+  en: 7ea9e578fe49b258
+  zh: bad2f5c30796b771
+/deepseek-ai-dsh-desktop-profile-migration-bundle/model-experience/kv-cache-effect:
+  en: cb496d3f95167723
+  zh: 6d38de27fd8b6ac1
+/deepseek-ai-dsh-desktop-profile-migration-bundle/known-limitations-and-deferred-work:
+  en: 4e4ad931844ff087
+  zh: c4734bb6c21f7658
+/deepseek-ai-dsh-desktop-profile-migration-bundle/known-limitations-and-deferred-work/dev-note:
+  en: 4745ad516591387d
+  zh: 98b017cf3a49e6b2

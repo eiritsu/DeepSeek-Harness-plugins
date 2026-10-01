@@ -1,0 +1,5 @@
+# Brave and Tavily register with the existing web_search provider selection service;
+# the same row also offers the Firecrawl extraction tool while firecrawlEnabled is true.
+- insert:
+    - id: tools-connections
+      name: '@deepseek-ai/dsh-tools-connections'

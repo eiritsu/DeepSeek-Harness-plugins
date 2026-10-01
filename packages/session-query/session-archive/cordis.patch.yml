@@ -1,0 +1,4 @@
+# Optional Session archive Settings and authenticated Host route.
+- insert:
+    - id: session-archive
+      name: '@deepseek-ai/dsh-session-archive'

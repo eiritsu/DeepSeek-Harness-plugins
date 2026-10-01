@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/bundle/configuration-and-skills-backup/README.md
+/:
+  en: b04234687b7c0d17
+  zh: 0a0a201ea2f0e7d5
+/deepseek-ai-dsh-configuration-and-skills-backup:
+  en: c38f7f196577319d
+  zh: a9d5dc707145f728
+/deepseek-ai-dsh-configuration-and-skills-backup/summary:
+  en: 36f9632169f38201
+  zh: 5824ee124f12107d
+/deepseek-ai-dsh-configuration-and-skills-backup/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 72c4e05c7f0ddcb2
+/deepseek-ai-dsh-configuration-and-skills-backup/use-this-package:
+  en: bbff250eba0f1b89
+  zh: b20a47f82d8ab6e0
+/deepseek-ai-dsh-configuration-and-skills-backup/use-this-package/install-into-a-profile:
+  en: 53b93bba99dd85e8
+  zh: f5356f80c98d160b
+/deepseek-ai-dsh-configuration-and-skills-backup/use-this-package/what-you-get:
+  en: e87904ec4d860fe7
+  zh: a7f56c9110d107f1
+/deepseek-ai-dsh-configuration-and-skills-backup/use-this-package/convert-an-old-configuration-backup:
+  en: 7fa3f9a383ac517b
+  zh: ab7dc20cda462bf5
+/deepseek-ai-dsh-configuration-and-skills-backup/understand-the-implementation:
+  en: bce01e1952b1e6a9
+  zh: e8167419179d6ffe
+/deepseek-ai-dsh-configuration-and-skills-backup/further-exploration:
+  en: 3e542eff3a875a05
+  zh: e94dcbf283e1a7ff
+/deepseek-ai-dsh-configuration-and-skills-backup/model-experience:
+  en: da884975844db9fd
+  zh: de771d497ef1cb92
+/deepseek-ai-dsh-configuration-and-skills-backup/model-experience/kv-cache-effect:
+  en: cb496d3f95167723
+  zh: 22f40965bf2c9531
+/deepseek-ai-dsh-configuration-and-skills-backup/known-limitations-and-deferred-work:
+  en: d81bbb828ffcaf55
+  zh: 6d028caa0f43b7c4
+/deepseek-ai-dsh-configuration-and-skills-backup/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 8ec3e73528ddb1a6

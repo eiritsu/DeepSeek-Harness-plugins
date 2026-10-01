@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-26-turn-process-shimmer.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-26-turn-process-shimmer.md
+/agent-note-optional-turn-process-shimmer-renderer:
+  en: 21a7c53330f16754
+  zh: 6031f0a97dadc5a8
+/agent-note-optional-turn-process-shimmer-renderer/problem:
+  en: 6ec6710719214943
+  zh: 24afd61e38f4e619
+/agent-note-optional-turn-process-shimmer-renderer/decision:
+  en: 3d7b7081f9d71a6c
+  zh: 64696e2d332e4d3e
+/agent-note-optional-turn-process-shimmer-renderer/alternatives-considered:
+  en: 31a4f96d80228e44
+  zh: 1a2cc99ed50ed8c0
+/agent-note-optional-turn-process-shimmer-renderer/consequences:
+  en: c29a26bae2f9c920
+  zh: c4db689c0ba5fae9

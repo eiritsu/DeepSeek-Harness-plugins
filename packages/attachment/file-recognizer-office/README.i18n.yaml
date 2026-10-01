@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/attachment/file-recognizer-office/README.md
+/:
+  en: 7faeba3a16778e50
+  zh: 1b50723e5e6fc504
+/deepseek-ai-dsh-file-recognizer-office:
+  en: 4741cfeb6424ffc0
+  zh: b0d9a2f9f1ed0ab4
+/deepseek-ai-dsh-file-recognizer-office/summary:
+  en: 4eb4ea53e23acdf9
+  zh: f5615243a015a6e5
+/deepseek-ai-dsh-file-recognizer-office/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 3006c8cf5801820f
+/deepseek-ai-dsh-file-recognizer-office/use-this-package:
+  en: bbff250eba0f1b89
+  zh: b20a47f82d8ab6e0
+/deepseek-ai-dsh-file-recognizer-office/use-this-package/install-into-a-profile:
+  en: 7133512ae3b94c66
+  zh: 2ea52143f4ace01a
+/deepseek-ai-dsh-file-recognizer-office/use-this-package/what-you-get:
+  en: a0c71480d18f07f3
+  zh: b2198bb47df05b77
+/deepseek-ai-dsh-file-recognizer-office/understand-the-implementation:
+  en: 8011e0c6c8d4b50b
+  zh: bf1c57e2ed17eceb
+/deepseek-ai-dsh-file-recognizer-office/further-exploration:
+  en: 771fe229d2ca2922
+  zh: c1b3f3020fc8d3ae
+/deepseek-ai-dsh-file-recognizer-office/model-experience:
+  en: 4eddf8e7cd00f5de
+  zh: d6db7ebf90d90535
+/deepseek-ai-dsh-file-recognizer-office/model-experience/kv-cache-effect:
+  en: 63705edeca3652b8
+  zh: 514d2df16854a262
+/deepseek-ai-dsh-file-recognizer-office/known-limitations-and-deferred-work:
+  en: 3c2e335f41dcc972
+  zh: 390ce30ebc4155d3
+/deepseek-ai-dsh-file-recognizer-office/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 3bb0c20c93f16f98

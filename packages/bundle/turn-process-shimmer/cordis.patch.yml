@@ -1,0 +1,4 @@
+# Optional Client replacement of the official turn-process keyed renderer.
+- insert:
+    - id: ui-turn-process-shimmer
+      name: '@deepseek-ai/dsh-turn-process-shimmer'

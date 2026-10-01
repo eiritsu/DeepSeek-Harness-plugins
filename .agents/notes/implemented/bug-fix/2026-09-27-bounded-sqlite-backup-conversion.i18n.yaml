@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-27-bounded-sqlite-backup-conversion.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-27-bounded-sqlite-backup-conversion.md
+/agent-note-bound-offline-sqlite-session-backup-conversion:
+  en: 9d96e28beeb40d8d
+  zh: 9d263c392d3ae362
+/agent-note-bound-offline-sqlite-session-backup-conversion/problem:
+  en: 9eb95ef995e12265
+  zh: f2dbf374c78be586
+/agent-note-bound-offline-sqlite-session-backup-conversion/decision:
+  en: 738d3c39b2f28844
+  zh: b18b9577bcf65e71
+/agent-note-bound-offline-sqlite-session-backup-conversion/alternatives-considered:
+  en: 1252b401499c6ce7
+  zh: 74efdd3429031a59
+/agent-note-bound-offline-sqlite-session-backup-conversion/consequences:
+  en: 765ce996f83a0f5e
+  zh: 53edd5f7b2ee277b
+/agent-note-bound-offline-sqlite-session-backup-conversion/verification:
+  en: 8357ee6bcdcebdc1
+  zh: 34ba3726576c5cd3

@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/bundle/lark-integration/README.md
+/:
+  en: 19af623bc4812b03
+  zh: d79fa6683b29faca
+/deepseek-ai-dsh-lark-integration:
+  en: ae6c0110c262acc3
+  zh: 23cfbd73ae9ea795
+/deepseek-ai-dsh-lark-integration/summary:
+  en: 8a17156fe85e7f7e
+  zh: 2076c066a1bd9a50
+/deepseek-ai-dsh-lark-integration/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f629b4f1a564678d
+/deepseek-ai-dsh-lark-integration/use-this-package:
+  en: 1163812b22042ff6
+  zh: ae90008d946080b9
+/deepseek-ai-dsh-lark-integration/understand-the-implementation:
+  en: 01faa9d3a9d1d27b
+  zh: 3e980b9989fd3eee
+/deepseek-ai-dsh-lark-integration/further-exploration:
+  en: 9ec6fad8a24333e7
+  zh: c9157126d97589a7
+/deepseek-ai-dsh-lark-integration/model-experience:
+  en: f54625dde8a65b76
+  zh: 6b23d5c6e60884a0
+/deepseek-ai-dsh-lark-integration/model-experience/kv-cache-effect:
+  en: 523353aea2579030
+  zh: 36e20009b21db3f3
+/deepseek-ai-dsh-lark-integration/known-limitations-and-deferred-work:
+  en: 7c47c0c60ae4c4b4
+  zh: 0e268d601e64a2d7
+/deepseek-ai-dsh-lark-integration/known-limitations-and-deferred-work/dev-note:
+  en: 13563ba860db0031
+  zh: 8171e5a86e50cee7

@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-26-provider-neutral-session-archives.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-26-provider-neutral-session-archives.md
+/agent-note-provider-neutral-session-archives:
+  en: b9a6cb4687e1a7e2
+  zh: 4eec038391c3cf95
+/agent-note-provider-neutral-session-archives/problem:
+  en: 2dbfd3b7171cd5b9
+  zh: 97c2dc7ba9da6dc6
+/agent-note-provider-neutral-session-archives/decision:
+  en: b017297155f8efd8
+  zh: bc571d1df81d4341
+/agent-note-provider-neutral-session-archives/alternatives-considered:
+  en: 46816a262a3d81c6
+  zh: 154303ca7b7bafed
+/agent-note-provider-neutral-session-archives/consequences:
+  en: e03adae8167ceb14
+  zh: 9f476b4700689212

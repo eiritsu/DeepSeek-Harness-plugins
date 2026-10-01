@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-27-durable-session-surface-replacement.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-27-durable-session-surface-replacement.md
+/agent-note-durable-session-surface-replacement-operations:
+  en: b4fbf064d7f6944c
+  zh: cc791c5b4ef5bd74
+/agent-note-durable-session-surface-replacement-operations/problem:
+  en: 47199caa910e00e4
+  zh: 7f448d83ec3dcf5e
+/agent-note-durable-session-surface-replacement-operations/decision:
+  en: 0bbf99da3065e439
+  zh: ca8ceabd46cff335
+/agent-note-durable-session-surface-replacement-operations/alternatives-considered:
+  en: 9fdd222cd6a0ff5d
+  zh: 708e2e5f9fd756cd
+/agent-note-durable-session-surface-replacement-operations/consequences:
+  en: 945e2420c4c58c12
+  zh: e845dd24e62481cd

@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-26-firecrawl-extraction-plugin.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-26-firecrawl-extraction-plugin.md
+/agent-note-firecrawl-extraction-as-an-optional-tool:
+  en: 377c7b828009447d
+  zh: 586b46df7f306dda
+/agent-note-firecrawl-extraction-as-an-optional-tool/problem:
+  en: dff6c3ce752a0544
+  zh: e9cab5d262bf48fd
+/agent-note-firecrawl-extraction-as-an-optional-tool/decision:
+  en: a7b1702a45db9ced
+  zh: e439fadc7283f474
+/agent-note-firecrawl-extraction-as-an-optional-tool/alternatives-considered:
+  en: 93e10058ebef25f4
+  zh: a6994b1cc52cd96d
+/agent-note-firecrawl-extraction-as-an-optional-tool/consequences:
+  en: f0b8273f1f5fee99
+  zh: 4e19957dc7ead71a

@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/llm/model-catalog/README.md
+/:
+  en: 6a95857698d6b3f7
+  zh: 0878c3562b11ff71
+/deepseek-ai-dsh-model-catalog:
+  en: 95dec10e55eb1cfa
+  zh: 84329985e368ab2c
+/deepseek-ai-dsh-model-catalog/summary:
+  en: b7d17a06726c7f80
+  zh: 1b2f1a0ae03d459b
+/deepseek-ai-dsh-model-catalog/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 1e7114955735e41f
+/deepseek-ai-dsh-model-catalog/use-this-package:
+  en: bbff250eba0f1b89
+  zh: b20a47f82d8ab6e0
+/deepseek-ai-dsh-model-catalog/use-this-package/install-into-a-profile:
+  en: 1ca2f93d0b7f5bc4
+  zh: 179b5e4172081147
+/deepseek-ai-dsh-model-catalog/use-this-package/what-you-get:
+  en: 8b5f22987591906d
+  zh: 337e9e638bad2687
+/deepseek-ai-dsh-model-catalog/understand-the-implementation:
+  en: a39eca86f64bcb99
+  zh: 72ef2cba71e7ba60
+/deepseek-ai-dsh-model-catalog/further-exploration:
+  en: 4337d7a58c469317
+  zh: f54d545999e32ce0
+/deepseek-ai-dsh-model-catalog/model-experience:
+  en: 4e18e73cec5bd576
+  zh: 9e1efcf537d64f16
+/deepseek-ai-dsh-model-catalog/model-experience/kv-cache-effect:
+  en: 71ad8fe2d5097c51
+  zh: 6b14dc7a126259a3
+/deepseek-ai-dsh-model-catalog/known-limitations-and-deferred-work:
+  en: 4f6128042f961c90
+  zh: f40e30c884fda145
+/deepseek-ai-dsh-model-catalog/known-limitations-and-deferred-work/dev-note:
+  en: 103230c60c7a8157
+  zh: a43cb4f24ff56bb6
