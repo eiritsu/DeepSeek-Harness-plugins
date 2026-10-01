@@ -6,11 +6,13 @@
 
 ## 安装插件
 
-`v0.2.0-rc.2.20261001.2` 的 GitHub Release 将为下表中的每个可安装组合包附带一个预构建 `.tgz` 资源。Release 发布后，在 Web 或 Desktop 中打开 **Plugins**，选择 **Install**，然后输入对应资源的下载 URL。也可以用 CLI 将同一 URL 安装到某个 profile：
+`v0.2.0-rc.2.20261001.2` 的 GitHub Release 已为下表中的每个可安装组合包附带一个预构建 `.tgz` 资源。在 Web 或 Desktop 的 **Plugins** 中选择 **Install**，输入对应资源的下载 URL。通过 CLI 安装时，请先下载 `.tgz` 资源，再将其绝对本地路径添加到 profile：
 
 ```sh
-dsh plugin --profile <profile> add https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.0-rc.2.20261001.2/<asset-file>
+dsh plugin --profile <profile> add /absolute/path/to/<asset-file>
 ```
+
+`dsh plugin` 会将包操作转交给 profile 使用的 pnpm。如果添加 Release URL 时出现 `ERR_PNPM_MISSING_TARBALL_INTEGRITY`，表示 pnpm 遇到缺少 integrity 的 tarball lockfile 记录；请改为安装已下载的本地文件。
 
 安装后，请在 **Plugins** 中启用组合包。UI 插件使用共享的 Web Client，因此除表格注明的特殊范围外，它们都可用于匹配版本的 Web 和 Desktop 应用。Headless profile 可以使用仅含 Host 的插件，但无法显示 Client UI。
 

@@ -6,11 +6,13 @@ This repository distributes optional DeepSeek Harness plugins maintained by Eiri
 
 ## Install a plugin
 
-The GitHub Release for `v0.2.0-rc.2.20261001.2` will contain one prebuilt `.tgz` asset for each installable bundle below. After that Release is published, open **Plugins** in Web or Desktop, choose **Install**, and enter the asset download URL. The CLI can install the same URL into a profile:
+The GitHub Release for `v0.2.0-rc.2.20261001.2` contains one prebuilt `.tgz` asset for each installable bundle below. In Web or Desktop, open **Plugins**, choose **Install**, and enter the asset download URL. For CLI installation, download the `.tgz` asset first and add its absolute local path to the profile:
 
 ```sh
-dsh plugin --profile <profile> add https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.0-rc.2.20261001.2/<asset-file>
+dsh plugin --profile <profile> add /absolute/path/to/<asset-file>
 ```
+
+`dsh plugin` forwards package operations to the profile's pnpm. If adding a Release URL fails with `ERR_PNPM_MISSING_TARBALL_INTEGRITY`, pnpm has encountered a tarball lockfile entry without integrity; install the downloaded local file instead.
 
 After installation, enable the bundle in **Plugins**. UI bundles use the shared Web Client, so they run in both the matching Web app and Desktop app unless the table marks a narrower scope. Headless profiles can use Host-only bundles but cannot display Client UI.
 
