@@ -6,10 +6,10 @@ This repository distributes optional DeepSeek Harness plugins maintained by Eiri
 
 ## Install a plugin
 
-The GitHub Release for `v0.2.0-rc.2` will contain one prebuilt `.tgz` asset for each installable bundle below. After that Release is published, open **Plugins** in Web or Desktop, choose **Install**, and enter the asset download URL. The CLI can install the same URL into a profile:
+The GitHub Release for `v0.2.0-rc.2.20261001.2` will contain one prebuilt `.tgz` asset for each installable bundle below. After that Release is published, open **Plugins** in Web or Desktop, choose **Install**, and enter the asset download URL. The CLI can install the same URL into a profile:
 
 ```sh
-dsh plugin --profile <profile> add https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.0-rc.2/<asset-file>
+dsh plugin --profile <profile> add https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.0-rc.2.20261001.2/<asset-file>
 ```
 
 After installation, enable the bundle in **Plugins**. UI bundles use the shared Web Client, so they run in both the matching Web app and Desktop app unless the table marks a narrower scope. Headless profiles can use Host-only bundles but cannot display Client UI.
@@ -71,7 +71,7 @@ These versioned packages support a bundle or profile composition and are not ind
 
 ## Compatibility and package contents
 
-The supported target for this release is Eiritsu's Web/Desktop distribution with Harness runtime base `0.2.0-rc.2`. The Electron test installer has shell `buildVersion` `0.2.0-rc.2.20261001.1` and is compatible when its bundled runtime base and plugin packages are `0.2.0-rc.2`. Keep the profile bundles and Harness runtime packages on that same base version. Public Harness APIs are pre-stable, and some features use APIs added by this distribution. For example, Office file recognition uses its native-file upload policy API, and Edit and resend uses the matching Agent and Agent Loop packages. An upstream build with the same version string is not sufficient if it lacks those additions.
+The supported target for this patch is Eiritsu's Web/Desktop distribution with Harness runtime base and plugin package version `0.2.0-rc.2`; release tag `v0.2.0-rc.2.20261001.2` does not change that compatibility version. The currently published Electron installer has shell `buildVersion` `0.2.0-rc.2.20261001.1` and is compatible when its bundled runtime base and plugin packages are `0.2.0-rc.2`. Keep the profile bundles and Harness runtime packages on that same base version. Users with an older Lark integration installed must uninstall it, then reinstall from [the Lark asset in this Release](https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.0-rc.2.20261001.2/deepseek-ai-dsh-lark-integration-0.2.0-rc.2.tgz). Public Harness APIs are pre-stable, and some features use APIs added by this distribution. For example, Office file recognition uses its native-file upload policy API, and Edit and resend uses the matching Agent and Agent Loop packages. An upstream build with the same version string is not sufficient if it lacks those additions.
 
 Release assets contain the built JavaScript, type declarations, `cordis.patch.yml`, and declared runtime assets selected by each package's `files` manifest. They do not contain the monorepo checkout or development dependencies. The two supporting packages are resolved as bundle dependencies when needed; they should not be installed by users as standalone features.
 

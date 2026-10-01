@@ -5,6 +5,25 @@ import type { Config } from '../src/index.ts'
 import { applyLarkCli, isLarkCliReadOnly } from '../src/lark-cli.ts'
 
 describe('Lark CLI policy and configuration', () => {
+  it('allows only known read-only IM chat-list options without approval', () => {
+    expect(isLarkCliReadOnly(['im', '+chat-list'])).toBe(true)
+    expect(isLarkCliReadOnly([
+      'im', '+chat-list', '--types', 'p2p', '--sort', 'active_time', '--page-size', '5', '--format', 'json',
+    ])).toBe(true)
+    expect(isLarkCliReadOnly(['im', '+chat-list', '--json'])).toBe(true)
+    expect(isLarkCliReadOnly(['im', '+chat-delete'])).toBe(false)
+    expect(isLarkCliReadOnly(['im', '+chat-list', '--all'])).toBe(false)
+    expect(isLarkCliReadOnly(['im', '+chat-list', '--types', 'p2p', '--verify'])).toBe(false)
+    expect(isLarkCliReadOnly(['im', '+chat-list', '--sort', 'unknown'])).toBe(false)
+    expect(isLarkCliReadOnly(['im', '+chat-list', '--page-size', '101'])).toBe(false)
+    expect(isLarkCliReadOnly(['im', '+chat-list', '--types', 'p2p', '--types', 'group'])).toBe(false)
+  })
+
+  it('allows structured auth status output but keeps token verification approval-gated', () => {
+    expect(isLarkCliReadOnly(['auth', 'status', '--json'])).toBe(true)
+    expect(isLarkCliReadOnly(['auth', 'status', '--verify'])).toBe(false)
+  })
+
   it('recognizes help only in command positions and never after the option separator', () => {
     expect(isLarkCliReadOnly(['--help'])).toBe(true)
     expect(isLarkCliReadOnly(['calendar', '--help'])).toBe(false)

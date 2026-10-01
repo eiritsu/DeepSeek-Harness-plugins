@@ -6,10 +6,10 @@
 
 ## 安装插件
 
-`v0.2.0-rc.2` 的 GitHub Release 将为下表中的每个可安装组合包附带一个预构建 `.tgz` 资源。Release 发布后，在 Web 或 Desktop 中打开 **Plugins**，选择 **Install**，然后输入对应资源的下载 URL。也可以用 CLI 将同一 URL 安装到某个 profile：
+`v0.2.0-rc.2.20261001.2` 的 GitHub Release 将为下表中的每个可安装组合包附带一个预构建 `.tgz` 资源。Release 发布后，在 Web 或 Desktop 中打开 **Plugins**，选择 **Install**，然后输入对应资源的下载 URL。也可以用 CLI 将同一 URL 安装到某个 profile：
 
 ```sh
-dsh plugin --profile <profile> add https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.0-rc.2/<asset-file>
+dsh plugin --profile <profile> add https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.0-rc.2.20261001.2/<asset-file>
 ```
 
 安装后，请在 **Plugins** 中启用组合包。UI 插件使用共享的 Web Client，因此除表格注明的特殊范围外，它们都可用于匹配版本的 Web 和 Desktop 应用。Headless profile 可以使用仅含 Host 的插件，但无法显示 Client UI。
@@ -75,7 +75,7 @@ Desktop profile 已包含其专用持久化组合层。对应源码组件位于 
 
 ## 兼容性与软件包内容
 
-本次支持的目标是 Harness runtime base 为 `0.2.0-rc.2` 的 Eiritsu Web/Desktop 发行版。Electron 测试安装包的 shell `buildVersion` 是 `0.2.0-rc.2.20261001.1`；只要其内置 runtime base 和插件软件包为 `0.2.0-rc.2`，就与本插件兼容。profile 组合包和 Harness runtime 软件包也必须保持此 base 版本。Harness 公共 API 尚未稳定，部分功能使用了此发行版新增的 API。例如，Office 文件识别使用原生文件上传策略 API；编辑并重发消息使用匹配版本的 Agent 与 Agent Loop 软件包。仅版本号相同但缺少这些扩展的上游构建仍不兼容。
+本 patch 支持 Harness runtime base 和插件软件包版本均为 `0.2.0-rc.2` 的 Eiritsu Web/Desktop 发行版；Release tag `v0.2.0-rc.2.20261001.2` 不会改变兼容版本。目前公开的 Electron 安装包 shell `buildVersion` 是 `0.2.0-rc.2.20261001.1`；只要其内置 runtime base 和插件软件包为 `0.2.0-rc.2`，就与本插件兼容。profile 组合包和 Harness runtime 软件包也必须保持此 base 版本。已安装旧版 Lark 集成的用户需要先卸载，再从[本次 Release 的 Lark 资源](https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.0-rc.2.20261001.2/deepseek-ai-dsh-lark-integration-0.2.0-rc.2.tgz)重新安装。Harness 公共 API 尚未稳定，部分功能使用了此发行版新增的 API。例如，Office 文件识别使用原生文件上传策略 API；编辑并重发消息使用匹配版本的 Agent 与 Agent Loop 软件包。仅版本号相同但缺少这些扩展的上游构建仍不兼容。
 
 Release 资源包含各软件包 `files` 清单选取的构建后 JavaScript、类型声明、`cordis.patch.yml` 和运行时资源，不包含 monorepo 工作树或开发依赖。需要时，组合包会解析其依赖的两个支持包；用户不应将它们作为独立功能安装。
 

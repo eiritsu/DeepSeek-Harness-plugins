@@ -32,7 +32,7 @@ kind: "package-bundle"
 <a id="understand-the-implementation"></a>
 ## 实现说明
 
-Profile patch 插入一个私聊连接和 `lark_cli` 均默认关闭的 `lark` Host 行。此包包含 Host wrapper、私聊实现、官方 Lark CLI launcher 和 Client 入口；只有 Host 配置处于服务状态时，Client 才会在 Plugins 详情页注册配置页面。Typert Loader 会随 Host entry 注册此包的 `./typert` contribution；直接挂载插件时，仅当 Loader 尚未登记该 contribution 才由插件入口注册。应用注册使用官方 channel SDK。用户 device authorization 与身份查询通过 `ctx.subprocess` 调用官方 CLI；应用密钥经 stdin 传递，不放入 argv 或环境变量，device code 保留在 Host 凭据存储中。只有包内精确列出的只读命令不需要审批；其他 CLI 命令请求官方工具审批。连接状态使用 `dsh-lark` 现有的 `larkStatus` Remote；设置操作使用此包独立的 `larkSetup` Remote。
+Profile patch 插入一个私聊连接和 `lark_cli` 均默认关闭的 `lark` Host 行。此包包含 Host wrapper、私聊实现、官方 Lark CLI launcher 和 Client 入口；只有 Host 配置处于服务状态时，Client 才会在 Plugins 详情页注册配置页面。Typert Loader 会随 Host entry 注册此包的 `./typert` contribution；直接挂载插件时，仅当 Loader 尚未登记该 contribution 才由插件入口注册。应用注册使用官方 channel SDK。用户 device authorization 与身份查询通过 `ctx.subprocess` 调用官方 CLI；应用密钥经 stdin 传递，不放入 argv 或环境变量，device code 保留在 Host 凭据存储中。只有包内精确列出的只读命令不需要审批；其他 CLI 命令请求官方工具审批。使用 `lark_cli` 调用 `auth status` 或 `auth status --json` 可检查此组合包的 CLI 配置；使用带有 `--types p2p`、`--sort active_time`、`--page-size 5` 和 `--format json` 等只读筛选参数的 `im +chat-list` 可列出会话。审批被拒绝表示请求操作没有运行，不能据此判断配置状态。连接状态使用 `dsh-lark` 现有的 `larkStatus` Remote；设置操作使用此包独立的 `larkSetup` Remote。
 
 在同一 profile 中只加载此包作为 Lark 集成的 Host owner；不要再加载独立的 `@deepseek-ai/dsh-lark` Host entry，重复 descriptor owner 会明确报错。独立包仍是此组合包所用的实现来源。
 
