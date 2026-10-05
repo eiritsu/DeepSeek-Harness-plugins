@@ -93,6 +93,7 @@ External packages installed for runtime use or distributed inside the prebuilt b
 | [`fast-xml-parser`](https://github.com/NaturalIntelligence/fast-xml-parser) | MIT |
 | [`fflate`](https://github.com/101arrowz/fflate) | MIT |
 | [`got`](https://github.com/sindresorhus/got) | MIT |
+| [`ical.js`](https://github.com/kewisch/ical.js) | MPL-2.0 |
 | [`immer`](https://github.com/immerjs/immer) | MIT |
 | [`ipaddr.js`](https://github.com/whitequark/ipaddr.js) | MIT |
 | [`js-yaml`](https://github.com/nodeca/js-yaml) | MIT |
@@ -167,6 +168,11 @@ The installed SDK 0.3.263 declares the following optional platform packages. Eac
 | [`@anthropic-ai/claude-agent-sdk-linux-x64-musl`](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk-linux-x64-musl) | 0.3.263 | SEE LICENSE IN LICENSE.md |
 | [`@anthropic-ai/claude-agent-sdk-win32-arm64`](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk-win32-arm64) | 0.3.263 | SEE LICENSE IN LICENSE.md |
 | [`@anthropic-ai/claude-agent-sdk-win32-x64`](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk-win32-x64) | 0.3.263 | SEE LICENSE IN LICENSE.md |
+
+
+## Calendar iCalendar parser
+
+`@deepseek-ai/dsh-calendar` distributes unmodified `ical.js` 2.2.1 under MPL-2.0. Its package includes the upstream license text and links to the corresponding source archive, which contains the `lib/` JavaScript sources: [`ical.js@2.2.1` source archive](https://registry.npmjs.org/ical.js/-/ical.js-2.2.1.tgz). The full license is included in the Calendar package as `LICENSE-ical.js`.
 
 
 ## LibreOffice conversion kit

@@ -140,6 +140,7 @@
     { "path": "./packages/client/ui-settings-models" },
     { "path": "./packages/attachment/file-recognizer-office/tsconfig.client.json" },
     { "path": "./packages/client/ui-plugin-manager/tsconfig.client.json" },
+    { "path": "./packages/bundle/calendar/tsconfig.client.json" },
     { "path": "./packages/bundle/copy-session-id/tsconfig.client.json" },
     { "path": "./packages/bundle/community-plugin-catalog/tsconfig.client.json" },
     { "path": "./packages/bundle/community-skill-catalog/tsconfig.client.json" },

@@ -46,6 +46,7 @@ Each row gives the package's source path and the exact asset filename. All bundl
 
 | Add-on | Package | Feature and surface | Source path | `.tgz` asset |
 |---|---|---|---|---|
+| Calendar | `@deepseek-ai/dsh-calendar` | Calendar view over Schedule automations, local entries, and user-supplied iCalendar subscriptions; Web and Desktop. **Unreleased:** the `v0.2.0-rc.2.20261001.2` assets do not contain it — build the `.tgz` from this repository or install the local path | `packages/bundle/calendar` | not published yet |
 | Office file recognition | `@deepseek-ai/dsh-file-recognizer-office` | Local DOCX, PPTX, XLSX, OpenDocument and PDF text extraction, optional OCR; Web and Desktop with this distribution's native-file upload API | `packages/attachment/file-recognizer-office` | `deepseek-ai-dsh-file-recognizer-office-0.2.0-rc.2.tgz` |
 | Community plugin catalog | `@deepseek-ai/dsh-community-plugin-catalog` | Browse and install community plugin packages; Web and Desktop | `packages/bundle/community-plugin-catalog` | `deepseek-ai-dsh-community-plugin-catalog-0.2.0-rc.2.tgz` |
 | Community skill catalog | `@deepseek-ai/dsh-community-skill-catalog` | Browse and install version-pinned SkillHub skills; Web and Desktop | `packages/bundle/community-skill-catalog` | `deepseek-ai-dsh-community-skill-catalog-0.2.0-rc.2.tgz` |

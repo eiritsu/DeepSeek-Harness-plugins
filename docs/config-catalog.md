@@ -429,6 +429,56 @@ export type Config = LocalConfig
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-bash-sandbox -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-calendar -->
+<a id="deepseek-aidsh-calendar"></a>
+
+## `@deepseek-ai/dsh-calendar`
+
+- `inject`: `sessions` · `storageDomain`
+- `refs`: `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/bundle/calendar/src/config.ts:6`](../packages/bundle/calendar/src/config.ts)
+
+```ts config-catalog
+/** Validated configuration for one calendar Host row. */
+export interface Config {
+  /** Deadline for one subscription fetch, covering connect, redirect, and body. */
+  fetchTimeoutMs: Volatile<number>
+  /** Largest accepted subscription response body, in bytes. */
+  maxResponseBytes: Volatile<number>
+  /** Refresh interval a new subscription receives when the request omits one. */
+  defaultRefreshIntervalSeconds: Volatile<number>
+  /** Shortest refresh interval a Client may request, in seconds. */
+  minRefreshIntervalSeconds: Volatile<number>
+  /** Longest refresh interval a Client may request, in seconds. */
+  maxRefreshIntervalSeconds: Volatile<number>
+  /** Days a subscription's fetched entries stay in the store before pruning. */
+  retentionDays: Volatile<number>
+  /** Largest accepted number of VEVENT components read from one feed. */
+  maxEventsPerSubscription: Volatile<number>
+  /** Largest accepted number of expanded occurrences produced by one VEVENT. */
+  maxOccurrencesPerEvent: Volatile<number>
+  /**
+   * Largest accepted number of rule steps evaluated for one VEVENT. A rule
+   * anchored far enough in the past to exhaust this budget contributes no
+   * occurrence and is reported as dropped.
+   */
+  maxExpansionIterations: Volatile<number>
+  /** Largest accepted number of stored occurrences one subscription or import contributes. */
+  maxOccurrencesPerSubscription: Volatile<number>
+  /** Days ahead of the Host clock a feed is expanded, so future occurrences exist to show. */
+  expansionHorizonDays: Volatile<number>
+  /** Largest accepted number of calendars kept from iCalendar text imports. */
+  maxImportedCalendars: Volatile<number>
+  /** Largest accepted number of entries one snapshot returns. */
+  maxEntriesPerSnapshot: Volatile<number>
+  /** Largest accepted number of occurrences one task contributes to a snapshot. */
+  maxOccurrencesPerTask: Volatile<number>
+  /** Largest accepted number of task occurrences one snapshot returns. */
+  maxOccurrences: Volatile<number>
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-calendar -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-client-connection -->
 <a id="deepseek-aidsh-client-connection"></a>
 

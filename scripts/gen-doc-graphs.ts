@@ -618,6 +618,14 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Stores tasks independently of Session activation and queues due messages in the original Session.',
   },
   {
+    key: 'calendar',
+    pkg: 'calendar',
+    title: 'Calendar view and entries',
+    mode: 'bundle',
+    consumers: ['calendar'],
+    note: 'Adds a Web and Desktop calendar for Schedule automations, local entries, and user-supplied iCalendar sources.',
+  },
+  {
     key: 'goals',
     pkg: 'goal',
     title: 'Same-session goal domain',

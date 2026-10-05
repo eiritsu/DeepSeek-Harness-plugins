@@ -423,6 +423,7 @@
     { "path": "./packages/acp/acp" },
     { "path": "./packages/bundle/acp-app" },
     { "path": "./packages/bundle/base" },
+    { "path": "./packages/bundle/calendar/tsconfig.host.json" },
     { "path": "./packages/bundle/copy-session-id" },
     { "path": "./packages/bundle/community-plugin-catalog/tsconfig.host.json" },
     { "path": "./packages/bundle/community-skill-catalog/tsconfig.host.json" },

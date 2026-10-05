@@ -51,6 +51,19 @@ function workspace(entries: Record<string, Manifest>): { manifests: Map<string, 
 }
 
 describe('tierExternalDeps', () => {
+  it('limits the ical.js exception to its reviewed version and MPL terms', () => {
+    expect(() => { assertRuntimeLicenses([{ name: 'ical.js', version: '2.2.1', license: 'MPL-2.0' }]) }).not.toThrow()
+    for (const dependency of [
+      { name: 'ical.js', version: '2.2.2', license: 'MPL-2.0' },
+      { name: 'ical.js', version: '2.2.1', license: 'GPL-3.0-only' },
+      { name: 'ical.js', license: 'MPL-2.0' },
+      { name: 'unrelated-library', version: '2.2.1', license: 'MPL-2.0' },
+    ]) {
+      expect(() => { assertRuntimeLicenses([dependency]) }).toThrow(`${dependency.name} (${dependency.license})`)
+    }
+    expect(isPermissive('MPL-2.0')).toBe(false)
+  })
+
   it('limits the LibreOffice exception to its reviewed package identity and MPL terms', () => {
     for (const name of [
       '@deepseek-ai/libreoffice-kit', '@deepseek-ai/libreoffice-kit-wasm',

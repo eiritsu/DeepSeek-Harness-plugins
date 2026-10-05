@@ -62,6 +62,48 @@ afterEach(() => {
 })
 
 describe('shared config schema catalog', () => {
+  it('classifies a default plugin class imported from a package-relative source file', () => {
+    const { root, write } = fixture()
+    write('packages/test/provider/src/service.ts', 'export class ProviderService {}\n')
+    write('packages/test/provider/src/index.ts', `
+import { ProviderService } from './service.ts'
+export { ProviderService }
+export default ProviderService
+`)
+    const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
+    expect(provider).toMatchObject({ kind: 'no-config', className: 'ProviderService' })
+  })
+
+  it('resolves the default plugin config imported from a package-relative source file', () => {
+    const { root, write } = fixture()
+    write('packages/test/provider/src/config.ts', `
+import Schema from '@deepseek-ai/schemastery'
+export interface Config {
+  /** Display mode. */
+  mode: string
+}
+export const Config = Schema.object({ mode: Schema.string() })
+`)
+    write('packages/test/provider/src/service.ts', `
+import { Config } from './config.ts'
+export class ProviderService {
+  static inject = ['sessions']
+  static Config = Config
+  constructor(ctx: unknown, config: Config) {}
+}
+`)
+    write('packages/test/provider/src/index.ts', `
+import { Config } from './config.ts'
+import { ProviderService } from './service.ts'
+export { Config, ProviderService }
+export default ProviderService
+`)
+    const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
+    expect(provider).toMatchObject({
+      kind: 'config', className: 'ProviderService', configTypeName: 'Config', schemaKeys: ['mode'], inject: ['sessions'],
+    })
+  })
+
   it('collects every branch through a renamed named import from a public source subpath', () => {
     const { root } = fixture()
     const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')

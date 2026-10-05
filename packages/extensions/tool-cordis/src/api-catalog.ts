@@ -556,6 +556,98 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'calendar',
+    summary: 'Remote service behind the calendar page.',
+    description: 'Remote service behind the calendar page.\n\nAutomations are read and written through the Host Schedule service, so a task the model created with `schedule_create` and a task a person created here are the same stored row. The Schedule service is optional in a profile: when it is absent every task method reports `service-unavailable` and the page still shows local entries, imports, and subscriptions.',
+    methods: [
+      {
+        signature: '@Remote(\'snapshot\') async snapshot(request: CalendarSnapshotRequest): Promise<CalendarSnapshot>',
+        description: 'Read everything the calendar shows for one range.',
+        parameters: [{ name: 'request', description: 'Inclusive range and the zone all-day dates are rendered in.' }],
+        returns: 'the Host clock, zone, tasks, occurrences, entries, and subscription state.',
+        throws: ['Error when the range or zone is outside the accepted bounds.'],
+      },
+      {
+        signature: '@Remote(\'createTask\') async createTask(request: CalendarCreateTaskRequest): Promise<CalendarCreateTaskResult>',
+        description: 'Create one automation bound to an explicit Session.\n\nThe Session must be one the Host can see: a reminder is delivered into a Session\'s inbox, so a Session this Harness does not list can never receive one. The Host Schedule service restores the Session at the due time, so the caller does not have to open it first. This method is Host-only in the Schedule service, which is why the calendar owns the validated Remote entry for it.',
+        parameters: [{ name: 'request', description: 'Session binding, title, instruction, and one timing selector.' }],
+        returns: 'the committed task, or the reason it was not created.',
+      },
+      {
+        signature: '@Remote(\'updateTask\') async updateTask(request: CalendarUpdateTaskRequest): Promise<CalendarUpdateTaskResult>',
+        description: 'Update one task\'s name, instruction, or timing.',
+        parameters: [{ name: 'request', description: 'Task binding, the record the Client committed, and the change.' }],
+        returns: 'the committed task, or the reason nothing changed.',
+      },
+      {
+        signature: '@Remote(\'deleteTask\') async deleteTask(request: CalendarDeleteTaskRequest): Promise<CalendarDeleteTaskResult>',
+        description: 'Delete one task.',
+        parameters: [{ name: 'request', description: 'Task binding and identity.' }],
+        returns: 'whether that Session owned a deleted task.',
+      },
+      {
+        signature: '@Remote(\'listSubscriptions\') listSubscriptions(): CalendarSubscription[]',
+        description: 'Every stored subscription with its live refresh state.',
+        parameters: [],
+        returns: 'the stored subscriptions, sorted by display name.',
+      },
+      {
+        signature: '@Remote(\'addSubscription\') async addSubscription(request: CalendarAddSubscriptionRequest): Promise<CalendarSubscriptionMutationResult>',
+        description: 'Store one user-supplied iCalendar subscription and fetch it once.',
+        parameters: [{ name: 'request', description: 'Name and URL the user supplied.' }],
+        returns: 'the stored subscription, or the reason it was rejected.',
+      },
+      {
+        signature: '@Remote(\'updateSubscription\') async updateSubscription(request: CalendarUpdateSubscriptionRequest): Promise<CalendarSubscriptionMutationResult>',
+        description: 'Update one stored subscription; a changed URL is fetched before it commits.',
+        parameters: [{ name: 'request', description: 'Fields the Client supplied.' }],
+        returns: 'the stored subscription, or the reason the change was rejected.',
+      },
+      {
+        signature: '@Remote(\'deleteSubscription\') async deleteSubscription(request: CalendarSubscriptionRef): Promise<CalendarDeleteSubscriptionResult>',
+        description: 'Remove one subscription and every entry it contributed.',
+        parameters: [{ name: 'request', description: 'Subscription the Client named.' }],
+        returns: 'whether a stored subscription was removed.',
+      },
+      {
+        signature: '@Remote(\'refreshSubscription\') async refreshSubscription(request: CalendarSubscriptionRef): Promise<CalendarRefreshResult>',
+        description: 'Fetch one subscription now.',
+        parameters: [{ name: 'request', description: 'Subscription the Client named.' }],
+        returns: 'the refreshed subscription, or the reason the fetch failed.',
+      },
+      {
+        signature: '@Remote(\'importIcs\') async importIcs(request: CalendarImportIcsRequest): Promise<CalendarImportIcsResult>',
+        description: 'Parse iCalendar text the user already has into a stored calendar.',
+        parameters: [{ name: 'request', description: 'Name and iCalendar text.' }],
+        returns: 'the stored calendar, or the reason it was rejected.',
+      },
+      {
+        signature: '@Remote(\'deleteImported\') async deleteImported(request: CalendarDeleteImportedRequest): Promise<CalendarDeleteImportedResult>',
+        description: 'Remove one imported calendar and every entry it contributed.',
+        parameters: [{ name: 'request', description: 'Imported calendar the Client named.' }],
+        returns: 'whether a stored import was removed.',
+      },
+      {
+        signature: '@Remote(\'saveEntry\') async saveEntry(request: CalendarSaveEntryRequest): Promise<CalendarEntryMutationResult>',
+        description: 'Create or replace one local entry.',
+        parameters: [{ name: 'request', description: 'Entry the Client supplied.' }],
+        returns: 'the committed entry, or the reason it was rejected.',
+      },
+      {
+        signature: '@Remote(\'deleteEntry\') async deleteEntry(request: CalendarDeleteEntryRequest): Promise<CalendarDeleteEntryResult>',
+        description: 'Delete one displayed entry; an entry owned by a source reports `readonly`.',
+        parameters: [{ name: 'request', description: 'Entry the Client named.' }],
+        returns: 'whether an owned entry was removed.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) async *watch(signal: AbortSignal): AsyncIterable<CalendarChange>',
+        description: 'Stream every change to the stored entries, subscriptions, and imports.\n\nThe stream carries no state: a Client refetches the snapshot on each frame and treats the snapshot as the single source of truth.',
+        parameters: [{ name: 'signal', description: 'Cancellation owned by the Remote stream carrier.' }],
+        returns: 'one frame per committed change until the Client disconnects.',
+      },
+    ],
+  },
+  {
     key: 'clientModules',
     summary: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index injection rows.',
     description: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index injection rows. Construction runs the activation scan synchronously — a malformed declaration or missing bundle among the already-loaded entries aggregates into one loud throw (FAILED fiber; the boot activation audit reports it).',
@@ -4767,6 +4859,174 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'BundleRowInfo',
     declaration: 'export interface BundleRowInfo {\n    rowId: string;\n    moduleName: string;\n    meta?: PluginLocalizedMeta;\n    entryId?: PluginEntryId;\n}',
+  },
+  {
+    name: 'CalendarAddSubscriptionRequest',
+    declaration: 'export interface CalendarAddSubscriptionRequest {\n    readonly name: string;\n    readonly url: string;\n    readonly enabled?: boolean;\n    readonly refreshIntervalSeconds?: number;\n}',
+  },
+  {
+    name: 'CalendarChange',
+    declaration: 'export interface CalendarChange {\n    readonly reason: CalendarChangeReason;\n    readonly subscriptionId?: CalendarSubscriptionId;\n    readonly at: string;\n}',
+  },
+  {
+    name: 'CalendarChangeReason',
+    declaration: 'export type CalendarChangeReason = \'subscription-refreshed\' | \'subscription-updated\' | \'subscription-deleted\' | \'subscription-failed\' | \'imported\' | \'import-deleted\' | \'entry-saved\' | \'entry-deleted\';',
+  },
+  {
+    name: 'CalendarCreateTaskRequest',
+    declaration: 'export interface CalendarCreateTaskRequest extends CalendarTaskSelector {\n    readonly sessionId: string;\n    readonly title: string;\n    readonly prompt: string;\n}',
+  },
+  {
+    name: 'CalendarCreateTaskResult',
+    declaration: 'export type CalendarCreateTaskResult = {\n    readonly ok: true;\n    readonly task: CalendarTask;\n} | {\n    readonly ok: false;\n    readonly code: CalendarTaskErrorCode;\n    readonly message: string;\n};',
+  },
+  {
+    name: 'CalendarDeleteEntryRequest',
+    declaration: 'export interface CalendarDeleteEntryRequest {\n    readonly id: string;\n}',
+  },
+  {
+    name: 'CalendarDeleteEntryResult',
+    declaration: 'export type CalendarDeleteEntryResult = {\n    readonly ok: true;\n    readonly id: string;\n} | {\n    readonly ok: false;\n    readonly code: CalendarEntryErrorCode;\n    readonly message: string;\n};',
+  },
+  {
+    name: 'CalendarDeleteImportedRequest',
+    declaration: 'export interface CalendarDeleteImportedRequest {\n    readonly id: CalendarImportedId;\n}',
+  },
+  {
+    name: 'CalendarDeleteImportedResult',
+    declaration: 'export type CalendarDeleteImportedResult = {\n    readonly ok: true;\n    readonly id: CalendarImportedId;\n} | {\n    readonly ok: false;\n    readonly code: \'not-found\' | \'internal-error\';\n    readonly message: string;\n};',
+  },
+  {
+    name: 'CalendarDeleteSubscriptionResult',
+    declaration: 'export type CalendarDeleteSubscriptionResult = {\n    readonly ok: true;\n    readonly id: CalendarSubscriptionId;\n} | {\n    readonly ok: false;\n    readonly code: CalendarSubscriptionErrorCode;\n    readonly message: string;\n};',
+  },
+  {
+    name: 'CalendarDeleteTaskRequest',
+    declaration: 'export interface CalendarDeleteTaskRequest {\n    readonly sessionId: string;\n    readonly id: ScheduleId;\n}',
+  },
+  {
+    name: 'CalendarDeleteTaskResult',
+    declaration: 'export type CalendarDeleteTaskResult = {\n    readonly ok: true;\n    readonly id: ScheduleId;\n} | {\n    readonly ok: false;\n    readonly code: CalendarTaskErrorCode;\n    readonly message: string;\n};',
+  },
+  {
+    name: 'CalendarEntry',
+    declaration: 'export interface CalendarEntry {\n    readonly id: string;\n    readonly origin: CalendarEntryOrigin;\n    readonly subscriptionId?: CalendarSubscriptionId;\n    readonly importedId?: CalendarImportedId;\n    readonly color?: string;\n    readonly title: string;\n    readonly summary?: string;\n    readonly location?: string;\n    readonly allDay: boolean;\n    readonly date: string;\n    readonly startsAt: string;\n    readonly endsAt?: string;\n    readonly recurring: boolean;\n}',
+  },
+  {
+    name: 'CalendarEntryErrorCode',
+    declaration: 'export type CalendarEntryErrorCode = \'invalid-title\' | \'invalid-time\' | \'invalid-range\' | \'not-found\' | \'readonly\' | \'internal-error\';',
+  },
+  {
+    name: 'CalendarEntryId',
+    declaration: 'export type CalendarEntryId = Branded<\'CalendarEntryId\'>;',
+  },
+  {
+    name: 'CalendarEntryMutationResult',
+    declaration: 'export type CalendarEntryMutationResult = {\n    readonly ok: true;\n    readonly entry: CalendarEntry;\n} | {\n    readonly ok: false;\n    readonly code: CalendarEntryErrorCode;\n    readonly message: string;\n};',
+  },
+  {
+    name: 'CalendarEntryOrigin',
+    declaration: 'export type CalendarEntryOrigin = \'local\' | \'subscription\' | \'import\';',
+  },
+  {
+    name: 'CalendarFailure',
+    declaration: 'export interface CalendarFailure {\n    readonly code: CalendarSubscriptionErrorCode;\n    readonly message: string;\n    readonly at: string;\n}',
+  },
+  {
+    name: 'CalendarImportedCalendar',
+    declaration: 'export interface CalendarImportedCalendar {\n    readonly id: CalendarImportedId;\n    readonly name: string;\n    readonly entryCount: number;\n    readonly droppedEntryCount: number;\n    readonly importedAt: string;\n}',
+  },
+  {
+    name: 'CalendarImportedId',
+    declaration: 'export type CalendarImportedId = Branded<\'CalendarImportedId\'>;',
+  },
+  {
+    name: 'CalendarImportErrorCode',
+    declaration: 'export type CalendarImportErrorCode = \'invalid-name\' | \'invalid-ics\' | \'response-too-large\' | \'internal-error\';',
+  },
+  {
+    name: 'CalendarImportIcsRequest',
+    declaration: 'export interface CalendarImportIcsRequest {\n    readonly name: string;\n    readonly ics: string;\n}',
+  },
+  {
+    name: 'CalendarImportIcsResult',
+    declaration: 'export type CalendarImportIcsResult = {\n    readonly ok: true;\n    readonly calendar: CalendarImportedCalendar;\n} | {\n    readonly ok: false;\n    readonly code: CalendarImportErrorCode;\n    readonly message: string;\n};',
+  },
+  {
+    name: 'CalendarOccurrence',
+    declaration: 'export interface CalendarOccurrence {\n    readonly taskId: ScheduleId;\n    readonly sessionId: string;\n    readonly kind: ScheduleRecord[\'kind\'];\n    readonly title: string;\n    readonly startsAt: string;\n    readonly status: \'active\' | \'inactive\';\n    readonly recurring: boolean;\n}',
+  },
+  {
+    name: 'CalendarRange',
+    declaration: 'export interface CalendarRange {\n    readonly start: string;\n    readonly end: string;\n}',
+  },
+  {
+    name: 'CalendarRefreshResult',
+    declaration: 'export type CalendarRefreshResult = {\n    readonly ok: true;\n    readonly subscription: CalendarSubscription;\n    readonly entryCount: number;\n    readonly droppedEntryCount: number;\n} | {\n    readonly ok: false;\n    readonly id: CalendarSubscriptionId;\n    readonly code: CalendarSubscriptionErrorCode;\n    readonly message: string;\n};',
+  },
+  {
+    name: 'CalendarSaveEntryRequest',
+    declaration: 'export interface CalendarSaveEntryRequest {\n    readonly id?: CalendarEntryId;\n    readonly title: string;\n    readonly summary?: string;\n    readonly location?: string;\n    readonly allDay: boolean;\n    readonly date?: string;\n    readonly startsAt?: string;\n    readonly endsAt?: string;\n}',
+  },
+  {
+    name: 'CalendarSelectableSession',
+    declaration: 'export interface CalendarSelectableSession {\n    readonly id: string;\n    readonly live: boolean;\n    readonly cwd?: string;\n    readonly updatedAt: number;\n    readonly blank: boolean;\n}',
+  },
+  {
+    name: 'CalendarSnapshot',
+    declaration: 'export interface CalendarSnapshot {\n    readonly now: string;\n    readonly hostTimeZone: string;\n    readonly timeZone: string;\n    readonly range: CalendarRange;\n    readonly tasks: readonly CalendarTask[];\n    readonly occurrences: readonly CalendarOccurrence[];\n    readonly occurrencesTruncated: boolean;\n    readonly entries: readonly CalendarEntry[];\n    readonly entriesTruncated: boolean;\n    readonly subscriptions: readonly CalendarSubscription[];\n    readonly importedCalendars: readonly CalendarImportedCalendar[];\n    readonly selectableSessions: readonly CalendarSelectableSession[];\n    readonly serviceAvailable: boolean;\n}',
+  },
+  {
+    name: 'CalendarSnapshotRequest',
+    declaration: 'export interface CalendarSnapshotRequest {\n    readonly rangeStart: string;\n    readonly rangeEnd: string;\n    readonly timeZone?: string;\n}',
+  },
+  {
+    name: 'CalendarSubscription',
+    declaration: 'export interface CalendarSubscription {\n    readonly id: CalendarSubscriptionId;\n    readonly name: string;\n    readonly url: string;\n    readonly protocol: CalendarSubscriptionProtocol;\n    readonly enabled: boolean;\n    readonly refreshIntervalSeconds: number;\n    readonly lastRefreshedAt?: string;\n    readonly lastFailure?: CalendarFailure;\n    readonly entryCount: number;\n    readonly droppedEntryCount: number;\n    readonly refreshing: boolean;\n    readonly createdAt: string;\n    readonly updatedAt: string;\n}',
+  },
+  {
+    name: 'CalendarSubscriptionErrorCode',
+    declaration: 'export type CalendarSubscriptionErrorCode = \'invalid-url\' | \'unsupported-protocol\' | \'not-found\' | \'request-failed\' | \'timeout\' | \'response-too-large\' | \'redirect-rejected\' | \'invalid-ics\' | \'service-unavailable\' | \'internal-error\';',
+  },
+  {
+    name: 'CalendarSubscriptionId',
+    declaration: 'export type CalendarSubscriptionId = Branded<\'CalendarSubscriptionId\'>;',
+  },
+  {
+    name: 'CalendarSubscriptionMutationResult',
+    declaration: 'export type CalendarSubscriptionMutationResult = {\n    readonly ok: true;\n    readonly subscription: CalendarSubscription;\n} | {\n    readonly ok: false;\n    readonly code: CalendarSubscriptionErrorCode;\n    readonly message: string;\n};',
+  },
+  {
+    name: 'CalendarSubscriptionProtocol',
+    declaration: 'export type CalendarSubscriptionProtocol = \'https\' | \'http\';',
+  },
+  {
+    name: 'CalendarSubscriptionRef',
+    declaration: 'export interface CalendarSubscriptionRef {\n    readonly id: CalendarSubscriptionId;\n}',
+  },
+  {
+    name: 'CalendarTask',
+    declaration: 'export interface CalendarTask {\n    readonly id: ScheduleId;\n    readonly sessionId: string;\n    readonly status: \'active\' | \'inactive\';\n    readonly lastDelivery?: ScheduleDeliveryReceipt;\n    readonly record: ScheduleRecord;\n    readonly occurrenceError?: string;\n}',
+  },
+  {
+    name: 'CalendarTaskErrorCode',
+    declaration: 'export type CalendarTaskErrorCode = \'invalid_prompt\' | \'invalid_selector\' | \'invalid_rule\' | \'invalid_time_zone\' | \'not_future\' | \'time_out_of_range\' | \'frequency_too_high\' | \'schedule_not_found\' | \'schedule_ended\' | \'schedule_conflict\' | \'session_not_found\' | \'service-unavailable\' | \'internal_error\';',
+  },
+  {
+    name: 'CalendarTaskSelector',
+    declaration: 'export type CalendarTaskSelector = Pick<ScheduleCreateRequest, \'at\' | \'after_seconds\' | \'every_seconds\' | \'daily\' | \'weekly\' | \'cron\'>;',
+  },
+  {
+    name: 'CalendarUpdateSubscriptionRequest',
+    declaration: 'export interface CalendarUpdateSubscriptionRequest {\n    readonly id: CalendarSubscriptionId;\n    readonly name?: string;\n    readonly url?: string;\n    readonly enabled?: boolean;\n    readonly refreshIntervalSeconds?: number;\n}',
+  },
+  {
+    name: 'CalendarUpdateTaskRequest',
+    declaration: 'export interface CalendarUpdateTaskRequest {\n    readonly sessionId: string;\n    readonly id: ScheduleId;\n    readonly expected: ScheduleRecord;\n    readonly title?: string;\n    readonly prompt?: string;\n    readonly change?: ScheduleTimingChange;\n}',
+  },
+  {
+    name: 'CalendarUpdateTaskResult',
+    declaration: 'export type CalendarUpdateTaskResult = {\n    readonly ok: true;\n    readonly task: CalendarTask;\n} | {\n    readonly ok: false;\n    readonly code: CalendarTaskErrorCode;\n    readonly message: string;\n};',
   },
   {
     name: 'ChangeResult',

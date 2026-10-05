@@ -62,6 +62,8 @@ const LIBREOFFICE_PACKAGES = new Set([
   '@deepseek-ai/libreoffice-kit-win32-arm64',
   '@deepseek-ai/libreoffice-kit-win32-x64',
 ])
+const ICAL_JS_PACKAGE = 'ical.js'
+const ICAL_JS_REVIEWED_VERSION = '2.2.1'
 
 /**
  * Whether a non-permissive runtime declaration has an identity-scoped owner
@@ -136,6 +138,7 @@ export interface Manifest {
 interface ExternalDep {
   name: string
   license: string
+  version?: string
   repo: string
   /** True when some shipped workspace consumer reaches it through runtime dependency edges. */
   runtime: boolean
@@ -342,7 +345,7 @@ function installedManifest(name: string, manifests: Map<string, Manifest>, expec
 }
 
 /** License and repository URL for an installed external package, from the pnpm store. */
-function installedMetadata(name: string, manifests: Map<string, Manifest>): { license: string; repo: string } {
+function installedMetadata(name: string, manifests: Map<string, Manifest>): { license: string; repo: string; version?: string } {
   const override = OVERRIDES[name]
   const manifest = installedManifest(name, manifests)
   const license = override?.license ?? manifest?.license
@@ -351,7 +354,7 @@ function installedMetadata(name: string, manifests: Map<string, Manifest>): { li
   if (license === undefined || repo === undefined) {
     throw new Error(`gen-third-party-notices: cannot resolve ${license === undefined ? 'license' : 'repository'} for ${name}; run \`pnpm install\`, or add an OVERRIDES entry.`)
   }
-  return { license, repo }
+  return { license, repo, ...(manifest?.version === undefined ? {} : { version: manifest.version }) }
 }
 
 function collectClaudeDistribution(manifests: Map<string, Manifest>): ClaudeDistribution {
@@ -692,13 +695,27 @@ export function isPermissive(license: string): boolean {
  * @param dependencies - Disclosed runtime package identities and declared licenses.
  * @throws When a runtime package has no permissive license or exact owner authorization.
  */
-export function assertRuntimeLicenses(dependencies: readonly { name: string; license: string }[]): void {
+export function assertRuntimeLicenses(dependencies: readonly { name: string; license: string; version?: string }[]): void {
   const rejected = dependencies.filter(dep => !isPermissive(dep.license)
     && !isOwnerAuthorizedRuntime(dep.name)
-    && !(LIBREOFFICE_PACKAGES.has(dep.name) && dep.license === 'MPL-2.0'))
+    && !(LIBREOFFICE_PACKAGES.has(dep.name) && dep.license === 'MPL-2.0')
+    && !(dep.name === ICAL_JS_PACKAGE && dep.version === ICAL_JS_REVIEWED_VERSION && dep.license === 'MPL-2.0'))
   if (rejected.length > 0) {
     throw new Error(`gen-third-party-notices: runtime ${rejected.map(dep => `${dep.name} (${dep.license})`).join(', ')} is not a permissive license; review the distribution terms and record the decision before regenerating.`)
   }
+}
+
+/** Describe the reviewed, exact-version Calendar parser source and license. */
+function renderIcalJsNotice(dep: ExternalDep | undefined): string {
+  if (dep === undefined) return ''
+  if (dep.version !== ICAL_JS_REVIEWED_VERSION || dep.license !== 'MPL-2.0') {
+    throw new Error(`gen-third-party-notices: ${ICAL_JS_PACKAGE} must remain at reviewed ${ICAL_JS_REVIEWED_VERSION} (MPL-2.0); found ${dep.version ?? 'unknown'} (${dep.license}).`)
+  }
+  return `
+## Calendar iCalendar parser
+
+\`@deepseek-ai/dsh-calendar\` distributes unmodified \`${ICAL_JS_PACKAGE}\` ${ICAL_JS_REVIEWED_VERSION} under MPL-2.0. Its package includes the upstream license text and links to the corresponding source archive, which contains the \`lib/\` JavaScript sources: [\`${ICAL_JS_PACKAGE}@${ICAL_JS_REVIEWED_VERSION}\` source archive](https://registry.npmjs.org/ical.js/-/ical.js-2.2.1.tgz). The full license is included in the Calendar package as \`LICENSE-ical.js\`.
+`
 }
 
 /**
@@ -798,6 +815,7 @@ pnpm applies local patches to the following packages at install time, so shipped
 
 ${patchedLines.join('\n')}
 ${renderClaudeDistribution(claudeDistribution)}
+${renderIcalJsNotice(runtimeDeps.find(dep => dep.name === ICAL_JS_PACKAGE))}
 ${kitRuntime ? `
 ## LibreOffice conversion kit
 

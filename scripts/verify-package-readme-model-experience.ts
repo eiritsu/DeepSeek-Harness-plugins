@@ -78,6 +78,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/llm/model-catalog': { kind: 'indirect', reason: 'The adapter resolves catalog metadata into its existing model capabilities before preparing a request.' },
   'packages/bundle/community-skill-catalog': { kind: 'none', reason: 'The opt-in bundle adds browser-only SkillHub discovery and a confirmed Host installation request, not model context.' },
   'packages/bundle/configuration-and-skills-backup': { kind: 'none', reason: 'The opt-in bundle transfers configuration and skill files without adding model input or Session content.' },
+  'packages/bundle/calendar': { kind: 'none', reason: 'The calendar renders stored records and registers no prompt, tool schema, or Session event; the only reminder is delivered by the native Schedule service.' },
   'packages/bundle/lark-integration': { kind: 'indirect', reason: 'The patch carrier adds Lark Host and Settings rows; the Host plugin owns model-visible Session content.' },
   'packages/bundle/copy-session-id': { kind: 'none', reason: 'The bundle copies a Session identifier in the browser and registers no model context.' },
   'packages/bundle/turn-process-shimmer': { kind: 'none', reason: 'The patch carrier selects a browser renderer replacement and changes no model input.' },

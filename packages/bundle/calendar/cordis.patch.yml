@@ -1,0 +1,31 @@
+# Optional Calendar Host plugin and Client page.
+#
+# The Calendar reads automations through `ctx.get('schedule')` instead of
+# declaring `schedule` in its injections and instead of inserting the Schedule
+# row here. An `insert` without an `id` always appends, so inserting the row
+# would mount a second Schedule service — a second task store and a second
+# delivery timer — in every profile that already has one. A row that a later
+# layer can also insert therefore stays the responsibility of the profile:
+# enable the official Schedule bundle (`@deepseek-ai/dsh-schedule`, for example
+# through `@deepseek-ai/dsh-experimental-schedule-bundle`) to get automations.
+# Without it this row still activates; task methods then report
+# `service-unavailable` and the page shows which bundle to enable.
+- insert:
+    - id: calendar
+      name: '@deepseek-ai/dsh-calendar'
+      config:
+        fetchTimeoutMs: 15000
+        maxResponseBytes: 2097152
+        defaultRefreshIntervalSeconds: 3600
+        minRefreshIntervalSeconds: 300
+        maxRefreshIntervalSeconds: 86400
+        retentionDays: 90
+        maxEventsPerSubscription: 1000
+        maxOccurrencesPerEvent: 366
+        maxExpansionIterations: 5000
+        maxOccurrencesPerSubscription: 5000
+        expansionHorizonDays: 180
+        maxImportedCalendars: 25
+        maxEntriesPerSnapshot: 5000
+        maxOccurrencesPerTask: 400
+        maxOccurrences: 2000

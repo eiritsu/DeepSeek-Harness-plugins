@@ -1820,6 +1820,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '',
     declaredBy: 'an entry in \'root\' (client-ui-layout), so it exists while that entry is mounted',
     occupants: [
+      'calendar CalendarPage',
       'client-ui-conversation ConversationPanel key \'conversation\'',
       'client-ui-plugin-manager PluginManagerPage',
       'client-ui-schedule TaskManagerPage',
@@ -1930,11 +1931,13 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       'useSessionRetainInfo: UseSessionRetainInfo',
       'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
     ],
-    keyDomain: 'open: any string the owner dispatches (no compile-time key set), already taken: @deepseek-ai/dsh-configuration-and-skills-backup, @deepseek-ai/dsh-experimental-voice-input-bundle, @deepseek-ai/dsh-lark-integration, @deepseek-ai/dsh-session-archive, @deepseek-ai/dsh-tools-connections',
+    keyDomain: 'open: any string the owner dispatches (no compile-time key set), already taken: @deepseek-ai/dsh-configuration-and-skills-backup, @deepseek-ai/dsh-experimental-voice-input-bundle, @deepseek-ai/dsh-file-recognizer-office, @deepseek-ai/dsh-lark-integration, @deepseek-ai/dsh-session-archive, @deepseek-ai/dsh-tools-connections',
     hookContext: '',
     slotInject: '',
     declaredBy: 'an entry in \'main\' (client-ui-plugin-manager), so it exists while that entry is mounted',
     occupants: [
+      'file-recognizer-office OfficeRecognitionCard key \'@deepseek-ai/dsh-file-recognizer-office\'',
+      'calendar CalendarConfigPage',
       'configuration-and-skills-backup ConfigurationSkillsBackupPage key \'@deepseek-ai/dsh-configuration-and-skills-backup\'',
       'lark-integration LarkSettingsPage key \'@deepseek-ai/dsh-lark-integration\'',
       'tools-connections ToolsConnectionsCard key \'@deepseek-ai/dsh-tools-connections\'',
@@ -2760,7 +2763,6 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '',
     declaredBy: 'an entry in \'sidebar.settings\' (client-ui-settings-general), so it exists while that entry is mounted',
     occupants: [
-      'file-recognizer-office OfficeRecognitionCard id \'file-recognizer-office\'',
       'client-ui-agent-preset AgentPresetSection id \'agent-presets\'',
       'client-ui-settings-account AccountSection id \'account\'',
       'client-ui-settings-general GeneralSection id \'general\'',
@@ -3158,6 +3160,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '',
     declaredBy: 'an entry in \'sidebar\' (client-ui-sidebar), so it exists while that entry is mounted',
     occupants: [
+      'calendar CalendarPanelIcon',
       'client-ui-plugin-manager PluginsPanelIcon',
       'client-ui-schedule TaskManagerIcon',
     ],

@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
+  "include": ["src/index.ts", "src/types.ts", "src/client-api.ts", "src/config.ts", "src/storage.ts", "src/clock.ts", "src/tasks.ts", "src/entries.ts", "src/subscriptions.ts", "src/ics.ts", "src/ics-fetch.ts", "src/service.ts"],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/schemastery" },
+    { "path": "../../schedule/schedule" },
+    { "path": "../../storage/storage-domain" },
+    { "path": "../../typert/protocol" },
+    { "path": "../../workspace/workspace/tsconfig.json" },
+    { "path": "../../core/session" }
+  ]
+}

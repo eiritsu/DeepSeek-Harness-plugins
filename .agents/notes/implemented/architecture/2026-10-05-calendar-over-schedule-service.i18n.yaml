@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-05-calendar-over-schedule-service.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-05-calendar-over-schedule-service.md
+/agent-note-calendar-over-the-schedule-service:
+  en: 372bccf47a99425e
+  zh: 5ddd0437c098b332
+/agent-note-calendar-over-the-schedule-service/problem:
+  en: 126fe803bc189022
+  zh: 97f124e347028ce2
+/agent-note-calendar-over-the-schedule-service/decision:
+  en: e459c0b11b6cf7cf
+  zh: 97bc688d0e0ca031
+/agent-note-calendar-over-the-schedule-service/alternatives-considered:
+  en: 74bf36f6e5376718
+  zh: 6d633e5c7b4f00ac
+/agent-note-calendar-over-the-schedule-service/consequences:
+  en: ef0137bb789eff0c
+  zh: d53b411ec8266d71

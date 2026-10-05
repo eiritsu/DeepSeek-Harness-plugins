@@ -50,6 +50,7 @@ pnpm dsh web
 
 | 插件 | npm 包 | 功能和界面 | 源码路径 | `.tgz` 资源 |
 |---|---|---|---|---|
+| Calendar 日历 | `@deepseek-ai/dsh-calendar` | 汇总 Schedule 自动化、本地条目与用户自行提供的 iCalendar 订阅的日历视图；Web 与桌面。**尚未发布：** `v0.2.0-rc.2.20261001.2` 的资源中不包含它——请从本仓库构建 `.tgz` 或安装本地路径 | `packages/bundle/calendar` | 尚未发布 |
 | Office 文件识别 | `@deepseek-ai/dsh-file-recognizer-office` | 本地提取 DOCX、PPTX、XLSX、OpenDocument 和 PDF 文本，可选 OCR；Web 和 Desktop，需此发行版提供原生文件上传 API | `packages/attachment/file-recognizer-office` | `deepseek-ai-dsh-file-recognizer-office-0.2.0-rc.2.tgz` |
 | 社区插件目录 | `@deepseek-ai/dsh-community-plugin-catalog` | 浏览和安装社区插件；Web 和 Desktop | `packages/bundle/community-plugin-catalog` | `deepseek-ai-dsh-community-plugin-catalog-0.2.0-rc.2.tgz` |
 | 社区 Skill 目录 | `@deepseek-ai/dsh-community-skill-catalog` | 浏览并安装指定版本的 SkillHub Skill；Web 和 Desktop | `packages/bundle/community-skill-catalog` | `deepseek-ai-dsh-community-skill-catalog-0.2.0-rc.2.tgz` |

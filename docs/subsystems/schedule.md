@@ -445,6 +445,126 @@ A failure to resolve the Session, enqueue the message, or confirm persistence le
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxcalendar--calendarservice"></a>
+
+### `ctx.calendar` — `CalendarService`
+
+Remote service behind the calendar page.
+
+Automations are read and written through the Host Schedule service, so a task the model created with `schedule_create` and a task a person created here are the same stored row. The Schedule service is optional in a profile: when it is absent every task method reports `service-unavailable` and the page still shows local entries, imports, and subscriptions.
+
+```ts cordis-catalog
+/**
+ * Read everything the calendar shows for one range.
+ * @param request - Inclusive range and the zone all-day dates are rendered in.
+ * @returns the Host clock, zone, tasks, occurrences, entries, and subscription state.
+ * @throws Error when the range or zone is outside the accepted bounds.
+ */
+@Remote('snapshot') async snapshot(request: CalendarSnapshotRequest): Promise<CalendarSnapshot>
+
+/**
+ * Create one automation bound to an explicit Session.
+ *
+ * The Session must be one the Host can see: a reminder is delivered into a
+ * Session's inbox, so a Session this Harness does not list can never receive
+ * one. The Host Schedule service restores the Session at the due time, so the
+ * caller does not have to open it first. This method is Host-only in the
+ * Schedule service, which is why the calendar owns the validated Remote entry
+ * for it.
+ * @param request - Session binding, title, instruction, and one timing selector.
+ * @returns the committed task, or the reason it was not created.
+ */
+@Remote('createTask') async createTask(request: CalendarCreateTaskRequest): Promise<CalendarCreateTaskResult>
+
+/**
+ * Update one task's name, instruction, or timing.
+ * @param request - Task binding, the record the Client committed, and the change.
+ * @returns the committed task, or the reason nothing changed.
+ */
+@Remote('updateTask') async updateTask(request: CalendarUpdateTaskRequest): Promise<CalendarUpdateTaskResult>
+
+/**
+ * Delete one task.
+ * @param request - Task binding and identity.
+ * @returns whether that Session owned a deleted task.
+ */
+@Remote('deleteTask') async deleteTask(request: CalendarDeleteTaskRequest): Promise<CalendarDeleteTaskResult>
+
+/**
+ * Every stored subscription with its live refresh state.
+ * @returns the stored subscriptions, sorted by display name.
+ */
+@Remote('listSubscriptions') listSubscriptions(): CalendarSubscription[]
+
+/**
+ * Store one user-supplied iCalendar subscription and fetch it once.
+ * @param request - Name and URL the user supplied.
+ * @returns the stored subscription, or the reason it was rejected.
+ */
+@Remote('addSubscription') async addSubscription(request: CalendarAddSubscriptionRequest): Promise<CalendarSubscriptionMutationResult>
+
+/**
+ * Update one stored subscription; a changed URL is fetched before it commits.
+ * @param request - Fields the Client supplied.
+ * @returns the stored subscription, or the reason the change was rejected.
+ */
+@Remote('updateSubscription') async updateSubscription(request: CalendarUpdateSubscriptionRequest): Promise<CalendarSubscriptionMutationResult>
+
+/**
+ * Remove one subscription and every entry it contributed.
+ * @param request - Subscription the Client named.
+ * @returns whether a stored subscription was removed.
+ */
+@Remote('deleteSubscription') async deleteSubscription(request: CalendarSubscriptionRef): Promise<CalendarDeleteSubscriptionResult>
+
+/**
+ * Fetch one subscription now.
+ * @param request - Subscription the Client named.
+ * @returns the refreshed subscription, or the reason the fetch failed.
+ */
+@Remote('refreshSubscription') async refreshSubscription(request: CalendarSubscriptionRef): Promise<CalendarRefreshResult>
+
+/**
+ * Parse iCalendar text the user already has into a stored calendar.
+ * @param request - Name and iCalendar text.
+ * @returns the stored calendar, or the reason it was rejected.
+ */
+@Remote('importIcs') async importIcs(request: CalendarImportIcsRequest): Promise<CalendarImportIcsResult>
+
+/**
+ * Remove one imported calendar and every entry it contributed.
+ * @param request - Imported calendar the Client named.
+ * @returns whether a stored import was removed.
+ */
+@Remote('deleteImported') async deleteImported(request: CalendarDeleteImportedRequest): Promise<CalendarDeleteImportedResult>
+
+/**
+ * Create or replace one local entry.
+ * @param request - Entry the Client supplied.
+ * @returns the committed entry, or the reason it was rejected.
+ */
+@Remote('saveEntry') async saveEntry(request: CalendarSaveEntryRequest): Promise<CalendarEntryMutationResult>
+
+/**
+ * Delete one displayed entry; an entry owned by a source reports `readonly`.
+ * @param request - Entry the Client named.
+ * @returns whether an owned entry was removed.
+ */
+@Remote('deleteEntry') async deleteEntry(request: CalendarDeleteEntryRequest): Promise<CalendarDeleteEntryResult>
+
+/**
+ * Stream every change to the stored entries, subscriptions, and imports.
+ *
+ * The stream carries no state: a Client refetches the snapshot on each frame
+ * and treats the snapshot as the single source of truth.
+ * @param signal - Cancellation owned by the Remote stream carrier.
+ * @returns one frame per committed change until the Client disconnects.
+ */
+@Remote({ mode: 'stream' }) async *watch(signal: AbortSignal): AsyncIterable<CalendarChange>
+```
+
+Source: [`packages/bundle/calendar/src/service.ts`](../../packages/bundle/calendar/src/service.ts)
+
 <a id="ctxschedule--scheduleservice"></a>
 
 ### `ctx.schedule` — `ScheduleService`

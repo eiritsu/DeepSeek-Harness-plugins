@@ -71,9 +71,11 @@ const PEER_REQUIRED_HOST_EXPORTS = {
   '@deepseek-ai/dsh-http-proxy': ['proxyRouteFor'],
   '@deepseek-ai/dsh-subprocess': ['SubprocessExecutableNotFoundError'],
   '@deepseek-ai/dsh-scope': ['carrierKeyOf', 'createScope', 'scopeOf', 'scopeTarget'],
+  '@deepseek-ai/dsh-schedule': ['ScheduleId', 'ScheduleInputError', 'isRecurringScheduleRecord', 'resolveRecurringOccurrence'],
   '@deepseek-ai/dsh-session': ['KNOWN_SESSION_EVENT_TYPES', 'SESSION_FORMAT_VERSION', 'SessionLogOffset', 'SessionSeq'],
   '@deepseek-ai/dsh-session-persistence': ['SessionPersistenceNotFoundError'],
   '@deepseek-ai/dsh-session-format-v3-to-v4': ['restoreReleasedV4Artifact'],
+  '@deepseek-ai/dsh-storage-domain': ['defineDomain', 'domainTable'],
   '@deepseek-ai/dsh-web': ['WebError'],
 } as const satisfies HostDependencyExports
 
