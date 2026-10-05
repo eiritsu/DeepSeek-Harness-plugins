@@ -117,7 +117,12 @@ export function TaskForm(props: TaskFormProps): ReactNode {
 
       <label className={css.field} htmlFor="calendar-title">
         <span className={css.fieldLabel}>{t('create.name')}</span>
-        <Input id="calendar-title" value={title} placeholder={t('create.namePlaceholder')} maxLength={120}
+        <Input
+          id="calendar-title"
+          className={css.textInput ?? ''}
+          value={title}
+          placeholder={t('create.namePlaceholder')}
+          maxLength={120}
           onChange={(event) => { setTitle(event.currentTarget.value) }} />
       </label>
 
@@ -138,20 +143,21 @@ export function TaskForm(props: TaskFormProps): ReactNode {
         </label>
       )}
 
-      {rule.kind === 'at' ? (
-        <label className={css.field} htmlFor="calendar-date">
-          <span className={css.fieldLabel}>{t('create.date')}</span>
-          <input id="calendar-date" type="date" className={css.native} value={rule.date}
-            onChange={(event) => { patch({ date: event.currentTarget.value }) }} />
-        </label>
-      ) : null}
-
       {rule.kind === 'at' || rule.kind === 'daily' || rule.kind === 'weekly' ? (
-        <label className={css.field} htmlFor="calendar-time">
-          <span className={css.fieldLabel}>{t('create.time')}</span>
-          <input id="calendar-time" type="time" className={css.native} value={rule.time}
-            onChange={(event) => { patch({ time: event.currentTarget.value }) }} />
-        </label>
+        <div className={rule.kind === 'at' ? css.dateTime : css.dateTimeSingle}>
+          {rule.kind === 'at' ? (
+            <label className={css.field} htmlFor="calendar-date">
+              <span className={css.fieldLabel}>{t('create.date')}</span>
+              <input id="calendar-date" type="date" className={css.native} value={rule.date}
+                onChange={(event) => { patch({ date: event.currentTarget.value }) }} />
+            </label>
+          ) : null}
+          <label className={css.field} htmlFor="calendar-time">
+            <span className={css.fieldLabel}>{t('create.time')}</span>
+            <input id="calendar-time" type="time" className={css.native} value={rule.time}
+              onChange={(event) => { patch({ time: event.currentTarget.value }) }} />
+          </label>
+        </div>
       ) : null}
 
       {rule.kind === 'weekly' ? (
@@ -192,7 +198,11 @@ export function TaskForm(props: TaskFormProps): ReactNode {
       {rule.kind === 'at' || rule.kind === 'daily' || rule.kind === 'weekly' ? (
         <label className={css.field} htmlFor="calendar-zone">
           <span className={css.fieldLabel}>{t('create.timezone')}</span>
-          <Input id="calendar-zone" value={zone} list="calendar-zone-list"
+          <Input
+            id="calendar-zone"
+            className={css.textInput ?? ''}
+            value={zone}
+            list="calendar-zone-list"
             onChange={(event) => { setZone(event.currentTarget.value) }} />
           <datalist id="calendar-zone-list">
             {[defaultZone, ...ZONE_SUGGESTIONS.filter(item => item !== defaultZone)].map(item => <option key={item} value={item} />)}
@@ -208,8 +218,21 @@ export function TaskForm(props: TaskFormProps): ReactNode {
       )}
 
       <div className={css.formActions}>
-        <Button variant="outline" type="button" className={css.dangerButton} onClick={onCancel} disabled={busy}>{t('create.cancel')}</Button>
-        <Button variant="primary" type="submit" disabled={busy || sessions.length === 0}>
+        <Button
+          variant="outline"
+          type="button"
+          className={css.dangerButton}
+          onClick={onCancel}
+          disabled={busy}
+        >
+          {t('create.cancel')}
+        </Button>
+        <Button
+          variant="primary"
+          type="submit"
+          className={css.primaryAction}
+          disabled={busy || sessions.length === 0}
+        >
           {busy ? t('create.saving') : mode === 'create' ? t('create.save') : t('edit.save')}
         </Button>
       </div>

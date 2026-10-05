@@ -97,7 +97,12 @@ export function CalendarPage(props: CalendarPageProps): ReactNode {
           </p>
         </div>
         <div className={css.headingActions}>
-          <Button variant="primary" onClick={() => { setForm({ mode: 'create' }) }} disabled={state.selectableSessions.length === 0}>
+          <Button
+            variant="primary"
+            className={css.primaryAction}
+            onClick={() => { setForm({ mode: 'create' }) }}
+            disabled={state.selectableSessions.length === 0}
+          >
             <IconPlusOutlineRegular size={16} />{t('create.open')}
           </Button>
           <Button variant="ghost" onClick={() => { face.refresh() }} disabled={state.loading || state.refreshing} aria-label={t('refresh')} title={t('refresh')}>
@@ -108,8 +113,22 @@ export function CalendarPage(props: CalendarPageProps): ReactNode {
 
       <div className={css.toolbar}>
         <div className={css.viewSwitch} role="group" aria-label={t('view.label')}>
-          <Pill active={state.view === 'month'} onClick={() => { face.setView('month') }}>{t('view.month')}</Pill>
-          <Pill active={state.view === 'list'} onClick={() => { face.setView('list') }}>{t('view.list')}</Pill>
+          <Pill
+            className={css.toolbarPill}
+            active={state.view === 'month'}
+            aria-pressed={state.view === 'month'}
+            onClick={() => { face.setView('month') }}
+          >
+            {t('view.month')}
+          </Pill>
+          <Pill
+            className={css.toolbarPill}
+            active={state.view === 'list'}
+            aria-pressed={state.view === 'list'}
+            onClick={() => { face.setView('list') }}
+          >
+            {t('view.list')}
+          </Pill>
         </div>
         <div className={css.monthNav}>
           <Button variant="ghost" size="sm" aria-label={t('month.prev')} title={t('month.prev')} onClick={() => { face.stepMonth(-1) }} disabled={state.view !== 'month'}>
@@ -123,7 +142,15 @@ export function CalendarPage(props: CalendarPageProps): ReactNode {
         </div>
         <div className={css.filters} role="group" aria-label={t('filter.label')}>
           {FILTERS.map(filter => (
-            <Pill key={filter} active={state.filter === filter} onClick={() => { face.setFilter(filter) }}>{t(FILTER_KEYS[filter])}</Pill>
+            <Pill
+              key={filter}
+              className={css.toolbarPill}
+              active={state.filter === filter}
+              aria-pressed={state.filter === filter}
+              onClick={() => { face.setFilter(filter) }}
+            >
+              {t(FILTER_KEYS[filter])}
+            </Pill>
           ))}
         </div>
       </div>
