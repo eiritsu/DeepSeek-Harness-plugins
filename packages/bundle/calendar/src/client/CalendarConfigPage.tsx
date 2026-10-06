@@ -1,5 +1,5 @@
 /** Plugins detail page: subscription management and ICS import. */
-import { useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { Button, IconCloseOutlineRegular, Input, Switch, Tag } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { CalendarImportedCalendar, CalendarSubscription, CalendarSubscriptionId } from '../types.ts'
@@ -36,9 +36,12 @@ export function CalendarConfigPage(props: CalendarConfigPageProps): ReactNode {
   const [formError, setFormError] = useState<{ key: CalendarConfigKey; detail?: string }>()
   const [importName, setImportName] = useState('')
   const [ics, setIcs] = useState('')
+  const [importFileName, setImportFileName] = useState('')
+  const [readingFile, setReadingFile] = useState(false)
   const [importError, setImportError] = useState<{ key: CalendarConfigKey; detail?: string }>()
   const [removeTarget, setRemoveTarget] = useState<RemoveTarget>()
   const [editing, setEditing] = useState<CalendarSubscription>()
+  const fileInput = useRef<HTMLInputElement>(null)
 
   const busy = state.feedback.busy
 
@@ -87,19 +90,34 @@ export function CalendarConfigPage(props: CalendarConfigPageProps): ReactNode {
 
   const importIcs = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
+    if (readingFile) return
     if (importName.trim() === '' || ics.trim() === '') { setImportError({ key: 'import.invalid-ics' }); return }
     setImportError(undefined)
     void face.importIcs(importName, ics).then((result) => {
-      if (result.ok) { setImportName(''); setIcs('') }
+      if (result.ok) { setImportName(''); setIcs(''); setImportFileName(''); if (fileInput.current !== null) fileInput.current.value = '' }
       else setImportError({ key: configKey(result.key), ...(result.detail === undefined ? {} : { detail: result.detail }) })
     })
   }
 
   const readFile = (event: ChangeEvent<HTMLInputElement>): void => {
-    const file = event.currentTarget.files?.[0]
+    if (readingFile) return
+    const input = event.currentTarget
+    const file = input.files?.[0]
     if (file === undefined) return
+    input.value = ''
+    setIcs('')
+    setImportFileName(file.name)
     if (importName.trim() === '') setImportName(file.name.replace(/\.ics$/iu, ''))
-    void file.text().then(setIcs)
+    setImportError(undefined)
+    setReadingFile(true)
+    try {
+      void file.text()
+        .then(setIcs, () => { setImportError({ key: 'import.read-failed' }) })
+        .finally(() => { setReadingFile(false) })
+    } catch {
+      setImportError({ key: 'import.read-failed' })
+      setReadingFile(false)
+    }
   }
 
   const removeSubscription = (id: CalendarSubscriptionId): Promise<CalendarActionResult> => face.removeSubscription(id)
@@ -132,30 +150,35 @@ export function CalendarConfigPage(props: CalendarConfigPageProps): ReactNode {
         <form className={css.form} onSubmit={submit}>
           <label className={css.field} htmlFor="calendar-sub-name">
             <span className={css.fieldLabel}>{editing === undefined ? t('name') : t('edit')}</span>
-            <Input id="calendar-sub-name" value={name} placeholder={t('namePlaceholder')} maxLength={MAX_CALENDAR_NAME_LENGTH}
+            <Input id="calendar-sub-name" className={css.inputWrap ?? ''} value={name} placeholder={t('namePlaceholder')} maxLength={MAX_CALENDAR_NAME_LENGTH}
               onChange={(event) => { setName(event.currentTarget.value) }} />
           </label>
           <label className={css.field} htmlFor="calendar-sub-url">
             <span className={css.fieldLabel}>{t('url')}</span>
-            <Input id="calendar-sub-url" value={url} placeholder={t('urlPlaceholder')} type="url"
+            <Input id="calendar-sub-url" className={css.inputWrap ?? ''} value={url} placeholder={t('urlPlaceholder')} type="url"
               onChange={(event) => { setUrl(event.currentTarget.value) }} />
             <span className={css.fieldHint}>{t('urlHint')}</span>
           </label>
           <div className={css.formRow}>
             <label className={css.field} htmlFor="calendar-sub-interval">
               <span className={css.fieldLabel}>{t('refreshInterval')}</span>
+              <span className={css.fieldHint}>{t('refreshIntervalHint')}</span>
               <input id="calendar-sub-interval" className={css.native} type="number"
                 min={1}
+                placeholder={t('refreshIntervalPlaceholder')}
                 value={interval} onChange={(event) => { setInterval(event.currentTarget.value) }} />
             </label>
-            <Switch checked={enabled} label={t('enabled')} disabled={busy} onChange={setEnabled} />
+            <div className={css.enabledSwitch}>
+              <span className={css.fieldLabel}>{t('enabled')}</span>
+              <Switch checked={enabled} label={t('enabled')} disabled={busy} onChange={setEnabled} />
+            </div>
           </div>
           {formError === undefined ? null : (
             <p className={css.formError} role="alert">{t(formError.key)}{formError.detail === undefined ? null : <span className={css.noticeDetail}> {formError.detail}</span>}</p>
           )}
           <div className={css.formActions}>
             {editing === undefined ? null : <Button variant="outline" type="button" className={css.dangerButton} onClick={resetForm} disabled={busy}>{t('cancel')}</Button>}
-            <Button variant="primary" type="submit" disabled={busy}>{busy ? t('adding') : editing === undefined ? t('add') : t('save')}</Button>
+            <Button variant="primary" type="submit" className={css.primaryButton} disabled={busy}>{busy ? t('adding') : editing === undefined ? t('add') : t('save')}</Button>
           </div>
         </form>
 
@@ -185,17 +208,20 @@ export function CalendarConfigPage(props: CalendarConfigPageProps): ReactNode {
                   )}
                 </div>
                 <div className={css.rowActions}>
-                  <Switch checked={subscription.enabled} label={t('enabled')} disabled={busy}
-                    onChange={(next) => { toggleEnabled(subscription, next) }} />
-                  <Button variant="outline" size="sm" disabled={busy}
+                  <div className={css.enabledSwitch}>
+                    <span className={css.fieldLabel}>{t('enabled')}</span>
+                    <Switch checked={subscription.enabled} label={t('enabledFor', { name: subscription.name })} disabled={busy}
+                      onChange={(next) => { toggleEnabled(subscription, next) }} />
+                  </div>
+                  <Button variant="outline" size="sm" className={css.actionButton} aria-label={t('editSubscription', { name: subscription.name })} disabled={busy}
                     onClick={() => { startEdit(subscription) }}>
                     {t('edit')}
                   </Button>
-                  <Button variant="outline" size="sm" disabled={busy || subscription.refreshing}
+                  <Button variant="outline" size="sm" className={css.actionButton} aria-label={subscription.refreshing ? t('refreshingSubscription', { name: subscription.name }) : t('refreshSubscription', { name: subscription.name })} disabled={busy || subscription.refreshing}
                     onClick={() => { void face.refreshSubscription(subscription.id) }}>
                     {subscription.refreshing ? t('refreshing') : t('refresh')}
                   </Button>
-                  <Button variant="outline" size="sm" className={css.dangerButton} disabled={busy}
+                  <Button variant="outline" size="sm" className={`${css.dangerButton} ${css.actionButton}`} aria-label={t('removeSubscription', { name: subscription.name })} disabled={busy}
                     onClick={() => { setRemoveTarget({ kind: 'subscription', value: subscription }) }}>
                     {t('remove')}
                   </Button>
@@ -211,24 +237,28 @@ export function CalendarConfigPage(props: CalendarConfigPageProps): ReactNode {
         <form className={css.form} onSubmit={importIcs}>
           <label className={css.field} htmlFor="calendar-import-name">
             <span className={css.fieldLabel}>{t('importName')}</span>
-            <Input id="calendar-import-name" value={importName} maxLength={MAX_CALENDAR_NAME_LENGTH}
+            <Input id="calendar-import-name" className={css.inputWrap ?? ''} value={importName} maxLength={MAX_CALENDAR_NAME_LENGTH}
               onChange={(event) => { setImportName(event.currentTarget.value) }} />
           </label>
-          <label className={css.field} htmlFor="calendar-import-file">
+          <div className={css.field}>
             <span className={css.fieldLabel}>{t('importFile')}</span>
-            <input id="calendar-import-file" className={css.native} type="file" accept=".ics,text/calendar"
-              onChange={readFile} />
-          </label>
+            <div className={css.filePicker}>
+              <input ref={fileInput} id="calendar-import-file" className={css.fileInput} type="file" accept=".ics,text/calendar"
+                aria-label={t('importFile')} disabled={readingFile} onChange={readFile} />
+              <label className={css.fileButton} htmlFor="calendar-import-file">{t('chooseFile')}</label>
+              <span className={css.fileName} aria-live="polite">{importFileName || t('noFileSelected')}</span>
+            </div>
+          </div>
           <label className={css.field} htmlFor="calendar-import-text">
             <span className={css.fieldLabel}>{t('importText')}</span>
-            <textarea id="calendar-import-text" className={css.textarea} rows={4} value={ics}
+            <textarea id="calendar-import-text" className={css.textarea} rows={4} value={ics} placeholder={t('importTextPlaceholder')} disabled={readingFile}
               onChange={(event) => { setIcs(event.currentTarget.value) }} />
           </label>
           {importError === undefined ? null : (
             <p className={css.formError} role="alert">{t(importError.key)}{importError.detail === undefined ? null : <span className={css.noticeDetail}> {importError.detail}</span>}</p>
           )}
           <div className={css.formActions}>
-            <Button variant="primary" type="submit" disabled={busy}>{busy ? t('importing') : t('importAction')}</Button>
+            <Button variant="primary" type="submit" className={css.primaryButton} disabled={busy || readingFile}>{readingFile ? t('readingFile') : busy ? t('importing') : t('importAction')}</Button>
           </div>
         </form>
         <h4 className={css.subHeading}>{t('imported')}</h4>
@@ -241,7 +271,7 @@ export function CalendarConfigPage(props: CalendarConfigPageProps): ReactNode {
                   <span className={css.rowMeta}>{t('importedCount', { count: calendar.entryCount, dropped: calendar.droppedEntryCount })}</span>
                 </div>
                 <div className={css.rowActions}>
-                  <Button variant="outline" size="sm" className={css.dangerButton} disabled={busy}
+                  <Button variant="outline" size="sm" className={`${css.dangerButton} ${css.actionButton}`} disabled={busy}
                     onClick={() => { setRemoveTarget({ kind: 'imported', value: calendar }) }}>
                     {t('removeImported')}
                   </Button>

@@ -305,6 +305,26 @@ describe('package payload constraints', () => {
     },
   )
 
+  it.each(['calendar', 'community-plugin-catalog', 'community-skill-catalog', 'lark-integration', 'tools-connections'])(
+    'publishes English and Chinese plugin metadata for %s', (name) => {
+      const dir = `packages/bundle/${name}`
+      const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as WorkspaceManifest['manifest']
+      expect(manifest.exports?.['./locale/*.json']).toBe('./locale/*.json')
+      expect(expectedDshPackageFiles(manifest)).toContain('locale/*.json')
+      expect(manifest.files).toEqual(expect.arrayContaining([...expectedDshPackageFiles(manifest)]))
+      expect(manifest.files?.[0]).toBe('locale/*.json')
+      for (const locale of ['en', 'zh']) {
+        const resource = JSON.parse(readFileSync(new URL(`../${dir}/locale/${locale}.json`, import.meta.url), 'utf8')) as {
+          meta?: { title?: unknown; description?: unknown }
+        }
+        expect(typeof resource.meta?.title, `${name}/${locale} title`).toBe('string')
+        expect(resource.meta?.title, `${name}/${locale} title`).not.toBe('')
+        expect(typeof resource.meta?.description, `${name}/${locale} description`).toBe('string')
+        expect(resource.meta?.description, `${name}/${locale} description`).not.toBe('')
+      }
+    },
+  )
+
   it('rejects locale publication entries without their resource exports', () => {
     const dir = 'packages/experimental/auto-review'
     const manifest = JSON.parse(readFileSync(new URL(`../${dir}/package.json`, import.meta.url), 'utf8')) as WorkspaceManifest['manifest']

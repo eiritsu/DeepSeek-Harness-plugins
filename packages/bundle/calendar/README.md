@@ -58,6 +58,8 @@ A subscription is an `https:` or `http:` URL the user obtained themselves; the H
 
 Imported iCalendar text is stored as its own calendar and, like a subscription, is read-only. **Neither source is ever written back**: no `VEVENT` is added, changed, or deleted upstream, and neither source starts an Agent. A subscription's own configuration — its name, URL, and refresh interval — is editable on the configuration page; upstream events are not. There is no free-busy and no organizer reply.
 
+The configuration page lets you choose an `.ics` file or paste its contents. It displays the selected filename, reports file-read failures in the current language, and clears the selection after a successful import so you can import that file again. Leave the refresh interval blank to use the configured default.
+
 `ical.js` resolves `RRULE`, `EXDATE`, `RECURRENCE-ID` overrides, whole-day `VALUE=DATE` values, and UTC times. A document's own `VTIMEZONE` definitions apply to that document only, so two feeds that define the same zone name differently cannot contaminate each other.
 
 Two cases are **refused rather than guessed**, because `ical.js` would otherwise convert them through the process's own zone and place the same event differently on every machine:
