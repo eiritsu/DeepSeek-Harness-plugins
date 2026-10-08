@@ -15,6 +15,25 @@ if (packedArtifactRequested && !built) {
   throw new Error('Lark packed-artifact test requires built Host and Client lib entries')
 }
 
+/** Resolve one manifest export target against the files the archive actually contains.
+ *
+ * A target containing `*` names a set of files rather than one entry, so it is satisfied when at
+ * least one packed entry fills it; `*` does not cross a directory separator. Every other target is
+ * a single path that must exist, which keeps a renamed, moved, or dropped export failing.
+ * @param entries - every path in the packed archive, each prefixed with `package/`.
+ * @param target - the export target exactly as the manifest writes it.
+ * @returns whether the package ships the files that target names.
+ */
+function exportTargetPresent(entries: ReadonlySet<string>, target: string): boolean {
+  const path = `package/${target.replace(/^\.\//, '')}`
+  if (!path.includes('*')) return entries.has(path)
+  const pattern = new RegExp(`^${path.split('*').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*')}$`)
+  for (const entry of entries) {
+    if (pattern.test(entry)) return true
+  }
+  return false
+}
+
 describe.skipIf(!packedArtifactRequested)('Lark integration packed runtime', () => {
   it('loads the Host and Client entries from the packed bundle without custom runtime packages', { timeout: 60_000 }, () => {
     const destination = mkdtempSync(join(tmpdir(), 'dsh-lark-integration-pack-'))
@@ -55,7 +74,7 @@ describe.skipIf(!packedArtifactRequested)('Lark integration packed runtime', () 
       for (const value of Object.values(exports)) {
         const targets = typeof value === 'string' ? [value] : Object.values(value)
         for (const target of targets) {
-          expect(entries.has(`package/${target.replace(/^\.\//, '')}`), `missing export target ${target}`).toBe(true)
+          expect(exportTargetPresent(entries, target), `missing export target ${target}`).toBe(true)
         }
       }
       expect(manifest.dsh?.client?.platform).toBe('web')

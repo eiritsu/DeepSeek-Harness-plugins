@@ -7,12 +7,33 @@ import { defineTool, type PreToolDecision } from '@deepseek-ai/dsh-tools'
 import type { SubprocessHandle } from '@deepseek-ai/dsh-subprocess'
 import type { Config } from './host/lark/plugin.ts'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
+import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
 const CLI_RUNNER = fileURLToPath(new URL('../vendor/larksuite-cli/scripts/run.cjs', import.meta.url))
 const CLI_VERSION = '1.0.90'
+const CLI_PROFILE_PREFIX = 'dsh-'
+const CLI_PROFILE_HASH_LENGTH = 32
+/** Longest chain of official CLI processes one `lark_cli` call starts: the profile listing, an
+ * optional legacy-profile rename with its confirming listing, the configuration initialization, and
+ * the command itself. The tool budget must cover every one of them, because each carries the
+ * configured process deadline and grace period. */
+const CLI_PROCESSES_PER_CALL = 5
+
+/** Name of the official CLI profile holding this bundle's user authorization records.
+ *
+ * `config init --name` updates that profile in place and keeps the records a replacing
+ * `config init` deletes, so repeated calls share one authorization. The name carries a digest of
+ * the application ID because one profile directory holds every configured application: a name per
+ * product domain alone would let a second runtime configured with another application overwrite
+ * the first one's identity. The digest keeps two applications of one product domain separate and
+ * leaves the result well inside the official 64-character profile name limit. */
+function cliProfile(brand: 'feishu' | 'lark', appId: string): string {
+  return `${CLI_PROFILE_PREFIX}${brand}-${createHash('sha256').update(appId).digest('hex').slice(0, CLI_PROFILE_HASH_LENGTH)}`
+}
 
 interface CliRunOptions {
+  readonly profile: string
   readonly timeoutMs: number
   readonly maxOutputBytes: number
   readonly graceMs: number
@@ -76,7 +97,9 @@ function spawnCli(
   const deadline = AbortSignal.timeout(options.timeoutMs)
   const combinedSignal = AbortSignal.any([signal, deadline])
   const handle = ctx.subprocess.spawn({
-    argv: [process.execPath, CLI_RUNNER, ...args],
+    // The profile flag is set by the integration, never by the model, so every call runs against
+    // the application whose authorization this profile holds.
+    argv: [process.execPath, CLI_RUNNER, '--profile', options.profile, ...args],
     cwd: resolveDshHome(),
     stdio: {
       stdin: stdin === undefined ? 'ignore' : { data: stdin },
@@ -90,6 +113,13 @@ function spawnCli(
       LARKSUITE_CLI_CONFIG_DIR: `${resolveDshHome()}/lark-cli`,
       LARKSUITE_CLI_NO_UPDATE_NOTIFIER: '1',
       LARKSUITE_CLI_NO_SKILLS_NOTIFIER: '1',
+      // The CLI reads an application identity from these names as well as from the profile, and it
+      // refuses to run when one is set without a matching secret. Clearing them keeps the
+      // configured application the only identity this process can select.
+      LARKSUITE_CLI_APP_ID: undefined,
+      LARKSUITE_CLI_APP_SECRET: undefined,
+      LARKSUITE_CLI_BRAND: undefined,
+      LARKSUITE_CLI_PROFILE: undefined,
       ...(process.versions.electron === undefined ? {} : { ELECTRON_RUN_AS_NODE: '1' }),
     },
   })
@@ -97,12 +127,90 @@ function spawnCli(
 }
 
 function settings(config: Config): CliSettings {
+  const brand = config.brand.get()
+  const appId = config.appId.get().trim()
   return {
-    enabled: config.cliEnabled.get(), appId: config.appId.get().trim(),
-    appSecretEnv: config.appSecretEnv.get().trim(), brand: config.brand.get(),
+    enabled: config.cliEnabled.get(), appId,
+    appSecretEnv: config.appSecretEnv.get().trim(), brand, profile: cliProfile(brand, appId),
     timeoutMs: config.cliTimeoutMs.get(), maxOutputBytes: config.cliMaxOutputBytes.get(),
     graceMs: config.cliGraceMs.get(),
   }
+}
+
+/** Arguments that register or refresh this bundle's named CLI profile. */
+function configInitArgs(snapshot: CliSettings): readonly string[] {
+  return ['config', 'init', '--name', snapshot.profile, '--app-id', snapshot.appId,
+    '--app-secret-stdin', '--brand', snapshot.brand]
+}
+
+interface CliProfile {
+  readonly name: string
+  readonly appId: string
+  readonly brand: string
+}
+
+/** Read the official CLI profile listing.
+ * @throws `cli-profile-unreadable` when the CLI reports a configuration it cannot parse, or when
+ * its listing is not the documented array of named profiles. */
+function parseProfiles(stdout: string): CliProfile[] {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(stdout)
+  } catch {
+    throw new Error('cli-profile-unreadable')
+  }
+  if (!Array.isArray(parsed)) throw new Error('cli-profile-unreadable')
+  return parsed.map((row) => {
+    if (typeof row !== 'object' || row === null) throw new Error('cli-profile-unreadable')
+    const { name, appId, brand } = row as Record<string, unknown>
+    if (typeof name !== 'string' || typeof appId !== 'string' || typeof brand !== 'string') {
+      throw new Error('cli-profile-unreadable')
+    }
+    return { name, appId, brand }
+  })
+}
+
+async function readProfiles(
+  ctx: Context, snapshot: CliSettings, signal: AbortSignal,
+): Promise<CliProfile[]> {
+  const listed = await spawnCli(ctx, ['profile', 'list'], signal, snapshot)
+  if (listed.exitCode !== 0 || listed.timedOut) throw new Error('cli-profile-unreadable')
+  return parseProfiles(listed.stdout)
+}
+
+/** Read the profile this bundle owns, or report which recorded identity holds its name.
+ * @throws `cli-profile-mismatch` when another application identity already owns the name, because
+ * running that profile would answer with another application's configuration. */
+function assertOwnedIdentity(profile: CliProfile, snapshot: CliSettings): void {
+  if (profile.appId !== snapshot.appId || profile.brand !== snapshot.brand) throw new Error('cli-profile-mismatch')
+}
+
+/** Bind the application identity to this bundle's profile before the first `config init`.
+ *
+ * A configuration written before this bundle used named profiles holds one unnamed profile whose
+ * name is its application ID. Creating the named profile leaves that profile in place, so the user
+ * authorization record it holds would stop being the one commands read. Renaming that profile onto
+ * this name moves the record onto the profile this bundle selects. Only an identical application ID
+ * and brand qualifies, so an authorization belonging to another identity is never reused. */
+async function adoptLegacyProfile(
+  ctx: Context, snapshot: CliSettings, signal: AbortSignal,
+): Promise<void> {
+  const profiles = await readProfiles(ctx, snapshot, signal)
+  const owned = profiles.find(profile => profile.name === snapshot.profile)
+  if (owned !== undefined) {
+    assertOwnedIdentity(owned, snapshot)
+    return
+  }
+  const legacy = profiles.find(profile => profile.name === snapshot.appId
+    && profile.appId === snapshot.appId && profile.brand === snapshot.brand)
+  if (legacy === undefined) return
+  const renamed = await spawnCli(ctx, ['profile', 'rename', legacy.name, snapshot.profile], signal, snapshot)
+  if (renamed.exitCode !== 0 || renamed.timedOut) throw new Error('cli-profile-rename-failed')
+  // The official rename reports success for a source it cannot resolve, so confirm the profile now
+  // records this identity before a command reads it as the configured application.
+  const adopted = (await readProfiles(ctx, snapshot, signal)).find(profile => profile.name === snapshot.profile)
+  if (adopted === undefined) throw new Error('cli-profile-adoption-failed')
+  assertOwnedIdentity(adopted, snapshot)
 }
 
 let cliTail = Promise.resolve()
@@ -119,18 +227,34 @@ async function execute(
 ): Promise<Awaited<ReturnType<typeof result>>> {
   if (!snapshot.enabled) throw new Error('Enable the Lark CLI tool in Settings before using it.')
   if (snapshot.appId === '') throw new Error('Set the Lark application ID in Settings before using the CLI.')
+  // This integration sets the profile before the model's arguments, where a `--` separator cannot
+  // move it behind the model's own values, and rejects any `--profile` the model supplies because a
+  // later flag selects the last one. Rewriting arguments instead would corrupt an argument that
+  // merely carries this text as its value.
+  if (args.some(arg => arg === '--profile' || arg.startsWith('--profile='))) {
+    throw new Error('This integration selects the Lark CLI profile. Remove --profile from the command.')
+  }
   signal.throwIfAborted()
   const secret = await ctx.credentials.resolve(credentialRef(snapshot.appSecretEnv))
   if (secret === undefined) throw new Error('Configure the Lark application secret before using the CLI.')
 
-  const initialized = await spawnCli(ctx, [
-    'config', 'init', '--app-id', snapshot.appId, '--app-secret-stdin', '--brand', snapshot.brand,
-  ], signal, snapshot, secret.value)
+  const initialized = await adoptAndInit(ctx, snapshot, signal, secret.value)
   if (initialized.exitCode !== 0) {
     throw new Error('Lark CLI configuration failed')
   }
 
   return spawnCli(ctx, args, signal, snapshot)
+}
+
+/** Adopt the user authorization record an older configuration still holds for this identity, then
+ * refresh the application identity and secret in this bundle's profile.
+ * @returns the initialization process outcome so the caller reports its own failure wording.
+ */
+async function adoptAndInit(
+  ctx: Context, snapshot: CliSettings, signal: AbortSignal, secret: string,
+): Promise<Awaited<ReturnType<typeof result>>> {
+  await adoptLegacyProfile(ctx, snapshot, signal)
+  return spawnCli(ctx, configInitArgs(snapshot), signal, snapshot, secret)
 }
 
 /** Run several official CLI commands without interleaving their shared config initialization.
@@ -155,9 +279,7 @@ export function runLarkCliCommands(
     if (snapshot.appId === '') throw new Error('application-unconfigured')
     const secret = await ctx.credentials.resolve(credentialRef(snapshot.appSecretEnv))
     if (secret === undefined) throw new Error('credential-unconfigured')
-    const initialized = await spawnCli(ctx, [
-      'config', 'init', '--app-id', snapshot.appId, '--app-secret-stdin', '--brand', snapshot.brand,
-    ], signal, snapshot, secret.value)
+    const initialized = await adoptAndInit(ctx, snapshot, signal, secret.value)
     if (initialized.exitCode !== 0 || initialized.timedOut) throw new Error('cli-config-failed')
     const results: Awaited<ReturnType<typeof result>>[] = []
     for (const args of commands) {
@@ -177,7 +299,7 @@ export function applyLarkCli(ctx: Context, config: Config): void {
     let registeredTimeout: number | undefined
     const sync = (): void => {
       if (config.cliEnabled.get()) {
-        const timeoutMs = 2 * (config.cliTimeoutMs.get() + config.cliGraceMs.get()) + 5_000
+        const timeoutMs = CLI_PROCESSES_PER_CALL * (config.cliTimeoutMs.get() + config.cliGraceMs.get()) + 5_000
         if (disposeTool !== undefined && registeredTimeout === timeoutMs) return
         disposeTool?.()
         disposeTool = ctx.tools.register(defineTool({

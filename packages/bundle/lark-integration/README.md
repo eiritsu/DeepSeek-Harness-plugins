@@ -36,6 +36,8 @@ The profile patch inserts one `lark` Host row with both the private-chat connect
 
 Load this package as the only Host owner of the Lark integration. Do not load the separate `@deepseek-ai/dsh-lark` Host entry in the same profile; duplicate descriptor ownership fails explicitly. The standalone package remains the implementation source used by this bundle.
 
+The official CLI stores every application in one profile directory. This bundle runs each command under a named profile derived from the product domain and the configured application ID, and initializes that profile in place, so repeated calls keep the user authorization records that a replacing initialization would delete. Hosts configured with different applications therefore share one Harness home without overwriting each other. A configuration written by an earlier release holds one unnamed profile named after its application ID; before the first command the Host renames that profile onto this one when the application ID and product domain both match, which keeps an existing authorization usable. The Host refuses to run when that profile name already records another application, when the profile listing cannot be read, or when a command selects its own profile.
+
 The first explicit CLI operation may download the upstream CLI binary; the embedded launcher verifies its SHA-256 against the package checksum manifest. Loading the bundle, opening its Plugins page, and enabling the private-chat connection do not start the launcher. Registration has a configurable deadline; authorization URLs are restricted to official Feishu and Lark account origins.
 
 <a id="further-exploration"></a>
@@ -62,6 +64,7 @@ No runtime invariant companion is published because this package has no independ
 - The Host accepts private chats from one configured user. Quick connect registers an app with the supported private-chat scopes; user authorization is limited to the official device-code flow and current-user identity needed by this integration.
 - Permission-template management is not included; CLI write commands still require the official per-call tool approval flow.
 - Group chats, multiple authorized users, and general application OAuth or permission administration are not supported. Existing-app setup does not alter permissions in the Lark developer console.
+- Changing the configured application or product domain leaves the previous CLI profile in the profile directory so its authorization records stay available; the official CLI's `profile remove` clears one on request.
 
 | Capability | Current coverage |
 |---|---|

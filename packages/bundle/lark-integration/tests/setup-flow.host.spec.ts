@@ -1,6 +1,7 @@
 import { Context } from '@deepseek-ai/cordis'
 import { createVolatile } from '@deepseek-ai/cosmokit'
 import { registerApp, type RegisterAppOptions } from '@larksuite/channel'
+import { createHash } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Config } from '../src/index.ts'
 import { LarkIntegrationSetup } from '../src/status.ts'
@@ -31,12 +32,15 @@ function harness(options: {
   } as never)
   ctx.provide('subprocess', {
     spawn(spec: { argv: string[] }) {
+      // The integration leads every command with its own profile selection.
       const args = spec.argv.slice(2)
       commands.push(args)
+      const cliArgs = args[0] === '--profile' ? args.slice(2) : args
       let stdout = ''
-      if (args[0] === 'auth' && args[1] === 'login' && args.includes('--no-wait')) {
+      if (cliArgs[0] === 'profile' && cliArgs[1] === 'list') stdout = '[]'
+      else if (cliArgs[0] === 'auth' && cliArgs[1] === 'login' && cliArgs.includes('--no-wait')) {
         stdout = JSON.stringify({ device_code: 'device-secret', verification_url: 'https://accounts.feishu.cn/oauth/device?code=public' })
-      } else if (args[0] === 'auth' && args[1] === 'status') {
+      } else if (cliArgs[0] === 'auth' && cliArgs[1] === 'status') {
         stdout = JSON.stringify({ identities: { user: { available: true, verified: true, openId: 'ou_authorized' } } })
       }
       return {
@@ -171,7 +175,16 @@ describe('Lark application and user authorization setup', () => {
     const completed = await h.service.completeUserAuthorization()
     expect(completed).toEqual({ ok: true })
     expect(h.settings.authorizedUserOpenId).toBe('ou_authorized')
-    expect(h.commands.map(args => args.slice(0, 2))).toEqual([['config', 'init'], ['auth', 'login'], ['config', 'init'], ['auth', 'login'], ['auth', 'status']])
+    expect(h.commands.map(args => args.slice(2, 4))).toEqual([
+      ['profile', 'list'], ['config', 'init'], ['auth', 'login'],
+      ['profile', 'list'], ['config', 'init'], ['auth', 'login'], ['auth', 'status'],
+    ])
+    // Every command runs under the profile bound to this application identity; the device flow
+    // stores the authorized user there, so a replacing init would delete the record it just wrote.
+    const profile = `dsh-feishu-${createHash('sha256').update('cli_existing').digest('hex').slice(0, 32)}`
+    expect(h.commands.every(args => args[0] === '--profile' && args[1] === profile)).toBe(true)
+    expect(h.commands.filter(args => args[2] === 'config')
+      .every(args => args[args.indexOf('--name') + 1] === profile)).toBe(true)
 
     expect((await h.service.beginUserAuthorization()).ok).toBe(true)
     h.config.appId = createVolatile('cli_other')

@@ -36,6 +36,8 @@ Profile patch 插入一个私聊连接和 `lark_cli` 均默认关闭的 `lark` H
 
 在同一 profile 中只加载此包作为 Lark 集成的 Host owner；不要再加载独立的 `@deepseek-ai/dsh-lark` Host entry，重复 descriptor owner 会明确报错。独立包仍是此组合包所用的实现来源。
 
+官方 CLI 把所有应用保存在同一个 profile 目录中。此组合包在由产品域名与所配置应用 ID 推导出的具名 profile 下运行每条命令，并就地初始化该 profile，因此重复调用不会丢失重新初始化会删除的用户授权记录。配置了不同应用的多个 Host 因此可以共用同一个 Harness home 而不会互相覆盖。旧版本写入的配置保存一个以应用 ID 命名的未命名 profile；首次命令前，Host 会在应用 ID 与产品域名都一致时把该 profile 重命名到当前 profile，从而继续使用已有授权。当该 profile 名称已记录其他应用、无法读取 profile 列表，或命令自带 profile 选择时，Host 会明确拒绝执行。
+
 首次显式调用 CLI 操作时可能下载上游 CLI binary；随包 launcher 会依据 checksum manifest 验证 SHA-256。加载组合包或打开其 Plugins 页面不会启动 launcher。应用注册截止时间可在高级设置中调整；授权 URL 仅接受官方飞书与 Lark 账号域名。
 
 <a id="further-exploration"></a>
@@ -62,6 +64,7 @@ Profile patch 插入一个私聊连接和 `lark_cli` 均默认关闭的 `lark` H
 - Host 只接受一位已配置用户的私聊。快速连接会注册一个仅配置本私聊功能权限的应用；用户授权仅覆盖本集成所需的官方 device-code 流程与当前用户身份。
 - 不包含权限模板管理；CLI 写命令的逐次审批不等于 Lark 权限管理。
 - 不支持群聊、多位授权用户、通用应用 OAuth 或权限管理。使用已有应用不会修改 Lark 开发者控制台中的权限。
+- 更改所配置的应用或产品域名后，旧的 CLI profile 会保留在 profile 目录中，其授权记录仍可使用；需要时可用官方 CLI 的 `profile remove` 清除。
 
 | 能力 | 当前覆盖 |
 |---|---|

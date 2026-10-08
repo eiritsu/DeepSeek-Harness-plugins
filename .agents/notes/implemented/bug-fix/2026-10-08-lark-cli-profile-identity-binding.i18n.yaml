@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-08-lark-cli-profile-identity-binding.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-10-08-lark-cli-profile-identity-binding.md
+/agent-note-bind-the-lark-cli-profile-to-one-application-identity:
+  en: 6cca4bbed35ddd22
+  zh: 8bd16b67048d6d74
+/agent-note-bind-the-lark-cli-profile-to-one-application-identity/problem:
+  en: d88a114579ae7eee
+  zh: ace58b49e498edd2
+/agent-note-bind-the-lark-cli-profile-to-one-application-identity/decision:
+  en: cf06dfbf475251af
+  zh: a11069c5113df14f
+/agent-note-bind-the-lark-cli-profile-to-one-application-identity/alternatives-considered:
+  en: 1a4f34f1c4a4d1ca
+  zh: 7d39b6b2436ac221
+/agent-note-bind-the-lark-cli-profile-to-one-application-identity/consequences:
+  en: 783285b553b63db2
+  zh: 59909973e7547e3f
