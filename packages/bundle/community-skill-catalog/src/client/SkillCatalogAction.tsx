@@ -1,4 +1,4 @@
-/** Sidebar footer action for the SkillHub skills directory. */
+/** Sidebar footer action for the SkillsMP skills directory. */
 import type { ReactNode } from 'react'
 import { IconSkillOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
@@ -8,7 +8,7 @@ import css from './SkillCatalogPage.module.css'
 
 type Store = PropsStore<ReturnType<typeof createSkillCatalogStore>>
 
-/** Open the SkillHub directory from the official sidebar footer.
+/** Open the SkillsMP directory from the official sidebar footer.
  * @param props Sidebar width, visibility state, and localized label.
  * @returns the footer action.
  */

@@ -37,11 +37,11 @@ it('mounts its Remote before waiting for the namespace and registering the sideb
   ctx.provide('locale', new LocaleRuntime(ctx))
 
   const mount = vi.fn(async () => {
-    ctx.provide('remote.skillHubCatalog', {})
+    ctx.provide('remote.skillsMpCatalog', {})
     return async () => {}
   })
   ctx.provide('remote', { $mount: mount } as never)
-  expect(inject).not.toContain('remote.skillHubCatalog')
+  expect(inject).not.toContain('remote.skillsMpCatalog')
 
   const slots = ctx.get('slots') as SlotRegistry
   slots.register({ name: 'root', children: {

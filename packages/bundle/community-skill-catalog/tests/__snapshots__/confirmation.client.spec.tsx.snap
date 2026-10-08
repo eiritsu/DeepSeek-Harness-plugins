@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SkillsMP catalog > shows the requested task prompt and does not fetch an empty query > initial use-case buttons 1`] = `"Common use casesProgrammingOffice documentsData analysisDesignMarketingOperations"`;

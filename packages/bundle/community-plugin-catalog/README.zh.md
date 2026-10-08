@@ -29,6 +29,8 @@ kind: "package-bundle"
 
 此 bundle 的 Host Remote 读取公开的 DeepSeek Harness 插件目录。它把搜索、分类、排序、分页与数量上限过滤条件传给站点 API，并返回当前列表与分类元数据。安装文本属于不可信数据：Host 将其规范化为单个受支持的 npm 或 GitHub 包 spec，过滤不支持的值，并要求 GitHub 目标与列表展示的仓库一致。Client 将规范化 spec 交给官方 Plugin Manager，其对话框要求用户确认。
 
+目录采用紧凑的弹窗排版和响应式列表行；宿主页面字体大小不会决定视图中能显示多少条结果。
+
 ### 配置
 
 | 字段 | 默认值 | 含义 |
@@ -46,6 +48,7 @@ Patch 只插入一个 bundle 行。包内包含 Host 目录 Remote 和动态 Web
 ## 进一步阅读
 
 - [Plugin Manager](../../boot/plugin-manager/README.zh.md) — 包安装与 profile 生命周期。
+- [SkillsMP GitHub 安装说明](../../../.agents/notes/implemented/architecture/2026-10-08-skillsmp-github-immutable-installation.zh.md)记录了相邻技能目录如何固定并校验技能内容。
 
 <a id="dev-note"></a>
 ### 开发备注

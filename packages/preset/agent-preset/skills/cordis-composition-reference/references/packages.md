@@ -50,6 +50,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | Package | Config | Description |
 |---|---|---|
 | `@deepseek-ai/dsh-acp-app` | no | The dsh ACP profile bundle: automation-only JSON-RPC stdio and process lifecycle over dsh-base |
+| `@deepseek-ai/dsh-calendar` | yes | Calendar view over Schedule automations, local entries, and user-supplied iCalendar subscriptions |
 | `@deepseek-ai/dsh-configuration-and-skills-backup` | yes | Opt-in configuration, skill-tree, and bundle-selection backups |
 | `@deepseek-ai/dsh-copy-session-id` | no | Opt-in Session ID copy action in the conversation header utilities |
 | `@deepseek-ai/dsh-desktop-profile-migration-bundle` | no | Explicit one-time selection migration for existing Desktop profiles |

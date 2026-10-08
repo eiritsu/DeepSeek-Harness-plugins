@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-10-08-skillsmp-github-immutable-installation.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-08-skillsmp-github-immutable-installation.md
+/agent-note-skillsmp-github-skill-installation:
+  en: 972b68452c5db015
+  zh: 882bbe0c6c05ad3e
+/agent-note-skillsmp-github-skill-installation/problem:
+  en: 8182ec35d55c88cb
+  zh: ab151852710f6491
+/agent-note-skillsmp-github-skill-installation/decision:
+  en: 7ff176ed049ad46b
+  zh: 52f4fde3ee55636a
+/agent-note-skillsmp-github-skill-installation/alternatives-considered:
+  en: b2f87ed4d97ddd96
+  zh: 5e29c4fe87894267
+/agent-note-skillsmp-github-skill-installation/consequences:
+  en: 9dfb7e5479fedeb4
+  zh: 44d9975f48195870
+/agent-note-skillsmp-github-skill-installation/related:
+  en: 24f386a017a58e0a
+  zh: f769ec04ace1523b

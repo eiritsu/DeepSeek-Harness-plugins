@@ -29,6 +29,8 @@ Add the bundle to a Web or Desktop UI profile when its users need community plug
 
 The bundle's Host Remote reads the public DeepSeek Harness plugin catalog. It passes search, category, sort, page, and limit filters to the site's API and returns current listings and category metadata. Install text is untrusted: the Host reduces it to one supported npm or GitHub package spec, drops unsupported values, and requires a GitHub target to match the listing's repository. The Client passes the normalized spec to the official Plugin Manager, whose dialog requires the user's confirmation.
 
+The directory uses compact overlay typography and responsive rows, so the host page's font size does not determine how many results fit in the view.
+
 ### Configuration
 
 | Field | Default | Meaning |
@@ -46,6 +48,7 @@ The patch inserts one bundle row. Its package contains the Host catalog Remote a
 ## Further Exploration
 
 - [Plugin Manager](../../boot/plugin-manager/README.md) — package installation and profile lifecycle.
+- The [SkillsMP GitHub installation note](../../../.agents/notes/implemented/architecture/2026-10-08-skillsmp-github-immutable-installation.md) records how the sibling catalog pins and validates skill content.
 
 <a id="dev-note"></a>
 ### Dev Note

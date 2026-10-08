@@ -1,6 +1,7 @@
 # Agent Note: SkillHub 技能安装
 
 Status: implemented
+Archived: 2026-10-08
 
 [English](2026-09-25-skillhub-catalog-installation.md) | 中文
 

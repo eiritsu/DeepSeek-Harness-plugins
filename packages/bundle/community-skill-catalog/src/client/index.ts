@@ -1,4 +1,4 @@
-/** Opt-in SkillHub browser directory mounted through official sidebar slots. */
+/** Opt-in SkillsMP browser directory mounted through official sidebar slots. */
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
@@ -18,7 +18,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap { skillCatalog: keyof typeof zh }
 }
 
-/** Services required by the SkillHub directory. */
+/** Services required by the SkillsMP directory. */
 export const inject = ['slots', 'locale', 'remote']
 
 /** Mount the verified-install Remote and the sidebar directory.
@@ -27,10 +27,10 @@ export const inject = ['slots', 'locale', 'remote']
  */
 export async function apply(ctx: Context): Promise<() => Promise<void>> {
   const disposeRemote = await ctx.remote.$mount(TYPERT_REMOTE)
-  const scope = ctx.inject(['slots', 'locale', 'remote', 'remote.skillHubCatalog'], (clientCtx) => {
+  const scope = ctx.inject(['slots', 'locale', 'remote', 'remote.skillsMpCatalog'], (clientCtx) => {
     clientCtx.effect(() => clientCtx.locale.register(NS, { en, zh }), 'skill-catalog: dictionaries')
     const store = createSkillCatalogStore()
-    const injection = () => ({ api: clientCtx.remote.skillHubCatalog })
+    const injection = () => ({ api: clientCtx.remote.skillsMpCatalog })
     clientCtx.slots.inject('plugins.item', () => clientCtx.slots.register({
       name: 'plugins.item', id: 'installed-skills', order: 50,
       label: () => clientCtx.locale.bind(NS)('managerTitle'), locale: NS, inject: injection,

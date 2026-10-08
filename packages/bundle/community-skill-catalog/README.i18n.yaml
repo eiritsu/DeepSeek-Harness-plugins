@@ -3,35 +3,41 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bundle/community-skill-catalog/README.md
 /:
-  en: cf249adfb72cf575
-  zh: 214b4c5c593cbff5
-/dsh-community-skill-catalog:
-  en: 52d3a0fc2e296dd1
-  zh: 57e1c606b51b4aa9
-/dsh-community-skill-catalog/summary:
-  en: b64ea30be54f41ee
-  zh: d155521993b2dd83
-/dsh-community-skill-catalog/table-of-contents:
-  en: 122f0d41696980b1
-  zh: a4dff8666b34953a
-/dsh-community-skill-catalog/use-this-package:
-  en: af7c6a0b82f0b132
-  zh: 098ff19ab36d87e0
-/dsh-community-skill-catalog/use-this-package/configuration:
-  en: b60991739943256a
-  zh: e418e5120a9891f7
-/dsh-community-skill-catalog/understand-the-implementation:
-  en: 87ca3b72d98d9a8e
-  zh: 20ca0e0ee1f570ec
-/dsh-community-skill-catalog/dev-note:
-  en: 1b930d3a1bb1e7e9
-  zh: 3ea0cc2c4a8511c7
-/dsh-community-skill-catalog/model-experience:
-  en: 62a2cf613c9d740b
-  zh: 55dc043a3051f05d
-/dsh-community-skill-catalog/model-experience/kv-cache-effect:
-  en: cbc915ac6baf5748
-  zh: 1b03debc4d4062ce
-/dsh-community-skill-catalog/known-limitations-and-deferred-work:
-  en: 523ecb90d633d6a5
-  zh: 5f0ed0bcc938bd10
+  en: 1103d451cd0d4569
+  zh: 0177037e24533c51
+/deepseek-ai-dsh-community-skill-catalog:
+  en: 98caa99df5934232
+  zh: d26b0149c7a50adc
+/deepseek-ai-dsh-community-skill-catalog/summary:
+  en: 25a24986bbe45eef
+  zh: 15ba87acea34de72
+/deepseek-ai-dsh-community-skill-catalog/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 6b2d5a3e9ebd49ff
+/deepseek-ai-dsh-community-skill-catalog/use-this-package:
+  en: 57ed7b0f84ae9f97
+  zh: 6d0b9285d5fefc0f
+/deepseek-ai-dsh-community-skill-catalog/use-this-package/skillsmp-credentials:
+  en: 0599963d46c6add5
+  zh: 21fb2c1ed094195e
+/deepseek-ai-dsh-community-skill-catalog/use-this-package/host-configuration:
+  en: a97c41dfb504ffc3
+  zh: 1b39aed1d4bddce0
+/deepseek-ai-dsh-community-skill-catalog/understand-the-implementation:
+  en: 2898b25977ddc397
+  zh: 0a1865b450f933de
+/deepseek-ai-dsh-community-skill-catalog/further-exploration:
+  en: b6eb1f3460c47d66
+  zh: c3c7ec6fa790b40b
+/deepseek-ai-dsh-community-skill-catalog/model-experience:
+  en: 4450a1fdcf67a87a
+  zh: c33e025f42ce27ab
+/deepseek-ai-dsh-community-skill-catalog/model-experience/kv-cache-effect:
+  en: 92592c1ca7d1b7e7
+  zh: b86b4f7a4dde4763
+/deepseek-ai-dsh-community-skill-catalog/known-limitations-and-deferred-work:
+  en: 2300f8b1e49c1b52
+  zh: 73ab6658dfbb713e
+/deepseek-ai-dsh-community-skill-catalog/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 6c5f9788c6536776

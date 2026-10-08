@@ -6,7 +6,7 @@
 
 ## 安装插件
 
-`v0.2.0-rc.2.20261001.2` 的 GitHub Release 已为下表中的每个可安装组合包附带一个预构建 `.tgz` 资源。在 Web 或 Desktop 的 **Plugins** 中选择 **Install**，输入对应资源的下载 URL。通过 CLI 安装时，请先下载 `.tgz` 资源，再将其绝对本地路径添加到 profile：
+`v0.2.0-rc.2.20261001.2` 的 GitHub Release 已为下表中的每个可安装组合包附带一个预构建 `.tgz` 资源。下表中标记 **尚未发布** 的行不在该 Release 中，请为它们安装从本仓库重新构建的 `.tgz`。在 Web 或 Desktop 的 **Plugins** 中选择 **Install**，输入对应资源的下载 URL。通过 CLI 安装时，请先下载 `.tgz` 资源，再将其绝对本地路径添加到 profile：
 
 ```sh
 dsh plugin --profile <profile> add /absolute/path/to/<asset-file>
@@ -52,8 +52,8 @@ pnpm dsh web
 |---|---|---|---|---|
 | Calendar 日历 | `@deepseek-ai/dsh-calendar` | 汇总 Schedule 自动化、本地条目与用户自行提供的 iCalendar 订阅的日历视图；Web 与桌面。**尚未发布：** `v0.2.0-rc.2.20261001.2` 的资源中不包含它——请从本仓库构建 `.tgz` 或安装本地路径 | `packages/bundle/calendar` | 尚未发布 |
 | Office 文件识别 | `@deepseek-ai/dsh-file-recognizer-office` | 本地提取 DOCX、PPTX、XLSX、OpenDocument 和 PDF 文本，可选 OCR；Web 和 Desktop，需此发行版提供原生文件上传 API | `packages/attachment/file-recognizer-office` | `deepseek-ai-dsh-file-recognizer-office-0.2.0-rc.2.tgz` |
-| 社区插件目录 | `@deepseek-ai/dsh-community-plugin-catalog` | 浏览和安装社区插件；Web 和 Desktop | `packages/bundle/community-plugin-catalog` | `deepseek-ai-dsh-community-plugin-catalog-0.2.0-rc.2.tgz` |
-| 社区 Skill 目录 | `@deepseek-ai/dsh-community-skill-catalog` | 浏览并安装指定版本的 SkillHub Skill；Web 和 Desktop | `packages/bundle/community-skill-catalog` | `deepseek-ai-dsh-community-skill-catalog-0.2.0-rc.2.tgz` |
+| 社区插件目录 | `@deepseek-ai/dsh-community-plugin-catalog` | 浏览和安装社区插件；Web 和 Desktop。**尚未发布：** `v0.2.0-rc.2.20261001.2` 的资源早于紧凑目录布局——请从本仓库构建 `.tgz` 或安装本地路径 | `packages/bundle/community-plugin-catalog` | `deepseek-ai-dsh-community-plugin-catalog-0.2.0-rc.2.tgz` |
+| 社区 Skill 目录 | `@deepseek-ai/dsh-community-skill-catalog` | 搜索 SkillsMP 并安装固定 Git commit 的 GitHub Skill；Web 和 Desktop。**尚未发布：** `v0.2.0-rc.2.20261001.2` 的资源仍搜索 SkillHub——请从本仓库构建 `.tgz` 或安装本地路径 | `packages/bundle/community-skill-catalog` | `deepseek-ai-dsh-community-skill-catalog-0.2.0-rc.2.tgz` |
 | 配置和 Skill 备份 | `@deepseek-ai/dsh-configuration-and-skills-backup` | 导出 profile 配置和选定的 Skill；Web 和 Desktop | `packages/bundle/configuration-and-skills-backup` | `deepseek-ai-dsh-configuration-and-skills-backup-0.2.0-rc.2.tgz` |
 | 复制 Session ID | `@deepseek-ai/dsh-copy-session-id` | 在对话标题栏中添加复制操作；Web 和 Desktop | `packages/bundle/copy-session-id` | `deepseek-ai-dsh-copy-session-id-0.2.0-rc.2.tgz` |
 | Desktop profile 迁移 | `@deepseek-ai/dsh-desktop-profile-migration-bundle` | 在 Desktop profile 设置中选择已安装的功能组合包；仅 Desktop | `packages/bundle/desktop-profile-migration` | `deepseek-ai-dsh-desktop-profile-migration-bundle-0.2.0-rc.2.tgz` |

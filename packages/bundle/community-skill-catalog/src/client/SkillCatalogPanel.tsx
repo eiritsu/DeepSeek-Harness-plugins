@@ -1,153 +1,228 @@
-/** Search SkillHub and review an exact release before verified installation. */
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+/** Search SkillsMP and review a pinned Git commit before installation. */
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Button, IconCloseOutlineRegular, IconSearchOutlineRegular, Input, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { SkillHubApiKeyFilter, SkillHubDetail, SkillHubPage, SkillHubSort } from '@deepseek-ai/dsh-community-skill-catalog/types'
+import type {
+  SkillsMpDetail,
+  SkillsMpInstallResult,
+  SkillsMpLocale,
+  SkillsMpPage,
+  SkillsMpSort,
+  SkillsMpTaxonomy,
+} from '@deepseek-ai/dsh-community-skill-catalog/types'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { InjectFace, PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type { createSkillCatalogStore } from './store.ts'
 import type { SkillCatalogKey } from './locales.ts'
+import { CategoryCascader } from './CategoryCascader.tsx'
+import type { CategoryOption } from './CategoryCascader.tsx'
+import { OccupationCascader } from './OccupationCascader.tsx'
 import css from './SkillCatalogPage.module.css'
 
 type CatalogRemote = {
+  taxonomy(locale: SkillsMpLocale, forceRefresh?: boolean, signal?: AbortSignal): Promise<RemoteResult<SkillsMpTaxonomy>>
   catalog(
-    query?: string,
+    query: string,
     category?: string,
-    source?: string,
-    apiKey?: SkillHubApiKeyFilter,
-    sort?: SkillHubSort,
+    occupation?: string,
+    language?: string,
+    sort?: SkillsMpSort,
     page?: number,
     pageSize?: number,
     signal?: AbortSignal,
-  ): Promise<RemoteResult<SkillHubPage>>
-  detail(canonicalName: string, signal?: AbortSignal): Promise<RemoteResult<SkillHubDetail>>
-  installSkill(
-    canonicalName: string,
-    version: string,
-    confirmed: boolean,
-    signal?: AbortSignal,
-  ): Promise<RemoteResult<{
-    readonly slug: string
-    readonly canonicalName: string
-    readonly version: string
-    readonly path: string
-    readonly files: number
-    readonly totalBytes: number
-    readonly backupCleanupPending?: string
-  }>>
+  ): Promise<RemoteResult<SkillsMpPage>>
+  detail(githubUrl: string, signal?: AbortSignal): Promise<RemoteResult<SkillsMpDetail>>
+  installSkill(githubUrl: string, commitSha: string, confirmed: boolean, signal?: AbortSignal): Promise<RemoteResult<SkillsMpInstallResult>>
 }
 
 export interface SkillCatalogPanelInjected { readonly api: CatalogRemote }
 type Store = PropsStore<ReturnType<typeof createSkillCatalogStore>>
 type Props = PropsRuntime<'shell.overlay'> & Store & PropsLocale<'skillCatalog'> & InjectFace<SkillCatalogPanelInjected>
 const PAGE_SIZE = 24
-const SORTS: readonly SkillHubSort[] = ['score', 'downloads', 'stars', 'installs', 'updated_at']
+const SORTS: readonly SkillsMpSort[] = ['stars', 'recent']
+const USE_CASES = [
+  ['programming', 'typescript code review'], ['documents', 'meeting notes document'], ['data', 'csv data analysis'],
+  ['design', 'design system'], ['marketing', 'marketing campaign'], ['operations', 'incident response'],
+] as const
+const LANGUAGES = ['en', 'zh', 'ja', 'mul', 'und'] as const
 
 function errorMessage(reason: unknown, translate: Props['t']): string {
+  const message = reason instanceof Error ? reason.message : ''
   if (typeof reason === 'object' && reason !== null && 'code' in reason && typeof reason.code === 'string') {
-    if (reason.code === 'skillhub/identity-ambiguous') return translate('identityAmbiguous')
-    if (reason.code === 'skillhub/identity-changed') return translate('identityChanged')
-    if (reason.code === 'skillhub/install-limit' && 'details' in reason && typeof reason.details === 'object' && reason.details !== null) {
-      const details = reason.details
-      const key = 'budget' in details && details.budget === 'archive' ? 'budgetArchive'
-        : 'budget' in details && details.budget === 'entries' ? 'budgetEntries'
-          : 'budget' in details && details.budget === 'files' ? 'budgetFiles'
-            : 'budget' in details && details.budget === 'expanded' ? 'budgetExpanded'
-              : 'budget' in details && details.budget === 'metadata' ? 'budgetMetadata' : undefined
-      if (key !== undefined && 'limit' in details && typeof details.limit === 'number' && Number.isSafeInteger(details.limit)) {
-        return translate('installLimit', { budget: translate(key), limit: details.limit.toLocaleString() })
+    if (reason.code === 'skillsmp/forbidden') return translate('skillsMpForbidden')
+    if (reason.code === 'skillsmp/rate-limited') return translate('skillsMpRateLimited')
+    if (reason.code === 'skillsmp/search-required') return translate('skillsMpSearchRequired')
+    if (reason.code === 'skillsmp/review-required') return translate('skillsMpReviewRequired')
+    if (reason.code === 'skillsmp/source-unavailable') return translate('skillsMpSourceUnavailable')
+    if (reason.code === 'skillsmp/manifest-incomplete') {
+      const details = 'details' in reason && typeof reason.details === 'object' && reason.details !== null ? reason.details : undefined
+      const skippedFiles = details !== undefined && 'skippedFiles' in details && typeof details.skippedFiles === 'number'
+        ? details.skippedFiles
+        : undefined
+      const limitReason = details !== undefined && 'limitReason' in details ? details.limitReason : undefined
+      const reasonKey = limitReason === 'file_count' ? 'manifestFileCountLimit'
+        : limitReason === 'file_size' ? 'manifestFileSizeLimit'
+          : limitReason === 'total_size' ? 'manifestTotalSizeLimit' : undefined
+      if (skippedFiles !== undefined && skippedFiles > 0 && reasonKey !== undefined) {
+        return translate('manifestIncomplete', { count: skippedFiles.toLocaleString(), limit: translate(reasonKey) })
       }
+      return translate('manifestIncompleteGeneric')
     }
+    if (reason.code === 'skillsmp/github-source-invalid') return translate('githubSourceInvalid')
+    if (reason.code === 'skillsmp/skill-markdown-missing') return translate('skillMarkdownMissing')
+    if (reason.code === 'skillsmp/file-integrity-failed') return translate('fileIntegrityFailed')
+    if (reason.code === 'skillsmp/skill-incompatible') return translate('skillIncompatible')
   }
-  const message = reason instanceof Error ? reason.message : String(reason)
   if (message.includes('did not resolve exclusively to public addresses')) return translate('networkDenied')
-  return message
+  return translate('failure')
+}
+
+function diagnosticMessage(reason: unknown): string {
+  if (typeof reason === 'object' && reason !== null && 'code' in reason && reason.code === 'skillsmp/skill-incompatible') return ''
+  let message: string
+  if (reason instanceof Error) message = reason.message
+  else if (typeof reason === 'object' && reason !== null) {
+    try { message = JSON.stringify(reason) }
+    catch { message = 'Unknown error object' }
+  } else message = String(reason)
+  return message.replace(/(Authorization:\s*Bearer\s+|authorization:\s*bearer\s+)\S+/gu, '$1[redacted]')
+    .replace(/\b(?:gh[pousr]_[A-Za-z0-9_]{20,}|sk_live_[A-Za-z0-9_]+)\b/gu, '[redacted]')
+    .replace(/("(?:access[_-]?token|api[_-]?key|authorization|password)"\s*:\s*")[^"]*/giu, '$1[redacted]')
 }
 
 /** Render the filtered directory and user-confirmed installer.
  * @param props Remote operations, locale, and sidebar-owned visibility state.
- * @returns the SkillHub modal while it is open.
+ * @returns the SkillsMP modal while it is open.
  */
 export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNode {
   const { open } = useStore(state => state)
+  const locale: SkillsMpLocale = t('locale') === 'zh' ? 'zh' : 'en'
+  const advancedFiltersId = useId().replaceAll(':', '')
   const [draft, setDraft] = useState('')
   const [query, setQuery] = useState('')
-  const [category, setCategory] = useState('all')
-  const [source, setSource] = useState('all')
-  const [apiKey, setApiKey] = useState<SkillHubApiKeyFilter>('all')
-  const [sort, setSort] = useState<SkillHubSort>('score')
+  const [categoryDraft, setCategoryDraft] = useState('')
+  const [category, setCategory] = useState('')
+  const [occupationDraft, setOccupationDraft] = useState('')
+  const [occupation, setOccupation] = useState('')
+  const [languageDraft, setLanguageDraft] = useState('')
+  const [language, setLanguage] = useState('')
+  const [sortDraft, setSortDraft] = useState<SkillsMpSort>('stars')
+  const [sort, setSort] = useState<SkillsMpSort>('stars')
+  const [taxonomyByLocale, setTaxonomyByLocale] = useState<Partial<Record<SkillsMpLocale, SkillsMpTaxonomy>>>({})
+  const [taxonomyBusy, setTaxonomyBusy] = useState(false)
+  const [taxonomyError, setTaxonomyError] = useState('')
+  const [taxonomyForceRefresh, setTaxonomyForceRefresh] = useState(0)
+  const consumedTaxonomyRefresh = useRef(0)
+  const [advanced, setAdvanced] = useState(false)
   const [pageNumber, setPageNumber] = useState(1)
-  const [page, setPage] = useState<SkillHubPage>()
-  const [observedCategories, setObservedCategories] = useState<readonly string[]>([])
-  const [observedSources, setObservedSources] = useState<readonly string[]>([])
+  const [page, setPage] = useState<SkillsMpPage>()
   const [resolvedKey, setResolvedKey] = useState('')
   const [retry, setRetry] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [selectedIdentity, setSelectedIdentity] = useState<string>()
-  const [detail, setDetail] = useState<SkillHubDetail>()
+  const [errorDetails, setErrorDetails] = useState('')
+  const [selected, setSelected] = useState<{ githubUrl: string; name: string }>()
+  const [detail, setDetail] = useState<SkillsMpDetail>()
   const [installing, setInstalling] = useState(false)
   const [notice, setNotice] = useState('')
   const installController = useRef<AbortController | undefined>(undefined)
   const [confirming, setConfirming] = useState(false)
+  const selectedDetail = selected !== undefined && detail?.skill.githubUrl === selected.githubUrl ? detail : undefined
+  const taxonomy = taxonomyByLocale[locale]
+  const categoryOptions = useMemo<readonly CategoryOption[]>(() => taxonomy?.categories.map(category => ({
+    slug: category.slug,
+    name: category.name,
+    ...(category.group === undefined ? {} : { group: category.group }),
+  })) ?? [], [taxonomy])
+  useEffect(() => () => { installController.current?.abort(new Error('SkillsMP catalog panel was unmounted.')) }, [])
 
-  useEffect(() => () => { installController.current?.abort(new Error('Skill catalog panel was unmounted.')) }, [])
+  useEffect(() => {
+    if (!open) {
+      setTaxonomyBusy(false)
+      return
+    }
+    const controller = new AbortController()
+    const forceRefresh = taxonomyForceRefresh > consumedTaxonomyRefresh.current
+    if (forceRefresh) consumedTaxonomyRefresh.current = taxonomyForceRefresh
+    setTaxonomyBusy(true)
+    setTaxonomyError('')
+    void api.taxonomy(locale, forceRefresh, controller.signal).then((result) => {
+      if (controller.signal.aborted) return
+      if (!result.ok) throw result.error
+      setTaxonomyByLocale(current => ({ ...current, [locale]: result.value }))
+    }).catch((reason: unknown) => {
+      if (!controller.signal.aborted) setTaxonomyError(errorMessage(reason, t))
+    }).finally(() => { if (!controller.signal.aborted) setTaxonomyBusy(false) })
+    return () => { controller.abort() }
+  }, [api, locale, open, taxonomyForceRefresh, t])
 
-  const requestKey = JSON.stringify([query, category, source, apiKey, sort, pageNumber])
+  const requestKey = JSON.stringify([query, category, occupation, language, sort, pageNumber])
   const currentPage = resolvedKey === requestKey
   useEffect(() => {
-    if (!open) return
+    if (!open || query.trim() === '' || selected !== undefined) {
+      setBusy(false)
+      return
+    }
     const controller = new AbortController()
     setBusy(true)
     setError('')
-    void api.catalog(query, category, source, apiKey, sort, pageNumber, PAGE_SIZE, controller.signal).then((result) => {
+    setErrorDetails('')
+    void api.catalog(
+      query.trim(), category || undefined, occupation || undefined, language || undefined,
+      sort, pageNumber, PAGE_SIZE, controller.signal,
+    ).then((result) => {
+      if (controller.signal.aborted) return
       if (!result.ok) throw result.error
       setPage(result.value)
-      setObservedCategories(current => [...new Set([
-        ...current,
-        ...result.value.items.map(skill => skill.category.trim()).filter(value => value !== '' && value !== 'all'),
-      ])].sort((left, right) => left.localeCompare(right)))
-      setObservedSources(current => [...new Set([
-        ...current,
-        ...result.value.items.map(skill => skill.source.trim()).filter(value => value !== '' && value !== 'all'),
-      ])].sort((left, right) => left.localeCompare(right)))
       setResolvedKey(requestKey)
     }).catch((reason: unknown) => {
-      if (!controller.signal.aborted) setError(errorMessage(reason, t))
+      if (!controller.signal.aborted) { setError(errorMessage(reason, t)); setErrorDetails(diagnosticMessage(reason)) }
     }).finally(() => { if (!controller.signal.aborted) setBusy(false) })
     return () => { controller.abort() }
-  }, [api, apiKey, category, open, pageNumber, query, requestKey, retry, sort, source])
+  }, [api, category, language, occupation, open, pageNumber, query, requestKey, retry, selected, sort])
 
   useEffect(() => {
-    if (!open || selectedIdentity === undefined) return
+    if (!open || selected === undefined) return
     const controller = new AbortController()
     setDetail(undefined)
     setError('')
-    void api.detail(selectedIdentity, controller.signal).then((result) => {
+    setErrorDetails('')
+    void api.detail(selected.githubUrl, controller.signal).then((result) => {
+      if (controller.signal.aborted) return
       if (!result.ok) throw result.error
       setDetail(result.value)
     }).catch((reason: unknown) => {
-      if (!controller.signal.aborted) setError(errorMessage(reason, t))
+      if (!controller.signal.aborted) { setError(errorMessage(reason, t)); setErrorDetails(diagnosticMessage(reason)) }
     })
     return () => { controller.abort() }
-  }, [api, open, selectedIdentity, retry])
+  }, [api, open, retry, selected])
 
-  const close = (): void => { setSelectedIdentity(undefined); setDetail(undefined); actions.close() }
-  const search = (event: FormEvent<HTMLFormElement>): void => { event.preventDefault(); setPageNumber(1); setQuery(draft.trim()) }
-  const filter = (update: () => void): void => { update(); setPageNumber(1) }
+  const close = (): void => { setSelected(undefined); setDetail(undefined); actions.close() }
+  const submit = (value: string): void => {
+    const trimmed = value.trim()
+    setDraft(trimmed)
+    setCategory(categoryDraft.trim())
+    setOccupation(occupationDraft.trim())
+    setLanguage(languageDraft.trim())
+    setSort(sortDraft)
+    setPageNumber(1)
+    setQuery(trimmed)
+  }
+  const search = (event: FormEvent<HTMLFormElement>): void => { event.preventDefault(); submit(draft) }
   const confirmInstall = async (): Promise<void> => {
-    if (detail === undefined || installing) return
+    if (selectedDetail === undefined || installing) return
     const controller = new AbortController()
     installController.current = controller
     setInstalling(true)
     setError('')
+    setErrorDetails('')
     setNotice('')
     try {
-      const result = await api.installSkill(detail.skill.canonicalName ?? '', detail.skill.version, true, controller.signal)
+      const result = await api.installSkill(selectedDetail.skill.githubUrl, selectedDetail.commitSha, true, controller.signal)
       if (!result.ok) throw result.error
       setNotice(result.value.backupCleanupPending === undefined ? t('installed') : t('backupPending', { path: result.value.backupCleanupPending }))
-      setSelectedIdentity(undefined)
+      setSelected(undefined)
       setDetail(undefined)
-    } catch (reason) { if (!controller.signal.aborted) setError(errorMessage(reason, t)) }
+    } catch (reason) { if (!controller.signal.aborted) { setError(errorMessage(reason, t)); setErrorDetails(diagnosticMessage(reason)) } }
     finally { installController.current = undefined; setInstalling(false); setConfirming(false) }
   }
 
@@ -156,81 +231,127 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
       <div className={css.panel}>
         <header className={css.header}><div><h2 className={css.title}>{t('title')}</h2><p className={css.description}>{t('description')}</p></div>
           <button type="button" className={css.iconButton} aria-label={t('close')} onClick={close} disabled={installing}><IconCloseOutlineRegular size={16} /></button></header>
-        {selectedIdentity === undefined ? <>
+        {selected === undefined ? <>
           <form className={css.search} onSubmit={search}>
             <Input type="search" value={draft} aria-label={t('searchPlaceholder')} placeholder={t('searchPlaceholder')} icon={<IconSearchOutlineRegular size={16} />} onChange={(event) => { setDraft(event.currentTarget.value) }} />
-            <Button variant="primary" type="submit" disabled={busy}>{t('search')}</Button>
+            <Button variant="primary" type="submit" disabled={draft.trim() === ''}>{t('search')}</Button>
           </form>
-          <div className={css.filters}>
-            <label>{t('category')}<select value={category} onChange={(event) => {
-              filter(() => { setCategory(event.currentTarget.value) })
-            }}>
-              <option value="all">{t('all')}</option>
-              {observedCategories.map(value => <option key={value} value={value}>{value}</option>)}
-              {category !== 'all' && !observedCategories.includes(category) ? <option value={category}>{category}</option> : null}
-            </select></label>
-            <label>{t('source')}<select value={source} onChange={(event) => {
-              filter(() => { setSource(event.currentTarget.value) })
-            }}>
-              <option value="all">{t('all')}</option>
-              <option value="official">{t('official')}</option>
-              <option value="community">{t('community')}</option>
-              {observedSources.filter(value => value !== 'official' && value !== 'community').map(value => <option key={value} value={value}>{value}</option>)}
-              {source !== 'all' && !observedSources.includes(source) && source !== 'official' && source !== 'community' ? <option value={source}>{source}</option> : null}
-            </select></label>
-            <label>{t('apiKey')}<select value={apiKey} onChange={(event) => {
-              filter(() => { setApiKey(event.currentTarget.value as SkillHubApiKeyFilter) })
-            }}>
-              <option value="all">{t('all')}</option><option value="required">{t('required')}</option><option value="none">{t('none')}</option>
-            </select></label>
-            <label>{t('sort')}<select value={sort} onChange={(event) => {
-              filter(() => { setSort(event.currentTarget.value as SkillHubSort) })
-            }}>
-              {SORTS.map(value => <option key={value} value={value}>{t(value satisfies SkillCatalogKey)}</option>)}
-            </select></label>
+          {query === '' ? <section className={css.scenarios} aria-label={t('useCasesTitle')}>
+            <p className={css.scenarioHeading}>{t('useCasesTitle')}</p>
+            <div className={css.scenarioButtons}>{USE_CASES.map(([key, value]) => <Button key={key} variant="primary" size="sm" onClick={() => { submit(value) }}>{t(key satisfies SkillCatalogKey)}</Button>)}</div>
+          </section> : null}
+          <div className={css.advanced}>
+            <button
+              type="button"
+              className={css.advancedToggle}
+              aria-expanded={advanced}
+              aria-controls={advancedFiltersId}
+              onClick={() => { setAdvanced(value => !value) }}
+            >{t('advancedFilters')}</button>
+            {advanced ? <section id={advancedFiltersId} className={css.advancedContent} aria-label={t('advancedFilters')}>
+              <div className={css.filters}>
+                <div className={css.filterField} role="group" aria-label={t('category')}>
+                  <span className={css.filterLabel}>{t('category')}</span>
+                  {taxonomy === undefined
+                    ? <button type="button" className={css.occupationTrigger} disabled={taxonomyBusy} onClick={() => { setTaxonomyForceRefresh(value => value + 1) }}>{taxonomyBusy ? t('taxonomyLoading') : t('retry')}</button>
+                    : <CategoryCascader
+                      label={t('category')}
+                      value={categoryDraft}
+                      options={categoryOptions}
+                      allLabel={t('allCategories')}
+                      otherGroupLabel={t('otherCategories')}
+                      searchLabel={t('searchCategories')}
+                      noResultsLabel={t('noFilterOptions')}
+                      domainsLabel={t('categoryDomains')}
+                      categoriesLabel={t('categoryOptions')}
+                      backLabel={t('backToDomains')}
+                      onChange={setCategoryDraft}
+                    />}
+                </div>
+                <div className={css.filterField} role="group" aria-label={t('occupation')}>
+                  <span className={css.filterLabel}>{t('occupation')}</span>
+                  {taxonomy === undefined
+                    ? <button type="button" className={css.occupationTrigger} disabled={taxonomyBusy} onClick={() => { setTaxonomyForceRefresh(value => value + 1) }}>{taxonomyBusy ? t('taxonomyLoading') : t('retry')}</button>
+                    : <OccupationCascader
+                      label={t('occupation')}
+                      value={occupationDraft}
+                      taxonomy={taxonomy}
+                      allLabel={t('allOccupations')}
+                      pickerTitle={t('occupationPickerTitle')}
+                      pickerDescription={t('occupationPickerDescription')}
+                      searchLabel={t('searchOccupations')}
+                      noResultsLabel={t('noFilterOptions')}
+                      majorGroupsLabel={t('occupationMajorGroups')}
+                      selectGroupLabel={name => t('selectOccupationGroup', { name })}
+                      collapseGroupLabel={name => t('collapseOccupationGroup', { name })}
+                      expandGroupLabel={name => t('expandOccupationGroup', { name })}
+                      clearSelectionLabel={t('allOccupations')}
+                      closeLabel={t('close')}
+                      onChange={setOccupationDraft}
+                    />}
+                </div>
+                <label>{t('language')}<select value={languageDraft} onChange={(event) => { setLanguageDraft(event.currentTarget.value) }}>
+                  <option value="">{t('anyLanguage')}</option>
+                  {LANGUAGES.map(value => <option key={value} value={value}>{t(`language_${value}` satisfies SkillCatalogKey)}</option>)}
+                </select></label>
+                <label>{t('sort')}<select value={sortDraft} onChange={(event) => {
+                  const selectedSort = SORTS.find(value => value === event.currentTarget.value)
+                  if (selectedSort !== undefined) setSortDraft(selectedSort)
+                }}>
+                  {SORTS.map(value => <option key={value} value={value}>{t(value satisfies SkillCatalogKey)}</option>)}
+                </select></label>
+                <Button variant="primary" size="sm" disabled={taxonomy === undefined || taxonomyBusy} onClick={() => { submit(query) }}>{t('applyFilters')}</Button>
+              </div>
+              {taxonomyBusy ? <p className={css.status} role="status">{t('taxonomyLoading')}</p> : null}
+              <div className={css.taxonomyActions}>
+                <Button variant="outline" size="sm" disabled={taxonomyBusy} onClick={() => { setTaxonomyForceRefresh(value => value + 1) }}>{t('refreshTaxonomy')}</Button>
+              </div>
+              {taxonomyError !== '' ? <div className={css.error} role="alert"><span>{taxonomyError}</span><Button variant="outline" size="sm" disabled={taxonomyBusy} onClick={() => { setTaxonomyForceRefresh(value => value + 1) }}>{t('retry')}</Button></div> : null}
+            </section> : null}
           </div>
           {notice !== '' ? <p className={css.notice} role="status">{notice}</p> : null}
-          {error !== '' ? <div className={css.error} role="alert"><span>{error}</span><Button variant="outline" size="sm" onClick={() => { setRetry(value => value + 1) }}>{t('retry')}</Button></div> : null}
+          {error !== '' ? <div className={css.error} role="alert"><span>{error}</span>{errorDetails !== '' ? <details className={css.errorDetails}><summary>{t('technicalDetails')}</summary><pre>{errorDetails}</pre></details> : null}<Button variant="outline" size="sm" onClick={() => { setRetry(value => value + 1) }}>{t('retry')}</Button></div> : null}
           <div className={css.results} aria-busy={busy}>
+            {query === '' ? <p className={css.status}>{t('searchPrompt')}</p> : null}
             {busy && !currentPage ? <p className={css.status} role="status">{t('loading')}</p> : null}
-            {currentPage ? page?.items.map((skill, index) => <article key={`${skill.canonicalName ?? skill.slug}:${index}`} className={css.row}>
+            {currentPage ? page?.items.map((skill, index) => <article key={`${skill.id}:${index}`} className={css.row}>
               <div className={css.skill}>
-                <button type="button" className={css.skillName} onClick={() => { setSelectedIdentity(skill.canonicalName ?? ''); setNotice('') }}>{skill.name}</button>
-                <span className={css.slug}>{skill.canonicalName ?? skill.slug} · {skill.version}</span>
+                <button type="button" className={css.skillName} onClick={() => { setSelected({ githubUrl: skill.githubUrl, name: skill.name }); setNotice('') }}>{skill.name}</button>
+                <span className={css.slug}>{skill.author} · {skill.contentLanguage}</span>
                 <p className={css.summary}>{skill.description}</p>
               </div>
-              <span className={css.category}>{skill.category || t('all')}</span>
-              <span className={css.metric} title={t('downloads')}>{skill.downloads.toLocaleString()}</span>
-              <Button variant="outline" size="sm" onClick={() => { setSelectedIdentity(skill.canonicalName ?? ''); setNotice('') }}>{t('detail')}</Button>
+              <span className={css.metric} title={t('starsMeaning')}>★ {skill.stars.toLocaleString()}</span>
+              <span className={css.date}>{t('updatedAt', { date: new Date(skill.updatedAt * 1000).toLocaleDateString(t('dateLocale')) })}</span>
+              <Button variant="outline" size="sm" onClick={() => { setSelected({ githubUrl: skill.githubUrl, name: skill.name }); setNotice('') }}>{t('detail')}</Button>
             </article>) : null}
             {currentPage && page?.items.length === 0 && !busy ? <p className={css.status}>{t('empty')}</p> : null}
           </div>
-          {currentPage && page !== undefined ? <footer className={css.pagination}><span>{page.total === 0 ? `0 ${t('results')}` : `${t('page', { page: String(pageNumber), total: String(Math.ceil(page.total / PAGE_SIZE)) })} · ${page.total.toLocaleString()} ${t('results')}`}</span>
+          {currentPage && page !== undefined ? <footer className={css.pagination}>
+            <span>{t('page', { page: String(pageNumber) })} · {page.totalIsExact ? t('exactTotal', { total: page.total.toLocaleString() }) : t('pageResults', { count: String(page.items.length) })}</span>
             <div><Button variant="outline" size="sm" disabled={busy || pageNumber <= 1} onClick={() => { setPageNumber(value => value - 1) }}>{t('previous')}</Button>
-              <Button variant="outline" size="sm" disabled={busy || pageNumber >= Math.ceil(page.total / PAGE_SIZE)} onClick={() => { setPageNumber(value => value + 1) }}>{t('next')}</Button></div>
+              <Button variant="outline" size="sm" disabled={busy || !page.hasNext} onClick={() => { setPageNumber(value => value + 1) }}>{t('next')}</Button></div>
           </footer> : null}
         </> : <>
-          <div className={css.detailHeader}><Button variant="outline" size="sm" disabled={installing} onClick={() => { setSelectedIdentity(undefined); setDetail(undefined); setError('') }}>{t('back')}</Button></div>
-          {error !== '' ? <div className={css.error} role="alert"><span>{error}</span><Button variant="outline" size="sm" onClick={() => { setRetry(value => value + 1) }}>{t('retry')}</Button></div> : null}
-          {detail === undefined ? error === '' ? <p className={css.status} role="status">{t('loading')}</p> : null : <section className={css.detail}>
-            <h3>{detail.skill.name}</h3><p>{detail.skill.description}</p>
-            <dl><dt>{t('publisher')}</dt><dd>{detail.owner || detail.skill.source}</dd><dt>{t('version')}</dt><dd>{detail.skill.version}</dd><dt>{t('size')}</dt><dd>{t('bytes', { count: detail.totalBytes.toLocaleString() })}</dd></dl>
-            {detail.skill.requiresApiKey ? <p className={css.warning}>{t('apiRequired')}</p> : null}
-            <h4>{t('changelog')}</h4><p className={css.changelog}>{detail.changelog || '—'}</p>
-            <h4>{t('files')}</h4><ul className={css.files}>{detail.files.map(file => <li key={file.path}><code>{file.path}</code><span>{t('bytes', { count: file.size.toLocaleString() })}</span></li>)}</ul>
+          <div className={css.detailHeader}><Button variant="outline" size="sm" disabled={installing} onClick={() => { setSelected(undefined); setDetail(undefined); setError('') }}>{t('back')}</Button></div>
+          {error !== '' ? <div className={css.error} role="alert"><span>{error}</span>{errorDetails !== '' ? <details className={css.errorDetails}><summary>{t('technicalDetails')}</summary><pre>{errorDetails}</pre></details> : null}<Button variant="outline" size="sm" onClick={() => { setRetry(value => value + 1) }}>{t('retry')}</Button></div> : null}
+          {selectedDetail === undefined ? error === '' ? <p className={css.status} role="status">{t('loading')}</p> : null : <section className={css.detail}>
+            <h3>{selectedDetail.skill.name}</h3><p>{selectedDetail.skill.description}</p>
+            <dl><dt>{t('author')}</dt><dd>{selectedDetail.skill.author}</dd><dt>{t('contentLanguage')}</dt><dd>{selectedDetail.skill.contentLanguage}</dd><dt>{t('source')}</dt><dd><a href={selectedDetail.skill.url} target="_blank" rel="noopener noreferrer">{t('openSkillsMp')}</a> · <a href={selectedDetail.skill.githubUrl} target="_blank" rel="noopener noreferrer">{t('openGitHub')}</a></dd><dt>{t('commit')}</dt><dd><code>{selectedDetail.commitSha}</code></dd><dt>{t('stars')}</dt><dd>{selectedDetail.skill.stars.toLocaleString()} · {t('starsMeaning')}</dd><dt>{t('size')}</dt><dd>{t('bytes', { count: selectedDetail.totalBytes.toLocaleString() })}</dd></dl>
+            <h4>{t('files')}</h4><ul className={css.files}>{selectedDetail.files.map(file => <li key={file.path}><code>{file.path}</code><span>{t('bytes', { count: file.size.toLocaleString() })}</span></li>)}</ul>
+            <h4>{t('skillMarkdown')}</h4><pre className={css.markdownPreview}>{selectedDetail.skillMarkdown}</pre>
             {installing && !confirming ? <div className={css.installing}><span role="status">{t('installing')}</span></div> : null}
             <Button variant="primary" disabled={installing} onClick={() => { setConfirming(true) }}>{t('install')}</Button>
           </section>}
         </>}
       </div>
     </Modal>
-    {detail !== undefined ? <Modal open={confirming} onClose={() => { if (!installing) setConfirming(false) }} title={t('reviewTitle')} closeLabel={t('closeReview')} description={t('reviewBody')} footer={<>
-      <Button variant="outline" onClick={() => { if (installing) installController.current?.abort(new Error('Skill installation cancelled.')); else setConfirming(false) }}>{t('cancel')}</Button>
+    {selectedDetail !== undefined ? <Modal open={confirming} onClose={() => { if (!installing) setConfirming(false) }} title={t('reviewTitle')} closeLabel={t('closeReview')} className={css.confirmDialog ?? ''} description={t('reviewBody')} footer={<>
+      <Button variant="outline" className={css.cancelButton} onClick={() => { if (installing) installController.current?.abort(new Error('Skill installation cancelled.')); else setConfirming(false) }}>{t('cancel')}</Button>
       <Button variant="primary" disabled={installing} onClick={() => { void confirmInstall() }}>{t('confirmInstall')}</Button>
     </>}>
-      <p>{t('confirmBody', { name: detail.skill.name, version: detail.skill.version })}</p>
+      <p>{t('confirmBody', { name: selectedDetail.skill.name, commit: selectedDetail.commitSha, files: selectedDetail.files.length, target: t('installTarget') })}</p>
       {installing ? <div className={css.installing}><span role="status">{t('installing')}</span></div> : null}
-      {error !== '' ? <p className={css.error} role="alert">{error}</p> : null}
+      {error !== '' ? <div className={css.error} role="alert"><span>{error}</span>{errorDetails !== '' ? <details className={css.errorDetails}><summary>{t('technicalDetails')}</summary><pre>{errorDetails}</pre></details> : null}</div> : null}
     </Modal> : null}
   </>
 }

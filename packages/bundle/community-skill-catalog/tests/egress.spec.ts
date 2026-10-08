@@ -1,422 +1,227 @@
-import { createServer as createHttpServer, type Server as HttpServer } from 'node:http'
-import { createServer as createHttpsServer, type Server as HttpsServer } from 'node:https'
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
-import { connect, type AddressInfo } from 'node:net'
-import { createHash } from 'node:crypto'
-import { tmpdir } from 'node:os'
-import { basename, dirname, join } from 'node:path'
-import type { Duplex } from 'node:stream'
-import * as tls from 'node:tls'
-import { zipSync } from 'fflate'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import { installProxyFromEnvironment } from '@deepseek-ai/dsh-http-proxy'
-import { parseSkillHubIdentity, SkillHubCatalog } from '../src/host/skillhub-catalog.ts'
-import { testCa, testCert, testKey } from './tls-fixture.ts'
+import type { LookupAddress, LookupOptions } from 'node:dns'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const { lookup } = vi.hoisted(() => ({ lookup: vi.fn() }))
-vi.mock('node:dns/promises', () => ({ lookup }))
+type FetchMock = (input: URL | RequestInfo, init?: RequestInit) => Promise<Response>
+type PinnedLookup = (
+  hostname: string,
+  options: LookupOptions,
+  callback: (error: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => void,
+) => void
+const { fetchMock, lookupMock, agentLookups, proxyState } = vi.hoisted(() => ({
+  fetchMock: vi.fn<FetchMock>(),
+  lookupMock: vi.fn(),
+  agentLookups: [] as (PinnedLookup | undefined)[],
+  proxyState: { dispatcher: { close: async () => {} } },
+}))
+vi.mock('undici', () => ({
+  Agent: class {
+    constructor(options?: { readonly connect?: { readonly lookup?: PinnedLookup } }) {
+      agentLookups.push(options?.connect?.lookup)
+    }
+    close(): Promise<void> { return Promise.resolve() }
+  },
+  Pool: class { close(): Promise<void> { return Promise.resolve() } },
+  ProxyAgent: class { close(): Promise<void> { return Promise.resolve() } },
+  getGlobalDispatcher: () => proxyState.dispatcher,
+  setGlobalDispatcher: (dispatcher: { close: () => Promise<void> }) => { proxyState.dispatcher = dispatcher },
+  fetch: fetchMock,
+}))
+vi.mock('node:dns/promises', () => ({ lookup: lookupMock }))
 
-let proxy: HttpServer | undefined
-let origin: HttpsServer | undefined
-let proxyUrl: string
-let endpoint: string
-let disposeProxy: (() => Promise<void>) | undefined
-let originalCertificates: string[] | undefined
-let connectTargets: string[]
-let originPaths: string[]
-const sockets = new Set<Duplex>()
-let responseForPath: (path: string) => { status: number; body: unknown }
-let heldArchive: { readonly path: string; readonly started: Deferred<void>; readonly closed: Deferred<void> } | undefined
+import { SkillsMpCatalog } from '../src/host/skillsmp-catalog.ts'
 
-interface Deferred<T> { readonly promise: Promise<T>; resolve(value: T): void }
-
-function deferred<T>(): Deferred<T> {
-  let resolve!: (value: T) => void
-  const promise = new Promise<T>((resolvePromise) => { resolve = resolvePromise })
-  return { promise, resolve }
+const SEARCH_RESPONSE = {
+  success: true,
+  data: { skills: [{ id: 'owner-skill', name: 'skill', author: 'owner', description: '', contentLanguage: 'en', githubUrl: 'https://github.com/owner/repo/tree/main/skill', skillUrl: 'https://skillsmp.com/creators/owner/repo/skill', stars: 1, updatedAt: 1 }], pagination: { page: 1, limit: 24, total: 1, totalPages: 1, hasNext: false, hasPrev: false, totalIsExact: true }, filters: { search: 'query', sortBy: 'stars' } },
+  meta: {},
+}
+const COMMIT = 'a'.repeat(40)
+const SKILL_TEXT = '---\nname: skill\ndescription: TUN routed skill.\n---\n\n# TUN routed skill\n'
+const SKILL_BYTES = Buffer.from(SKILL_TEXT)
+const DOWNLOAD_TARGET = { owner: 'owner', repo: 'repo', branch: 'main', path: 'skill' }
+const DOWNLOAD_TOKEN = 'short-lived-token'
+const DOWNLOAD_MANIFEST = {
+  commitSha: COMMIT,
+  files: [{ path: 'SKILL.md', size: SKILL_BYTES.byteLength, rawUrl: `https://raw.githubusercontent.com/owner/repo/${COMMIT}/skill/SKILL.md` }],
+  limitReason: null,
+  skippedFiles: 0,
+  truncated: false,
 }
 
-function own(socket: Duplex): void {
-  sockets.add(socket)
-  socket.once('close', () => sockets.delete(socket))
+function requestUrl(input: URL | RequestInfo): URL {
+  if (input instanceof URL) return input
+  return new URL(typeof input === 'string' ? input : input.url)
 }
 
-function listen(server: HttpServer | HttpsServer): Promise<AddressInfo> {
-  return new Promise((resolve, reject) => {
-    server.once('error', reject)
-    server.listen(0, '127.0.0.1', () => {
-      server.removeListener('error', reject)
-      resolve(server.address() as AddressInfo)
-    })
+function response(body: unknown, status = 200, headers?: HeadersInit): Response {
+  const responseBody = body instanceof Uint8Array ? Buffer.from(body) : JSON.stringify(body)
+  return new Response(responseBody, { status, ...(headers === undefined ? {} : { headers }) })
+}
+
+afterEach(() => { fetchMock.mockReset(); lookupMock.mockReset(); agentLookups.length = 0 })
+
+describe('SkillsMP outbound requests', () => {
+  it.each([
+    ['loopback', '127.0.0.1', 4],
+    ['10/8', '10.1.2.3', 4],
+    ['172.16/12', '172.16.0.1', 4],
+    ['192.168/16', '192.168.0.1', 4],
+    ['link-local', '169.254.1.1', 4],
+    ['IPv6 unique-local', 'fc00::1', 6],
+  ])('rejects %s DNS answers before issuing HTTP', async (_range, address, family) => {
+    lookupMock.mockResolvedValue([{ address, family }])
+    const catalog = new SkillsMpCatalog(new Context(), {})
+
+    await expect(catalog.catalog('query')).rejects.toThrow('did not resolve exclusively to public addresses')
+    expect(fetchMock).not.toHaveBeenCalled()
   })
-}
 
-function close(server: HttpServer | HttpsServer | undefined): Promise<void> {
-  if (server === undefined || !server.listening) return Promise.resolve()
-  return new Promise((resolve, reject) => {
-    server.close((error) => {
-      if (error) reject(error)
-      else resolve()
+  it('allows the TUN answer for each trusted HTTPS origin and pins it without changing the host', async () => {
+    lookupMock.mockResolvedValue([{ address: '198.18.1.24', family: 4 }])
+    fetchMock.mockImplementation(async (input: URL | RequestInfo) => {
+      const url = requestUrl(input)
+      if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/v1/skills/search') return response(SEARCH_RESPONSE)
+      if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/github-contents/token') return response({ token: DOWNLOAD_TOKEN, target: DOWNLOAD_TARGET })
+      if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/github-contents') return response(DOWNLOAD_MANIFEST)
+      if (url.origin === 'https://raw.githubusercontent.com') return response(SKILL_BYTES)
+      return response({}, 404)
     })
-  })
-}
+    const catalog = new SkillsMpCatalog(new Context(), {})
 
-function environment(noProxy?: string): { get(name: string): { value: string } | undefined } {
-  return {
-    get(name) {
-      if (name === 'HTTPS_PROXY') return { value: proxyUrl }
-      if (name === 'NO_PROXY' && noProxy !== undefined) return { value: noProxy }
-      return undefined
-    },
-  }
-}
+    await catalog.catalog('query')
+    await catalog.detail('https://github.com/owner/repo/tree/main/skill')
 
-async function installPolicy(noProxy?: string): Promise<void> {
-  disposeProxy = await installProxyFromEnvironment(environment(noProxy), () => undefined)
-}
-
-async function installLiveProxy(proxyUrl: string): Promise<void> {
-  vi.stubEnv('HTTPS_PROXY', proxyUrl)
-  disposeProxy = await installProxyFromEnvironment({
-    get: name => name === 'HTTPS_PROXY' ? { value: process.env.HTTPS_PROXY! } : undefined,
-  }, () => undefined)
-}
-
-async function teardown(): Promise<void> {
-  let failure: unknown
-  const dispose = disposeProxy
-  disposeProxy = undefined
-  try { await dispose?.() }
-  catch (error: unknown) { failure = error }
-  for (const socket of sockets) socket.destroy()
-  const closed = await Promise.allSettled([close(proxy), close(origin)])
-  for (const result of closed) {
-    if (result.status === 'rejected' && failure === undefined) failure = result.reason
-  }
-  proxy = undefined
-  origin = undefined
-  const certificates = originalCertificates
-  originalCertificates = undefined
-  try {
-    if (certificates !== undefined) tls.setDefaultCACertificates(certificates)
-  } catch (error: unknown) {
-    failure ??= error
-  } finally {
-    vi.unstubAllEnvs()
-    vi.restoreAllMocks()
-    sockets.clear()
-  }
-  if (failure !== undefined) throw failure
-}
-
-beforeEach(async () => {
-  connectTargets = []
-  originPaths = []
-  responseForPath = () => ({ status: 200, body: { skills: [], total: 0 } })
-  heldArchive = undefined
-  sockets.clear()
-  lookup.mockReset().mockResolvedValue([{ address: '198.18.1.24', family: 4 }])
-  try {
-    originalCertificates = tls.getCACertificates('default')
-    tls.setDefaultCACertificates([...originalCertificates, testCa])
-
-    origin = createHttpsServer({ key: testKey, cert: testCert }, (request, response) => {
-      originPaths.push(request.url ?? '')
-      if (heldArchive !== undefined && request.url === heldArchive.path) {
-        response.writeHead(200, { 'content-type': 'application/zip' })
-        response.write(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
-        heldArchive.started.resolve(undefined)
-        response.once('close', () => { heldArchive?.closed.resolve(undefined) })
-        return
-      }
-      const result = responseForPath(request.url ?? '')
-      if (result.body instanceof Uint8Array) {
-        response.writeHead(result.status, { 'content-type': 'application/zip', 'content-length': String(result.body.byteLength) })
-        response.end(result.body)
-      } else {
-        response.writeHead(result.status, { 'content-type': 'application/json' })
-        response.end(typeof result.body === 'string' ? result.body : JSON.stringify(result.body))
-      }
-    })
-    origin.on('connection', (socket) => { own(socket) })
-    const originAddress = await listen(origin)
-
-    proxy = createHttpServer()
-    proxy.on('connection', (socket) => { own(socket) })
-    proxy.on('connect', (request, client, head) => {
-      own(client)
-      connectTargets.push(request.url ?? '')
-      const upstream = connect(originAddress.port, '127.0.0.1')
-      own(upstream)
-      client.on('error', () => upstream.destroy())
-      upstream.on('error', () => {
-        if (!client.destroyed) client.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n')
+    const requests = fetchMock.mock.calls.map(([input]) => requestUrl(input))
+    expect(new Set(requests.map(url => url.origin))).toEqual(new Set([
+      'https://skillsmp.com', 'https://raw.githubusercontent.com',
+    ]))
+    expect(lookupMock).toHaveBeenCalledTimes(requests.length)
+    expect(agentLookups).toHaveLength(requests.length)
+    for (const [index, url] of requests.entries()) {
+      expect(lookupMock).toHaveBeenNthCalledWith(index + 1, url.hostname, { all: true, order: 'verbatim' })
+      const pinnedLookup = agentLookups[index]
+      if (pinnedLookup === undefined) throw new Error(`Direct HTTPS request ${index} did not receive a pinned lookup.`)
+      let resolved: string | LookupAddress[] | undefined
+      pinnedLookup(url.hostname, { all: true }, (error, address) => {
+        if (error !== null) throw error
+        resolved = address
       })
-      upstream.once('connect', () => {
-        if (client.destroyed) { upstream.destroy(); return }
-        client.write('HTTP/1.1 200 Connection Established\r\n\r\n')
-        if (head.length > 0) upstream.write(head)
-        upstream.pipe(client)
-        client.pipe(upstream)
-      })
+      expect(resolved).toEqual([{ address: '198.18.1.24', family: 4 }])
+    }
+  })
+
+  it('does not resolve locally when the explicit HTTPS proxy handles the request', async () => {
+    fetchMock.mockResolvedValue(response(SEARCH_RESPONSE))
+    const dispose = await installProxyFromEnvironment({
+      get(name) { return name === 'HTTPS_PROXY' ? { value: 'http://proxy.test:8080' } : undefined },
+    }, () => undefined)
+    try {
+      const catalog = new SkillsMpCatalog(new Context(), {})
+      await catalog.catalog('query')
+      expect(lookupMock).not.toHaveBeenCalled()
+      expect(fetchMock).toHaveBeenCalledOnce()
+    } finally { await dispose() }
+  })
+
+  it.each([
+    'https://github.com.evil.test/owner/repo/tree/main/skill',
+    'https://198.18.1.24/owner/repo/tree/main/skill',
+  ])('does not issue requests for a malicious GitHub source URL: %s', async (githubUrl) => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    const skill = SEARCH_RESPONSE.data.skills[0]
+    if (skill === undefined) throw new Error('Search fixture has no skill.')
+    const malicious = { ...SEARCH_RESPONSE, data: { ...SEARCH_RESPONSE.data, skills: [{ ...skill, githubUrl }] } }
+    fetchMock.mockResolvedValue(response(malicious))
+    const catalog = new SkillsMpCatalog(new Context(), {})
+
+    await expect(catalog.catalog('query')).rejects.toMatchObject({ code: 'skillsmp/github-source-invalid' })
+    expect(fetchMock.mock.calls.map(([input]) => requestUrl(input).origin)).toEqual(['https://skillsmp.com'])
+  })
+
+  it.each([
+    [403, 'skillsmp/forbidden'],
+    [429, 'skillsmp/rate-limited'],
+  ])('returns a typed SkillsMP HTTP %s failure', async (status, code) => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    fetchMock.mockResolvedValue(response({ success: false }, status))
+    const catalog = new SkillsMpCatalog(new Context(), {})
+
+    await expect(catalog.catalog('query')).rejects.toMatchObject({ code, details: { status } })
+  })
+
+  it.each([
+    ['/api/github-contents/token', 429, 'skillsmp/rate-limited'],
+    ['/api/github-contents', 503, 'skillsmp/source-unavailable'],
+  ])('returns a typed SkillsMP source failure for %s HTTP %s', async (path, status, code) => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    fetchMock.mockImplementation(async (input: URL | RequestInfo) => {
+      const url = requestUrl(input)
+      if (url.pathname === '/api/v1/skills/search') return response(SEARCH_RESPONSE)
+      if (url.pathname === '/api/github-contents/token') {
+        return url.pathname === path ? response({}, status) : response({ token: DOWNLOAD_TOKEN, target: DOWNLOAD_TARGET })
+      }
+      if (url.pathname === path) return response({}, status)
+      return response(SKILL_BYTES)
     })
-    const proxyAddress = await listen(proxy)
-    proxyUrl = `http://127.0.0.1:${proxyAddress.port}`
-    endpoint = 'https://api.skillhub.test'
-  } catch (error: unknown) {
-    try { await teardown() }
-    catch (cleanupError: unknown) { throw new AggregateError([error, cleanupError], 'SkillHub egress fixture startup and cleanup both failed.') }
-    throw error
-  }
-})
+    const catalog = new SkillsMpCatalog(new Context(), {})
 
-afterEach(teardown)
+    await catalog.catalog('query')
+    await expect(catalog.detail('https://github.com/owner/repo/tree/main/skill')).rejects.toMatchObject({ code, details: { status } })
+  })
 
-describe('SkillHub outbound routing', () => {
-  it('parses a canonical namespace-qualified identity', () => {
-    expect(parseSkillHubIdentity('@alice/demo')).toEqual({
-      canonicalName: '@alice/demo', namespace: 'alice', skillSlug: 'demo',
+  it('rejects redirects from the SkillsMP endpoint', async () => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    fetchMock.mockResolvedValueOnce(response({}, 302, { location: 'https://raw.githubusercontent.com/attacker/repo/main/file' }))
+    const catalog = new SkillsMpCatalog(new Context(), {})
+
+    await expect(catalog.catalog('query')).rejects.toThrow('redirect')
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('keeps search credentials and temporary download tokens on SkillsMP only', async () => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    fetchMock.mockImplementation(async (input: URL | RequestInfo) => {
+      const url = requestUrl(input)
+      if (url.pathname === '/api/v1/skills/search') return response(SEARCH_RESPONSE)
+      if (url.pathname === '/api/github-contents/token') return response({ token: DOWNLOAD_TOKEN, target: DOWNLOAD_TARGET })
+      if (url.pathname === '/api/github-contents') return response(DOWNLOAD_MANIFEST)
+      if (url.hostname === 'raw.githubusercontent.com') return response(SKILL_BYTES)
+      return response({}, 404)
     })
-  })
-
-  it('sends HTTPS through the installed proxy without resolving the origin locally', async () => {
-    await installPolicy()
-
-    const page = await new SkillHubCatalog(new Context(), { endpoint }).catalog()
-
-    expect(page).toEqual({ items: [], total: 0 })
-    expect(connectTargets).toEqual(['api.skillhub.test:443'])
-    expect(originPaths).toEqual(['/api/skills?page=1&pageSize=24&sortBy=score&order=desc'])
-    expect(lookup).not.toHaveBeenCalled()
-  })
-
-  it('rejects a special-use fake-DNS answer when no proxy policy is installed', async () => {
-    await expect(new SkillHubCatalog(new Context(), { endpoint }).catalog())
-      .rejects.toThrow('did not resolve exclusively to public addresses')
-
-    expect(lookup).toHaveBeenCalledOnce()
-    expect(connectTargets).toEqual([])
-    expect(originPaths).toEqual([])
-  })
-
-  it('keeps NO_PROXY direct and rejects the same special-use fake-DNS answer', async () => {
-    await installPolicy('api.skillhub.test')
-
-    await expect(new SkillHubCatalog(new Context(), { endpoint }).catalog())
-      .rejects.toThrow('did not resolve exclusively to public addresses')
-
-    expect(lookup).toHaveBeenCalledOnce()
-    expect(connectTargets).toEqual([])
-    expect(originPaths).toEqual([])
-  })
-
-  it('blocks a duplicate slug before requesting its slug-only detail or files', async () => {
-    await installPolicy()
-    const identityPath = '/api/skills?slug=dev-expert&page=1&pageSize=100&sortBy=score&order=desc'
-    responseForPath = path => path === identityPath ? {
-      status: 200,
-      body: { total: 2, skills: [
-        { namespace: { canonicalName: '@first/dev-expert' }, slug: 'dev-expert', name: 'First', version: '1.0' },
-        { namespace: { canonicalName: '@second/dev-expert' }, slug: 'dev-expert', name: 'Second', version: '2.0' },
-      ] },
-    } : { status: 404, body: {} }
-
-    const skillRoot = await mkdtemp(join(tmpdir(), 'skillhub-ambiguous-test-'))
-    try {
-      const service = new SkillHubCatalog(new Context(), { endpoint, skillRoot })
-      await expect(service.detail('@second/dev-expert'))
-        .rejects.toMatchObject({ code: 'skillhub/identity-ambiguous' })
-      await expect(service.installSkill('@second/dev-expert', '1.17.0', true))
-        .rejects.toMatchObject({ code: 'skillhub/identity-ambiguous' })
-
-      expect(originPaths).toEqual([identityPath, identityPath])
-    } finally { await rm(skillRoot, { recursive: true, force: true }) }
-  })
-
-  it('rejects a detail that declares a different canonical publisher', async () => {
-    await installPolicy()
-    const identityPath = '/api/skills?slug=sample-skill&page=1&pageSize=100&sortBy=score&order=desc'
-    responseForPath = (path) => {
-      if (path === identityPath) return {
-        status: 200,
-        body: { total: 1, skills: [{ namespace: { canonicalName: '@selected/sample-skill' }, slug: 'sample-skill', name: 'Sample', version: '1.0' }] },
-      }
-      if (path === '/api/v1/skills/sample-skill') return {
-        status: 200,
-        body: {
-          skill: { namespace: { canonicalName: '@other/sample-skill' }, slug: 'sample-skill', displayName: 'Wrong publisher' },
-          latestVersion: { version: '1.0' },
-        },
-      }
-      return { status: 404, body: {} }
-    }
-
-    await expect(new SkillHubCatalog(new Context(), { endpoint }).detail('@selected/sample-skill'))
-      .rejects.toMatchObject({ code: 'skillhub/identity-changed' })
-
-    expect(originPaths).toEqual([identityPath, '/api/v1/skills/sample-skill'])
-  })
-
-  it('installs an exact-version ZIP with a file larger than 1 MiB under its canonical identity path', async () => {
-    await installPolicy()
-    const identityPath = '/api/skills?slug=sample-skill&page=1&pageSize=100&sortBy=score&order=desc'
-    const listing = { total: 1, skills: [{ namespace: { canonicalName: '@selected/sample-skill' }, slug: 'sample-skill', name: 'Sample', version: '1.0' }] }
-    const detail = { skill: { namespace: { canonicalName: '@selected/sample-skill' }, slug: 'sample-skill', displayName: 'Sample' }, latestVersion: { version: '1.0' } }
-    const skill = new TextEncoder().encode('# Sample\n')
-    const large = new Uint8Array(1024 * 1024 + 1).fill(65)
-    const metadata = new TextEncoder().encode(JSON.stringify({ ownerId: '420620', publishedAt: 1785936194603, slug: 'sample-skill', version: '1.0' }))
-    const digest = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex')
-    const archive = zipSync({ 'SKILL.md': skill, 'references/large.bin': large, '_meta.json': metadata })
-    const files = [
-      { path: 'SKILL.md', size: skill.byteLength, sha256: digest(skill) },
-      { path: 'references/large.bin', size: large.byteLength, sha256: digest(large) },
-    ]
-    responseForPath = (path) => {
-      if (path === identityPath) return { status: 200, body: listing }
-      if (path === '/api/v1/skills/sample-skill') return { status: 200, body: detail }
-      if (path === '/api/v1/skills/sample-skill/files?version=1.0') return {
-        status: 200,
-        body: { version: '1.0', files },
-      }
-      if (path === '/api/v1/download?slug=sample-skill&version=1.0') return { status: 200, body: archive }
-      return { status: 404, body: {} }
-    }
-
-    const skillRoot = await mkdtemp(join(tmpdir(), 'skillhub-canonical-test-'))
     const ctx = new Context()
-    try {
-      const service = new SkillHubCatalog(ctx, { endpoint, skillRoot })
-      await expect(service.installSkill('@selected/sample-skill', 'not a version', true)).rejects.toThrow('version is invalid')
-      const result = await service.installSkill('@selected/sample-skill', '1.0', true)
+    const resolveCredential = vi.fn(async (_reference: string) => ({
+      value: 'private-skillsmp-key',
+      source: 'test',
+    }))
+    ctx.provide('credentials', { resolve: resolveCredential } as never)
+    const catalog = new SkillsMpCatalog(ctx, { skillsmpCredentialKey: 'SKILLSMP_API_KEY' })
 
-      expect(result.canonicalName).toBe('@selected/sample-skill')
-      expect(result.path).toBe(join(skillRoot, '%40selected%2Fsample-skill'))
-      expect(result.files).toBe(2)
-      expect(await readFile(join(result.path, 'references/large.bin'))).toEqual(Buffer.from(large))
-      expect(originPaths).toContain('/api/v1/download?slug=sample-skill&version=1.0')
-      expect(originPaths.some(path => path.includes('/api/v1/skills/sample-skill/file?'))).toBe(false)
-      expect((await readdir(skillRoot)).sort()).toEqual(['%40selected%2Fsample-skill', '.skillhub'])
-    } finally {
-      await ctx.fiber.dispose()
-      await rm(skillRoot, { recursive: true, force: true })
+    await catalog.catalog('query')
+    await catalog.detail('https://github.com/owner/repo/tree/main/skill')
+    expect(resolveCredential.mock.calls.map(([reference]) => reference)).toEqual(['SKILLSMP_API_KEY'])
+    for (const [input, init] of fetchMock.mock.calls) {
+      const url = requestUrl(input)
+      const headers = new Headers(init?.headers)
+      if (url.pathname === '/api/v1/skills/search') expect(headers.get('authorization')).toBe('Bearer private-skillsmp-key')
+      else expect(headers.has('authorization')).toBe(false)
+      if (url.origin === 'https://raw.githubusercontent.com') expect(headers.has('x-skillsmp-download-token')).toBe(false)
+      if (url.pathname === '/api/github-contents') expect(headers.get('x-skillsmp-download-token')).toBe(DOWNLOAD_TOKEN)
     }
+    await ctx.fiber.dispose()
   })
 
-  it('waits for a streaming ZIP install to stop and clean staging when its Host fiber is disposed', async () => {
-    await installPolicy()
-    const identityPath = '/api/skills?slug=sample-skill&page=1&pageSize=100&sortBy=score&order=desc'
-    const listing = { total: 1, skills: [{ namespace: { canonicalName: '@selected/sample-skill' }, slug: 'sample-skill', name: 'Sample', version: '1.0' }] }
-    const detail = { skill: { namespace: { canonicalName: '@selected/sample-skill' }, slug: 'sample-skill', displayName: 'Sample' }, latestVersion: { version: '1.0' } }
-    responseForPath = (path) => {
-      if (path === identityPath) return { status: 200, body: listing }
-      if (path === '/api/v1/skills/sample-skill') return { status: 200, body: detail }
-      if (path === '/api/v1/skills/sample-skill/files?version=1.0') return {
-        status: 200,
-        body: { version: '1.0', files: [{ path: 'SKILL.md', size: 1, sha256: createHash('sha256').update('#').digest('hex') }] },
-      }
-      return { status: 404, body: {} }
-    }
-    const archivePath = '/api/v1/download?slug=sample-skill&version=1.0'
-    const started: Deferred<void> = deferred()
-    const closed: Deferred<void> = deferred()
-    heldArchive = { path: archivePath, started, closed }
-    const skillRoot = await mkdtemp(join(tmpdir(), 'skillhub-dispose-test-'))
+  it('fails clearly when a configured SkillsMP credential reference is unavailable', async () => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    fetchMock.mockResolvedValue(response(SEARCH_RESPONSE))
     const ctx = new Context()
-    try {
-      const service = new SkillHubCatalog(ctx, { endpoint, skillRoot })
-      const install = service.installSkill('@selected/sample-skill', '1.0', true)
-      const rejected = expect(install).rejects.toThrow()
-      await started.promise
-      await ctx.fiber.dispose()
-      await rejected
-      await closed.promise
-      expect(await readdir(join(skillRoot, '.skillhub'))).toEqual([])
-      expect((await readdir(skillRoot)).sort()).toEqual(['.skillhub'])
-    } finally {
-      await ctx.fiber.dispose()
-      heldArchive = undefined
-      await rm(skillRoot, { recursive: true, force: true })
-    }
+    ctx.provide('credentials', { resolve: async () => undefined } as never)
+    const catalog = new SkillsMpCatalog(ctx, { skillsmpCredentialKey: 'MISSING_SKILLSMP_API_KEY' })
+
+    await expect(catalog.catalog('query')).rejects.toThrow('configured SkillsMP credential reference is unavailable')
+    expect(fetchMock).not.toHaveBeenCalled()
+    await ctx.fiber.dispose()
   })
 
-  it('preserves an existing skill after invalid ZIP, unsafe or unlisted paths, hash mismatch, and budget rejection', async () => {
-    await installPolicy()
-    const identityPath = '/api/skills?slug=sample-skill&page=1&pageSize=100&sortBy=score&order=desc'
-    const listing = { total: 1, skills: [{ namespace: { canonicalName: '@selected/sample-skill' }, slug: 'sample-skill', name: 'Sample', version: '1.0' }] }
-    const detail = { skill: { namespace: { canonicalName: '@selected/sample-skill' }, slug: 'sample-skill', displayName: 'Sample' }, latestVersion: { version: '1.0' } }
-    const skill = new TextEncoder().encode('# replacement')
-    const metadata = new TextEncoder().encode(JSON.stringify({ slug: 'sample-skill', version: '1.0' }))
-    const release = { 'SKILL.md': skill, '_meta.json': metadata }
-    let archive = new Uint8Array([0x50, 0x4b, 0x01])
-    let hash = '0'.repeat(64)
-    responseForPath = (path) => {
-      if (path === identityPath) return { status: 200, body: listing }
-      if (path === '/api/v1/skills/sample-skill') return { status: 200, body: detail }
-      if (path === '/api/v1/skills/sample-skill/files?version=1.0') return {
-        status: 200,
-        body: { version: '1.0', files: [{ path: 'SKILL.md', size: skill.byteLength, sha256: hash }] },
-      }
-      if (path === '/api/v1/download?slug=sample-skill&version=1.0') return { status: 200, body: archive }
-      return { status: 404, body: {} }
-    }
-    const skillRoot = await mkdtemp(join(tmpdir(), 'skillhub-invalid-archive-test-'))
-    const target = join(skillRoot, '%40selected%2Fsample-skill')
-    const ctx = new Context()
-    try {
-      await mkdir(target, { recursive: true })
-      await writeFile(join(target, 'SKILL.md'), 'previous')
-      const service = new SkillHubCatalog(ctx, { endpoint, skillRoot })
-      await expect(service.installSkill('@selected/sample-skill', '1.0', true)).rejects.toThrow(/zip|central directory/iu)
-      expect(await readFile(join(target, 'SKILL.md'), 'utf8')).toBe('previous')
-      expect(await readdir(join(skillRoot, '.skillhub'))).toEqual([])
-
-      archive = zipSync(release)
-      await expect(service.installSkill('@selected/sample-skill', '1.0', true)).rejects.toThrow('integrity check failed')
-      expect(await readFile(join(target, 'SKILL.md'), 'utf8')).toBe('previous')
-      expect(await readdir(join(skillRoot, '.skillhub'))).toEqual([])
-
-      hash = createHash('sha256').update(skill).digest('hex')
-      const outsidePath = join(dirname(skillRoot), `${basename(skillRoot)}-outside.txt`)
-      archive = zipSync({ 'SKILL.md': skill, '../outside.txt': new Uint8Array([1]) })
-      await expect(service.installSkill('@selected/sample-skill', '1.0', true)).rejects.toThrow('../outside.txt')
-      expect(await readFile(join(target, 'SKILL.md'), 'utf8')).toBe('previous')
-      await expect(readFile(outsidePath)).rejects.toMatchObject({ code: 'ENOENT' })
-      expect(await readdir(join(skillRoot, '.skillhub'))).toEqual([])
-
-      archive = zipSync({ ...release, 'unlisted.txt': new Uint8Array([2]) })
-      await expect(service.installSkill('@selected/sample-skill', '1.0', true)).rejects.toThrow('unlisted file')
-      expect(await readFile(join(target, 'SKILL.md'), 'utf8')).toBe('previous')
-      expect(await readdir(join(skillRoot, '.skillhub'))).toEqual([])
-
-      const limitedCtx = new Context()
-      try {
-        const limited = new SkillHubCatalog(limitedCtx, { endpoint, skillRoot, maxArchiveBytes: 1 })
-        await expect(limited.installSkill('@selected/sample-skill', '1.0', true)).rejects.toMatchObject({
-          code: 'skillhub/install-limit', details: { budget: 'archive', limit: 1 },
-        })
-      } finally { await limitedCtx.fiber.dispose() }
-      expect(await readFile(join(target, 'SKILL.md'), 'utf8')).toBe('previous')
-      expect(await readdir(join(skillRoot, '.skillhub'))).toEqual([])
-    } finally {
-      await ctx.fiber.dispose()
-      await rm(skillRoot, { recursive: true, force: true })
-    }
-  })
-
-  it.skipIf(process.env.DSH_SKILLHUB_PUBLIC_PROXY_TEST !== '1')('reads one public catalog page through the explicitly configured proxy', async () => {
-    const configuredProxy = process.env.DSH_SKILLHUB_PUBLIC_PROXY_URL
-    if (configuredProxy === undefined) throw new Error('Set DSH_SKILLHUB_PUBLIC_PROXY_URL to an explicitly selected proxy for this opt-in test.')
-    const proxyAddress = new URL(configuredProxy)
-    if (!['http:', 'https:'].includes(proxyAddress.protocol) || proxyAddress.username !== '' || proxyAddress.password !== '') {
-      throw new Error('The opt-in test requires a credential-free HTTP(S) proxy URL.')
-    }
-    await installLiveProxy(configuredProxy)
-
-    const page = await new SkillHubCatalog(new Context(), {}).catalog(undefined, undefined, undefined, undefined, 'score', 1, 1)
-
-    expect(page.items.length).toBeLessThanOrEqual(1)
-    expect(page.total).toBeGreaterThanOrEqual(page.items.length)
-    expect(lookup).not.toHaveBeenCalled()
-  })
 })

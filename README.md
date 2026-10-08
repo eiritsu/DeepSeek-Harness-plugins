@@ -6,7 +6,7 @@ This repository distributes optional DeepSeek Harness plugins maintained by Eiri
 
 ## Install a plugin
 
-The GitHub Release for `v0.2.0-rc.2.20261001.2` contains one prebuilt `.tgz` asset for each installable bundle below. In Web or Desktop, open **Plugins**, choose **Install**, and enter the asset download URL. For CLI installation, download the `.tgz` asset first and add its absolute local path to the profile:
+The GitHub Release for `v0.2.0-rc.2.20261001.2` contains one prebuilt `.tgz` asset for each installable bundle below. Rows marked **Unreleased** are not in that Release, so install a `.tgz` rebuilt from this repository for those. In Web or Desktop, open **Plugins**, choose **Install**, and enter the asset download URL. For CLI installation, download the `.tgz` asset first and add its absolute local path to the profile:
 
 ```sh
 dsh plugin --profile <profile> add /absolute/path/to/<asset-file>
@@ -48,8 +48,8 @@ Each row gives the package's source path and the exact asset filename. All bundl
 |---|---|---|---|---|
 | Calendar | `@deepseek-ai/dsh-calendar` | Calendar view over Schedule automations, local entries, and user-supplied iCalendar subscriptions; Web and Desktop. **Unreleased:** the `v0.2.0-rc.2.20261001.2` assets do not contain it — build the `.tgz` from this repository or install the local path | `packages/bundle/calendar` | not published yet |
 | Office file recognition | `@deepseek-ai/dsh-file-recognizer-office` | Local DOCX, PPTX, XLSX, OpenDocument and PDF text extraction, optional OCR; Web and Desktop with this distribution's native-file upload API | `packages/attachment/file-recognizer-office` | `deepseek-ai-dsh-file-recognizer-office-0.2.0-rc.2.tgz` |
-| Community plugin catalog | `@deepseek-ai/dsh-community-plugin-catalog` | Browse and install community plugin packages; Web and Desktop | `packages/bundle/community-plugin-catalog` | `deepseek-ai-dsh-community-plugin-catalog-0.2.0-rc.2.tgz` |
-| Community skill catalog | `@deepseek-ai/dsh-community-skill-catalog` | Browse and install version-pinned SkillHub skills; Web and Desktop | `packages/bundle/community-skill-catalog` | `deepseek-ai-dsh-community-skill-catalog-0.2.0-rc.2.tgz` |
+| Community plugin catalog | `@deepseek-ai/dsh-community-plugin-catalog` | Browse and install community plugin packages; Web and Desktop. **Unreleased:** the `v0.2.0-rc.2.20261001.2` asset predates the compact catalog layout — build the `.tgz` from this repository or install the local path | `packages/bundle/community-plugin-catalog` | `deepseek-ai-dsh-community-plugin-catalog-0.2.0-rc.2.tgz` |
+| Community skill catalog | `@deepseek-ai/dsh-community-skill-catalog` | Search SkillsMP and install GitHub skills pinned to a commit; Web and Desktop. **Unreleased:** the `v0.2.0-rc.2.20261001.2` asset still searches SkillHub — build the `.tgz` from this repository or install the local path | `packages/bundle/community-skill-catalog` | `deepseek-ai-dsh-community-skill-catalog-0.2.0-rc.2.tgz` |
 | Configuration and skills backup | `@deepseek-ai/dsh-configuration-and-skills-backup` | Export profile configuration and selected skills; Web and Desktop | `packages/bundle/configuration-and-skills-backup` | `deepseek-ai-dsh-configuration-and-skills-backup-0.2.0-rc.2.tgz` |
 | Copy Session ID | `@deepseek-ai/dsh-copy-session-id` | Add a copy action to the conversation header; Web and Desktop | `packages/bundle/copy-session-id` | `deepseek-ai-dsh-copy-session-id-0.2.0-rc.2.tgz` |
 | Desktop profile migration | `@deepseek-ai/dsh-desktop-profile-migration-bundle` | Select installed feature bundles in Desktop profile settings; Desktop only | `packages/bundle/desktop-profile-migration` | `deepseek-ai-dsh-desktop-profile-migration-bundle-0.2.0-rc.2.tgz` |
