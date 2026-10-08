@@ -208,6 +208,25 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
     setQuery(trimmed)
   }
   const search = (event: FormEvent<HTMLFormElement>): void => { event.preventDefault(); submit(draft) }
+  /**
+   * Record an edited query box. Emptying it returns the catalog to its initial
+   * browse state: the committed query, the results it produced, and its
+   * notices go, and the catalog effect's cleanup aborts a search still in flight
+   * so a late response cannot bring them back. A non-empty edit only changes the
+   * box — the search runs when the user submits it.
+   * @param value - the edited query box value.
+   */
+  const editDraft = (value: string): void => {
+    setDraft(value)
+    if (value.trim() !== '') return
+    setQuery('')
+    setPage(undefined)
+    setResolvedKey('')
+    setPageNumber(1)
+    setError('')
+    setErrorDetails('')
+    setNotice('')
+  }
   const confirmInstall = async (): Promise<void> => {
     if (selectedDetail === undefined || installing) return
     const controller = new AbortController()
@@ -233,7 +252,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
           <button type="button" className={css.iconButton} aria-label={t('close')} onClick={close} disabled={installing}><IconCloseOutlineRegular size={16} /></button></header>
         {selected === undefined ? <>
           <form className={css.search} onSubmit={search}>
-            <Input type="search" value={draft} aria-label={t('searchPlaceholder')} placeholder={t('searchPlaceholder')} icon={<IconSearchOutlineRegular size={16} />} onChange={(event) => { setDraft(event.currentTarget.value) }} />
+            <Input type="search" value={draft} aria-label={t('searchPlaceholder')} placeholder={t('searchPlaceholder')} icon={<IconSearchOutlineRegular size={16} />} onChange={(event) => { editDraft(event.currentTarget.value) }} />
             <Button variant="primary" type="submit" disabled={draft.trim() === ''}>{t('search')}</Button>
           </form>
           {query === '' ? <section className={css.scenarios} aria-label={t('useCasesTitle')}>

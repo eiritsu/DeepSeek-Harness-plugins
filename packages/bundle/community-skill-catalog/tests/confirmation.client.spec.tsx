@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SkillsMpDetail, SkillsMpPage, SkillsMpSkill, SkillsMpTaxonomy } from '@deepseek-ai/dsh-community-skill-catalog/types'
 import { RemoteError } from '@deepseek-ai/dsh-typert-protocol'
@@ -106,6 +106,80 @@ describe('SkillsMP catalog', () => {
     await screen.findByRole('button', { name: skill.name })
     expect(screen.getByRole<HTMLInputElement>('searchbox', { name: en.searchPlaceholder }).value).toBe('typescript code review')
     expect(catalog).toHaveBeenCalledWith('typescript code review', undefined, undefined, undefined, 'stars', 1, 24, expect.any(AbortSignal))
+  })
+
+  it('returns to the initial browse state when an emptied query box follows a search', async () => {
+    const catalog = vi.fn().mockResolvedValue({ ok: true, value: page })
+    renderPanel({ catalog, detail: vi.fn(), installSkill: vi.fn() })
+    const searchbox = screen.getByRole('searchbox', { name: en.searchPlaceholder })
+    fireEvent.change(searchbox, { target: { value: 'planner' } })
+    fireEvent.click(screen.getByRole('button', { name: en.search }))
+    await screen.findByRole('button', { name: skill.name })
+    expect(document.querySelector('footer')?.textContent).toContain('Page 1')
+
+    fireEvent.change(searchbox, { target: { value: 'weekly plan' } })
+    expect(catalog).toHaveBeenCalledOnce()
+    fireEvent.change(searchbox, { target: { value: '' } })
+    expect(screen.queryByRole('button', { name: skill.name })).toBeNull()
+    expect(screen.getByRole('region', { name: en.useCasesTitle }).textContent).toMatchSnapshot('initial use-case buttons')
+    expect(screen.getByText(en.searchPrompt)).toBeTruthy()
+    expect(document.querySelector('footer')).toBeNull()
+    expect(catalog).toHaveBeenCalledOnce()
+  })
+
+  it('aborts an unsettled search when the query box empties and drops its late result', async () => {
+    let resolveSearch: (result: { ok: true; value: SkillsMpPage }) => void = () => undefined
+    const catalog = vi.fn((..._call: Parameters<SkillCatalogPanelInjected['api']['catalog']>) =>
+      new Promise<{ ok: true; value: SkillsMpPage }>((resolve) => { resolveSearch = resolve }))
+    renderPanel({ catalog, detail: vi.fn(), installSkill: vi.fn() })
+    const searchbox = screen.getByRole('searchbox', { name: en.searchPlaceholder })
+    fireEvent.change(searchbox, { target: { value: 'planner' } })
+    fireEvent.click(screen.getByRole('button', { name: en.search }))
+    await waitFor(() => { expect(catalog).toHaveBeenCalledOnce() })
+    const request = catalog.mock.calls[0]?.[7]
+    expect(request?.aborted).toBe(false)
+
+    fireEvent.change(searchbox, { target: { value: '' } })
+    await waitFor(() => { expect(request?.aborted).toBe(true) })
+    await act(async () => { resolveSearch({ ok: true, value: page }) })
+    expect(screen.queryByRole('button', { name: skill.name })).toBeNull()
+    expect(screen.getByRole('region', { name: en.useCasesTitle })).toBeTruthy()
+    expect(document.querySelector('footer')).toBeNull()
+  })
+
+  it('keeps a late search failure from returning an error after the query box empties', async () => {
+    let rejectSearch: (reason: unknown) => void = () => undefined
+    const catalog = vi.fn(() => new Promise<never>((_resolve, reject) => { rejectSearch = reject }))
+    renderPanel({ catalog, detail: vi.fn(), installSkill: vi.fn() })
+    const searchbox = screen.getByRole('searchbox', { name: en.searchPlaceholder })
+    fireEvent.change(searchbox, { target: { value: 'planner' } })
+    fireEvent.click(screen.getByRole('button', { name: en.search }))
+    await waitFor(() => { expect(catalog).toHaveBeenCalledOnce() })
+
+    fireEvent.change(searchbox, { target: { value: '' } })
+    await act(async () => { rejectSearch(new RemoteError('skillsmp/rate-limited', 'Try again later.', { status: 429 })) })
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getByRole('region', { name: en.useCasesTitle })).toBeTruthy()
+  })
+
+  it('treats a whitespace-only query box as empty and leaves the advanced filter drafts in place', async () => {
+    const catalog = vi.fn().mockResolvedValue({ ok: true, value: page })
+    renderPanel({ catalog, detail: vi.fn(), installSkill: vi.fn() })
+    fireEvent.click(screen.getByRole('button', { name: en.advancedFilters }))
+    fireEvent.change(await screen.findByLabelText(en.language), { target: { value: 'zh' } })
+    fireEvent.change(screen.getByLabelText(en.sort), { target: { value: 'recent' } })
+    const searchbox = screen.getByRole('searchbox', { name: en.searchPlaceholder })
+    fireEvent.change(searchbox, { target: { value: 'planner' } })
+    fireEvent.click(screen.getByRole('button', { name: en.search }))
+    await screen.findByRole('button', { name: skill.name })
+
+    fireEvent.change(searchbox, { target: { value: '   ' } })
+    expect(screen.queryByRole('button', { name: skill.name })).toBeNull()
+    expect(screen.getByRole('region', { name: en.useCasesTitle })).toBeTruthy()
+    expect(screen.getByRole<HTMLSelectElement>('combobox', { name: en.language }).value).toBe('zh')
+    expect(screen.getByRole<HTMLSelectElement>('combobox', { name: en.sort }).value).toBe('recent')
+    expect(screen.getByRole('button', { name: en.search })).toHaveProperty('disabled', true)
+    expect(catalog).toHaveBeenCalledOnce()
   })
 
   it('keeps older catalog responses from replacing the current search results', async () => {

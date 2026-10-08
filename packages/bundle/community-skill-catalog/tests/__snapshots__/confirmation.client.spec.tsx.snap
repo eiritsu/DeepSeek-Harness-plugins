@@ -1,3 +1,5 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`SkillsMP catalog > returns to the initial browse state when an emptied query box follows a search > initial use-case buttons 1`] = `"Common use casesProgrammingOffice documentsData analysisDesignMarketingOperations"`;
+
 exports[`SkillsMP catalog > shows the requested task prompt and does not fetch an empty query > initial use-case buttons 1`] = `"Common use casesProgrammingOffice documentsData analysisDesignMarketingOperations"`;
