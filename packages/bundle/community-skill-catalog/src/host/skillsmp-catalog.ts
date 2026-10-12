@@ -16,7 +16,7 @@ import z from '@deepseek-ai/schemastery'
 import ipaddr from 'ipaddr.js'
 import { parse } from 'parse5'
 import type { DefaultTreeAdapterMap } from 'parse5'
-import { Agent, fetch } from 'undici'
+import { Agent, fetch, type Dispatcher } from 'undici'
 import type {
   InstalledSkill, SkillsMpDetail, SkillsMpInstallResult, SkillsMpLocale, SkillsMpPage, SkillsMpSkill, SkillsMpSort, SkillsMpTaxonomy,
   SkillsMpTaxonomyCategory, SkillsMpTaxonomyOccupation,
@@ -233,27 +233,37 @@ export class SkillsMpCatalog extends TypertRemoteService {
       this.maxTotalBytes,
     )
     const files = manifest.files
-    const reviewedFiles: ReviewedFile[] = []
-    let totalBytes = 0
-    let skillMarkdown: string | undefined
-    for (const file of files) {
-      signal.throwIfAborted()
-      const bytes = await this.fetchRawBytes(file.rawUrl, file.path, file.size, this.maxFileBytes, signal)
-      totalBytes += bytes.byteLength
-      if (totalBytes > Math.min(this.maxTotalBytes, 5 * 1024 * 1024)) throw new Error('SkillsMP manifest exceeds the configured total file limit.')
-      const sha = gitBlobSha(bytes)
-      reviewedFiles.push({ path: file.path, size: file.size, sha, rawUrl: file.rawUrl })
-      if (file.path === 'SKILL.md') {
-        if (file.size > this.maxResponseBytes) throw new Error(`SkillsMP SKILL.md preview exceeds maxResponseBytes (${this.maxResponseBytes}).`)
-        try { skillMarkdown = new TextDecoder('utf-8', { fatal: true }).decode(bytes) }
-        catch (error: unknown) { throw new Error('SkillsMP returned invalid UTF-8 for SKILL.md.', { cause: error }) }
-      }
+    const skillFile = files.find(file => file.path === 'SKILL.md')
+    if (skillFile === undefined) {
+      throw new RemoteError('skillsmp/skill-markdown-missing', 'GitHub skill directory must contain a root SKILL.md file.', {})
     }
-    if (skillMarkdown === undefined) throw new RemoteError('skillsmp/skill-markdown-missing', 'GitHub skill directory must contain a root SKILL.md file.', {})
+    if (skillFile.size > this.maxResponseBytes) {
+      throw new Error(`SkillsMP SKILL.md preview exceeds maxResponseBytes (${this.maxResponseBytes}).`)
+    }
+    const skillBytes = await this.fetchRawBytes(skillFile.rawUrl, skillFile.path, skillFile.size, this.maxFileBytes, signal)
+    let skillMarkdown: string
+    try {
+      skillMarkdown = new TextDecoder('utf-8', { fatal: true }).decode(skillBytes)
+    } catch (error: unknown) {
+      throw new Error('SkillsMP returned invalid UTF-8 for SKILL.md.', { cause: error })
+    }
+    const skillSha = gitBlobSha(skillBytes)
+
+    let totalBytes = 0
+    const reviewedFiles: ReviewedFile[] = []
+    for (const file of files) {
+      totalBytes += file.size
+      const sha = file.path === 'SKILL.md' ? skillSha : undefined
+      reviewedFiles.push({ path: file.path, size: file.size, ...(sha !== undefined ? { sha } : {}), rawUrl: file.rawUrl })
+    }
+    if (totalBytes > Math.min(this.maxTotalBytes, 5 * 1024 * 1024)) {
+      throw new Error('SkillsMP manifest exceeds the configured total file limit.')
+    }
+
     const detail: SkillsMpDetail = {
       skill,
       commitSha: manifest.commitSha,
-      files: reviewedFiles.map(({ path, size, sha }) => ({ path, size, sha })),
+      files: reviewedFiles.map(({ path, size, sha }) => ({ path, size, ...(sha !== undefined ? { sha } : {}) })),
       totalBytes,
       skillMarkdown,
       ...(manifest.skippedFiles !== undefined ? { skippedFiles: manifest.skippedFiles } : {}),
@@ -342,26 +352,63 @@ export class SkillsMpCatalog extends TypertRemoteService {
     const control = await ensureControlRoot(root)
     const operation = await mkdtemp(join(control, 'install-'))
     let backupCleanupPending: string | undefined
+    let sharedAgent: Agent | undefined
     try {
+      signal.throwIfAborted()
+      const sampleUrl = new URL(GITHUB_RAW_ORIGIN)
+      const route = proxyRouteFor(sampleUrl)
+      const proxied = route.proxied && isIP(sampleUrl.hostname) === 0
+      if (!proxied) {
+        sharedAgent = new Agent({
+          connect: { lookup: pinnedLookup(await resolvePublic(sampleUrl, signal)) },
+          connections: 8,
+        })
+      }
+      const sharedDispatcher = proxied ? route.dispatcher : sharedAgent
       const stage = join(operation, 'tree')
       await mkdir(stage, { mode: 0o700 })
       let total = 0
-      for (const file of reviewed.reviewedFiles) {
-        signal.throwIfAborted()
-        const bytes = await this.fetchRawBytes(file.rawUrl, file.path, file.size, this.maxFileBytes, signal, file.sha)
-        total += bytes.byteLength
-        if (total > this.maxTotalBytes) throw new Error(`SkillsMP skill exceeds maxTotalBytes (${this.maxTotalBytes}).`)
-        const destination = resolve(stage, ...safeRelativePath(file.path))
-        if (!destination.startsWith(`${resolve(stage)}${sep}`)) throw new Error('GitHub file path escaped the staging directory.')
-        await mkdir(dirname(destination), { recursive: true, mode: 0o700 })
-        await writeFile(destination, bytes, { flag: 'wx', mode: 0o600 })
-      }
+      const installAbort = new AbortController()
+      const workerSignal = AbortSignal.any([signal, installAbort.signal])
+      let firstError: unknown
+      const concurrency = 6
+      let cursor = 0
+      const workers = Array.from({ length: Math.min(concurrency, reviewed.reviewedFiles.length) }, async () => {
+        while (cursor < reviewed.reviewedFiles.length) {
+          workerSignal.throwIfAborted()
+          const index = cursor++
+          const file = reviewed.reviewedFiles[index]
+          if (file === undefined) break
+          try {
+            const bytes = await this.fetchRawBytes(
+              file.rawUrl, file.path, file.size, this.maxFileBytes, workerSignal, file.sha, sharedDispatcher,
+            )
+            workerSignal.throwIfAborted()
+            total += bytes.byteLength
+            if (total > this.maxTotalBytes) throw new Error(`SkillsMP skill exceeds maxTotalBytes (${this.maxTotalBytes}).`)
+            const destination = resolve(stage, ...safeRelativePath(file.path))
+            if (!destination.startsWith(`${resolve(stage)}${sep}`)) throw new Error('GitHub file path escaped the staging directory.')
+            await mkdir(dirname(destination), { recursive: true, mode: 0o700 })
+            await writeFile(destination, bytes, { flag: 'wx', mode: 0o600 })
+          } catch (error: unknown) {
+            if (firstError === undefined) firstError = error
+            installAbort.abort(error)
+            throw error
+          }
+        }
+      })
+      await Promise.allSettled(workers)
+      if (firstError !== undefined) throw firstError
+      signal.throwIfAborted()
       if (total !== reviewed.totalBytes) throw new Error('Installed GitHub file bytes do not match the reviewed inventory.')
       await this.validateStagedSkill(operation, signal)
       signal.throwIfAborted()
       const target = join(root, safeSkillId(skill.id))
       backupCleanupPending = await commitSkillDirectory(root, control, target, stage, signal)
-    } finally { await rm(operation, { recursive: true, force: true }) }
+    } finally {
+      await rm(operation, { recursive: true, force: true })
+      await sharedAgent?.close()
+    }
     return {
       id: skill.id,
       commitSha: selectedSha,
@@ -457,10 +504,11 @@ export class SkillsMpCatalog extends TypertRemoteService {
     maxBytes: number,
     signal: AbortSignal,
     expectedSha?: string,
+    dispatcher?: Dispatcher,
   ): Promise<Uint8Array> {
     const url = new URL(rawUrl)
     if (url.origin !== GITHUB_RAW_ORIGIN) throw new Error('Manifest raw URL is outside the allowed GitHub content origin.')
-    const response = await requestPublic(url, this.timeoutMs, signal, undefined)
+    const response = await requestPublic(url, this.timeoutMs, signal, undefined, {}, dispatcher)
     try {
       if (response.status !== 200) throw new Error(`GitHub raw content returned HTTP ${response.status}.`)
       const bytes = await readBounded(response, Math.min(512_001, Math.max(maxBytes, size + 1)))
@@ -936,7 +984,7 @@ interface ManifestFile {
 interface ReviewedFile {
   readonly path: string
   readonly size: number
-  readonly sha: string
+  readonly sha?: string
   readonly rawUrl: string
 }
 interface ReviewedSkill extends SkillsMpDetail {
@@ -1229,6 +1277,7 @@ async function requestPublic(
   parentSignal: AbortSignal,
   headers: Record<string, string> | undefined,
   request: { readonly method?: 'GET' | 'POST'; readonly body?: string } = {},
+  dispatcher?: Dispatcher,
 ): Promise<ResponseHandle> {
   if (!ALLOWED_ORIGINS.has(url.origin)) throw new Error('SkillsMP request origin is not allowed.')
   if (url.protocol !== 'https:' || url.username !== '' || url.password !== '') throw new Error('SkillsMP requests require credential-free HTTPS URLs.')
@@ -1244,15 +1293,18 @@ async function requestPublic(
   const current = url
   let activeAgent: Agent | undefined
   try {
-    const route = proxyRouteFor(current)
-    const proxied = route.proxied && isIP(current.hostname) === 0
-    if (!proxied) activeAgent = new Agent({ connect: { lookup: pinnedLookup(await resolvePublic(current, controller.signal)) } })
-    const dispatcher = proxied ? route.dispatcher : activeAgent
-    if (dispatcher === undefined) throw new Error('SkillsMP request has no network dispatcher.')
+    let activeDispatcher = dispatcher
+    if (activeDispatcher === undefined) {
+      const route = proxyRouteFor(current)
+      const proxied = route.proxied && isIP(current.hostname) === 0
+      if (!proxied) activeAgent = new Agent({ connect: { lookup: pinnedLookup(await resolvePublic(current, controller.signal)) } })
+      activeDispatcher = proxied ? route.dispatcher : activeAgent
+    }
+    if (activeDispatcher === undefined) throw new Error('SkillsMP request has no network dispatcher.')
     let response: UndiciResponse
     try {
       response = await fetch(current, {
-        dispatcher,
+        dispatcher: activeDispatcher,
         redirect: 'manual',
         signal: controller.signal,
         method: request.method ?? 'GET',

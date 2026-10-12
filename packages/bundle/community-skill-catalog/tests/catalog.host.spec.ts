@@ -219,6 +219,10 @@ describe('SkillsMP search and pinned GitHub installation', () => {
       const detail = await catalog.detail(SKILL_URL)
       expect(detail.files.map(file => file.path)).toEqual(['SKILL.md', 'assets/image.bin'])
       expect(detail.totalBytes).toBe(SKILL_BYTES.byteLength + asset.byteLength)
+      const rawUrlsDuringDetail = fetchMock.mock.calls
+        .map(([input]) => requestUrl(input).toString())
+        .filter(url => url.includes('raw.githubusercontent.com'))
+      expect(rawUrlsDuringDetail).toEqual([rawUrl('SKILL.md')])
       const result = await catalog.installSkill(SKILL_URL, detail.commitSha, true)
       expect(result.files).toBe(2)
       expect(await readFile(join(result.path, 'assets/image.bin'))).toEqual(asset)

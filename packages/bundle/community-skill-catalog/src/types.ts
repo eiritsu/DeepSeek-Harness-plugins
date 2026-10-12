@@ -81,7 +81,7 @@ export interface SkillsMpPage {
 export interface SkillsMpDetail {
   readonly skill: SkillsMpSkill
   readonly commitSha: string
-  readonly files: readonly { readonly path: string; readonly size: number; readonly sha: string }[]
+  readonly files: readonly { readonly path: string; readonly size: number; readonly sha?: string }[]
   readonly totalBytes: number
   readonly skillMarkdown: string
   /** Number of auxiliary or oversized files omitted by SkillsMP. */
