@@ -55,15 +55,11 @@ describe('desktop package-set selection', () => {
       dependencies: Record<string, string>
     }
     const independentPackages = [
-      '@deepseek-ai/dsh-file-recognizer-office',
       '@deepseek-ai/dsh-community-plugin-catalog',
       '@deepseek-ai/dsh-lark-integration',
       '@deepseek-ai/dsh-tools-connections',
       '@deepseek-ai/dsh-community-skill-catalog',
-      '@deepseek-ai/dsh-file-recognizer-office',
       '@deepseek-ai/dsh-model-catalog',
-      '@deepseek-ai/dsh-copy-session-id',
-      '@deepseek-ai/dsh-turn-process-shimmer',
       '@deepseek-ai/dsh-session-archive',
       '@deepseek-ai/dsh-experimental-computer-use-cua-native',
     ]

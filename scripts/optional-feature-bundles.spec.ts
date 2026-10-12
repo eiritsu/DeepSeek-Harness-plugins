@@ -23,8 +23,6 @@ const manifests = new Map(globSync('packages/*/*/package.json', { cwd: root }).m
 
 const definitions = [
   { bundle: '@deepseek-ai/dsh-lark-integration', rows: ['lark'], clientRows: [] },
-  { bundle: '@deepseek-ai/dsh-copy-session-id', rows: ['ui-copy-session-id'], clientRows: ['ui-copy-session-id'] },
-  { bundle: '@deepseek-ai/dsh-turn-process-shimmer', rows: ['ui-turn-process-shimmer'], clientRows: ['ui-turn-process-shimmer'] },
   { bundle: '@deepseek-ai/dsh-tools-connections', rows: ['tools-connections'], clientRows: [] },
   { bundle: '@deepseek-ai/dsh-experimental-computer-use-cua-native', rows: ['computer-use', 'computer-use-cua-driver-native'], clientRows: [] },
 ] as const
@@ -32,12 +30,8 @@ const definitions = [
 const standaloneBundles = [
   '@deepseek-ai/dsh-community-plugin-catalog',
   '@deepseek-ai/dsh-community-skill-catalog',
-  '@deepseek-ai/dsh-file-recognizer-office',
   '@deepseek-ai/dsh-model-catalog',
-  '@deepseek-ai/dsh-configuration-and-skills-backup',
-  '@deepseek-ai/dsh-desktop-profile-migration-bundle',
   '@deepseek-ai/dsh-session-archive',
-  '@deepseek-ai/dsh-session-message-edit-resend',
   ...definitions.map(({ bundle }) => bundle),
 ] as const
 
@@ -73,7 +67,7 @@ describe('optional feature bundles', () => {
     }
   })
 
-  it('composes all five layers together without changing the Web template selection', () => {
+  it('composes all defined layers together without changing the Web template selection', () => {
     const names = definitions.map(({ bundle }) => bundle)
     const rows = definitions.map(({ bundle }) => patches(bundle))
     const warnings: string[] = []

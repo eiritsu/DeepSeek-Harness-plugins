@@ -29,7 +29,6 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | Package | Config | Description |
 |---|---|---|
 | `@deepseek-ai/dsh-attachment-local` | yes | Private content-addressed DSH_HOME attachment storage |
-| `@deepseek-ai/dsh-file-recognizer-office` | yes | Local Office text extraction and optional OCR for scanned PDF attachments |
 
 ## boot
 
@@ -51,15 +50,10 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-acp-app` | no | The dsh ACP profile bundle: automation-only JSON-RPC stdio and process lifecycle over dsh-base |
 | `@deepseek-ai/dsh-calendar` | yes | Calendar view over Schedule automations, local entries, and user-supplied iCalendar subscriptions |
-| `@deepseek-ai/dsh-configuration-and-skills-backup` | yes | Opt-in configuration, skill-tree, and bundle-selection backups |
-| `@deepseek-ai/dsh-copy-session-id` | no | Opt-in Session ID copy action in the conversation header utilities |
-| `@deepseek-ai/dsh-desktop-profile-migration-bundle` | no | Explicit one-time selection migration for existing Desktop profiles |
 | `@deepseek-ai/dsh-headless` | yes | The dsh one-shot bundle: a direct core Agent/Session runner over dsh-base with no Host, HTTP, or browser layer |
 | `@deepseek-ai/dsh-lark-integration` | yes | Opt-in Lark and Feishu private-chat integration with its bundle configuration page |
 | `@deepseek-ai/dsh-sdk-app` | yes | The dsh SDK profile bundle: stdio JSON-RPC serving and process lifecycle over dsh-base |
-| `@deepseek-ai/dsh-session-message-edit-resend` | no | Optional edit-and-resend action for the latest completed ordinary user turn |
 | `@deepseek-ai/dsh-tools-connections` | yes | Opt-in Brave and Tavily search providers and Firecrawl extraction with a settings page |
-| `@deepseek-ai/dsh-turn-process-shimmer` | no | Opt-in running-turn label shimmer for the Web conversation |
 | `@deepseek-ai/dsh-web-app` | yes | The dsh browser-surface bundle: the web patch layer over dsh-base plus the runtime glue plugin (frontend dist serving, web-surface prompt, bash runtime variables, URL line) |
 
 ## client

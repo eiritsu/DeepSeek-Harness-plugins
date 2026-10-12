@@ -53,21 +53,19 @@ describe('Desktop Web boot smoke', () => {
 
   it('keeps independently installed packages out of the clean baseline and bundle list', () => {
     const names = [
-      '@deepseek-ai/dsh-file-recognizer-office', '@deepseek-ai/dsh-community-plugin-catalog',
+      '@deepseek-ai/dsh-community-plugin-catalog',
       '@deepseek-ai/dsh-community-skill-catalog',
       '@deepseek-ai/dsh-lark-integration', '@deepseek-ai/dsh-model-catalog',
-      '@deepseek-ai/dsh-copy-session-id', '@deepseek-ai/dsh-turn-process-shimmer',
       '@deepseek-ai/dsh-session-archive',
     ]
     const selected = new Set([
-      '@deepseek-ai/dsh-file-recognizer-office', '@deepseek-ai/dsh-community-plugin-catalog',
+      '@deepseek-ai/dsh-community-plugin-catalog',
       '@deepseek-ai/dsh-community-skill-catalog', '@deepseek-ai/dsh-model-catalog',
-      '@deepseek-ai/dsh-copy-session-id', '@deepseek-ai/dsh-turn-process-shimmer',
       '@deepseek-ai/dsh-session-archive',
     ])
     const bundles = names.map(name => ({ name, installed: false, enabled: selected.has(name) }))
     expect(() =>{  assertDesktopOptionalBundles(bundles.filter(bundle => bundle.name === DESKTOP_OPTIONAL_BUNDLE_SMOKE)) }).not.toThrow()
-    expect(() =>{  assertDesktopOptionalBundles(bundles) }).toThrow(/independent plugins are in-box.*dsh-file-recognizer-office/u)
+    expect(() =>{  assertDesktopOptionalBundles(bundles) }).toThrow(/independent plugins are in-box.*dsh-community-plugin-catalog/u)
     expect(() =>{  assertDesktopCleanBaseline({
       plugins: [{ moduleName: '@deepseek-ai/dsh-client-ui-session', enabled: true }],
       bundles: [{ name: '@deepseek-ai/dsh-model-catalog', installed: false, enabled: false }],

@@ -12,13 +12,10 @@ import { createPluginProfile } from '../src/project-manager.ts'
 import { runtimeArchivePath } from '../../desktop-host/src/office-engine.ts'
 
 const INDEPENDENT_PLUGIN_BUNDLES = [
-  '@deepseek-ai/dsh-file-recognizer-office',
   '@deepseek-ai/dsh-community-plugin-catalog',
   '@deepseek-ai/dsh-community-skill-catalog',
   '@deepseek-ai/dsh-lark-integration',
   '@deepseek-ai/dsh-model-catalog',
-  '@deepseek-ai/dsh-copy-session-id',
-  '@deepseek-ai/dsh-turn-process-shimmer',
   '@deepseek-ai/dsh-session-archive',
   '@deepseek-ai/dsh-experimental-computer-use-cua-native',
 ] as const

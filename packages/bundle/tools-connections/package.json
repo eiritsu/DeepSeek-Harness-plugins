@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tools-connections",
   "description": "Opt-in Brave and Tavily search providers and Firecrawl extraction with a settings page",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-alpha.2",
   "publishConfig": {
     "access": "public"
   },
@@ -51,7 +51,10 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-web": "workspace:*"
+    "@deepseek-ai/dsh-credentials": "workspace:*",
+    "@deepseek-ai/dsh-tools": "workspace:*",
+    "@deepseek-ai/dsh-web": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
@@ -65,14 +68,12 @@
     "@deepseek-ai/dsh-client-ui-renderer": "workspace:*",
     "@deepseek-ai/dsh-client-ui-settings": "workspace:*",
     "@deepseek-ai/dsh-client-ui-slots": "workspace:*",
-    "@deepseek-ai/dsh-util-values": "workspace:*",
-    "@deepseek-ai/dsh-web": "workspace:*",
-    "@types/react": "~18.3.1",
-    "react": "^18.2.0"
-  },
-  "dependencies": {
     "@deepseek-ai/dsh-credentials": "workspace:*",
     "@deepseek-ai/dsh-tools": "workspace:*",
-    "@deepseek-ai/schemastery": "workspace:~"
+    "@deepseek-ai/dsh-util-values": "workspace:*",
+    "@deepseek-ai/dsh-web": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~",
+    "@types/react": "~18.3.1",
+    "react": "^18.2.0"
   }
 }

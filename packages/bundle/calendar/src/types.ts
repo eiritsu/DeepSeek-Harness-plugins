@@ -249,6 +249,7 @@ export type CalendarTaskErrorCode =
   | 'not_future'
   | 'time_out_of_range'
   | 'frequency_too_high'
+  | 'subagent_session'
   | 'schedule_not_found'
   | 'schedule_ended'
   | 'schedule_conflict'

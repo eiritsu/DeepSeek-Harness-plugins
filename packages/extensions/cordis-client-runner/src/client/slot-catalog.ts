@@ -412,9 +412,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     hookContext: '',
     slotInject: '',
     declaredBy: 'an entry in \'conversation.chat.node\' (client-ui-chat), so it exists while that entry is mounted',
-    occupants: [
-      'session-message-edit-resend MessageEditAction id \'edit-resend\'',
-    ],
+    occupants: [],
     replaceRisk: 'none',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'conversation.chat.user-actions\', () => ctx.slots.register(\n      { name: \'conversation.chat.user-actions\', id: \'my-entry\', order: 100, label: \'My entry\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
     source: 'packages/client/ui-chat/src/client/contract/slots.ts:335',
@@ -1049,7 +1047,6 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '',
     declaredBy: 'an entry in \'conversation.composer.bar\' (client-ui-conversation), so it exists while that entry is mounted',
     occupants: [
-      'session-message-edit-resend EditComposerNotice id \'edit-resend\'',
       'client-ui-commands PopupSelectView id \'command-popup\'',
       'client-ui-input-trigger MenuView id \'slash-menu\'',
       'client-ui-message-feedback FeedbackDialog id \'feedback-dialog\'',
@@ -1558,7 +1555,6 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '',
     declaredBy: 'an entry in \'conversation.session.header\' (client-ui-conversation), so it exists while that entry is mounted',
     occupants: [
-      'copy-session-id CopySessionIdAction id \'copy-session-id\'',
       'client-ui-open-in-app SessionOpenInAppAction id \'open-in-app\'',
       'client-ui-schedule ScheduleCatalogAction id \'schedule-catalog\'',
       'session-log-export SessionLogDownloadHeaderAction id \'session-log-download\'',
@@ -1931,14 +1927,12 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
       'useSessionRetainInfo: UseSessionRetainInfo',
       'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
     ],
-    keyDomain: 'open: any string the owner dispatches (no compile-time key set), already taken: @deepseek-ai/dsh-configuration-and-skills-backup, @deepseek-ai/dsh-experimental-voice-input-bundle, @deepseek-ai/dsh-file-recognizer-office, @deepseek-ai/dsh-lark-integration, @deepseek-ai/dsh-session-archive, @deepseek-ai/dsh-tools-connections',
+    keyDomain: 'open: any string the owner dispatches (no compile-time key set), already taken: @deepseek-ai/dsh-experimental-voice-input-bundle, @deepseek-ai/dsh-lark-integration, @deepseek-ai/dsh-session-archive, @deepseek-ai/dsh-tools-connections',
     hookContext: '',
     slotInject: '',
     declaredBy: 'an entry in \'main\' (client-ui-plugin-manager), so it exists while that entry is mounted',
     occupants: [
-      'file-recognizer-office OfficeRecognitionCard key \'@deepseek-ai/dsh-file-recognizer-office\'',
       'calendar CalendarConfigPage',
-      'configuration-and-skills-backup ConfigurationSkillsBackupPage key \'@deepseek-ai/dsh-configuration-and-skills-backup\'',
       'lark-integration LarkSettingsPage key \'@deepseek-ai/dsh-lark-integration\'',
       'tools-connections ToolsConnectionsCard key \'@deepseek-ai/dsh-tools-connections\'',
       'experimental-client-ui-voice-input VoicePreparation key \'@deepseek-ai/dsh-experimental-voice-input-bundle\'',
@@ -2712,7 +2706,6 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '',
     declaredBy: 'an entry in \'settings.section\' (client-ui-settings-plugins), so it exists while that entry is mounted',
     occupants: [
-      'desktop-profile-migration-bundle MigrationPanel id \'desktop-migration\'',
       'client-ui-settings-plugin-inventory PluginInventorySettingsTab id \'all\'',
     ],
     replaceRisk: 'none',

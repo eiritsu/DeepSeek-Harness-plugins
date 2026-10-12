@@ -11,7 +11,7 @@ const SUBSCRIPTION_CODES: readonly CalendarSubscriptionErrorCode[] = [
 ]
 const TASK_CODES: readonly CalendarTaskErrorCode[] = [
   'invalid_prompt', 'invalid_selector', 'invalid_rule', 'invalid_time_zone', 'not_future',
-  'time_out_of_range', 'frequency_too_high', 'schedule_not_found', 'schedule_ended',
+  'time_out_of_range', 'frequency_too_high', 'subagent_session', 'schedule_not_found', 'schedule_ended',
   'schedule_conflict', 'session_not_found', 'service-unavailable', 'internal_error',
 ]
 const ENTRY_CODES: readonly CalendarEntryErrorCode[] = ['invalid-title', 'invalid-time', 'invalid-range', 'not-found', 'readonly', 'internal-error']

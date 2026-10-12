@@ -180,13 +180,6 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Authorized Office bytes are converted on the Host using the declared native target engine, or Node WASM when no native target is declared.',
   },
   {
-    key: 'messageEditResend',
-    pkg: 'session-message-edit-resend',
-    title: 'Edit-and-resend admission for one Session prompt',
-    mode: 'core',
-    note: 'Revalidates one submitted replacement against the current surface before the durable replacement request; its operation state outlives the Client connection.',
-  },
-  {
     key: 'attachments',
     pkg: 'attachment',
     title: 'Durable binary attachment storage',

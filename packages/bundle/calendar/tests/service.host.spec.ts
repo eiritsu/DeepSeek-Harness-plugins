@@ -364,6 +364,43 @@ describe('calendar task delegation', () => {
     expect(result).toMatchObject({ ok: false, code: 'invalid_prompt' })
   })
 
+  it('reports a subagent Session rejection from the Schedule service', async () => {
+    running = await harness({ schedule: true, listedSessions: ['s-1'] })
+    vi.spyOn(running.ctx.schedule, 'create').mockRejectedValueOnce({
+      code: 'subagent_session',
+      message: 'This Session belongs to subagent routing, which never receives reminder delivery.',
+    })
+    const result = await running.service.createTask({
+      sessionId: 's-1', title: 'Standup', prompt: 'Join', at: at(3),
+    })
+    expect(result).toEqual({
+      ok: false,
+      code: 'subagent_session',
+      message: 'This Session belongs to subagent routing, which never receives reminder delivery.',
+    })
+  })
+
+  it('reports a subagent Session rejection on updateTask', async () => {
+    running = await harness({ schedule: true, listedSessions: ['s-1'] })
+    const created = await running.service.createTask({
+      sessionId: 's-1', title: 'Standup', prompt: 'Join', at: at(3),
+    })
+    expect(created.ok).toBe(true)
+    const task = created.ok ? created.task : undefined
+    vi.spyOn(running.ctx.schedule, 'update').mockResolvedValueOnce({
+      code: 'subagent_session',
+      message: 'This Session belongs to subagent routing, which never receives reminder delivery.',
+    } as never)
+    const updated = await running.service.updateTask({
+      sessionId: 's-1', id: task!.id, expected: task!.record, title: 'Updated',
+    })
+    expect(updated).toEqual({
+      ok: false,
+      code: 'subagent_session',
+      message: 'A delegated subagent cannot use reminders.',
+    })
+  })
+
   it('applies a compare-and-update and refuses a stale one', async () => {
     running = await harness({ schedule: true, listedSessions: ['s-1'] })
     const created = await running.service.createTask({
@@ -547,10 +584,10 @@ describe('calendar subscriptions', () => {
 
   it('keeps the new configuration when a fetch of the old one is still running', async () => {
     running = await harness()
-    currentFeed().body = ics('UID:s-1', 'DTSTART:20261006T090000Z', 'DTEND:20261006T100000Z', 'SUMMARY:Original')
+    currentFeed().body = ics('UID:s-1', `DTSTART:${stamp(5, 9)}`, `DTEND:${stamp(5, 10)}`, 'SUMMARY:Original')
     const added = await running.service.addSubscription({ name: 'Work', url: currentFeed().url() })
     const id = added.ok ? added.subscription.id : ('sub-x' as never)
-    currentFeed().body = ics('UID:s-2', 'DTSTART:20261007T090000Z', 'DTEND:20261007T100000Z', 'SUMMARY:Replacement')
+    currentFeed().body = ics('UID:s-2', `DTSTART:${stamp(6, 9)}`, `DTEND:${stamp(6, 10)}`, 'SUMMARY:Replacement')
     currentFeed().delayMs = 50
     const slow = running.service.refreshSubscription({ id })
     // The configuration changes while the previous body is still in flight.

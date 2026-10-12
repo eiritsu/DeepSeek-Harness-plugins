@@ -52,7 +52,7 @@ describe('calendar bundle manifest', () => {
       dsh: { bundle: { patch: string }; client: { platform: string } }
     }
     expect(manifest.name).toBe('@deepseek-ai/dsh-calendar')
-    expect(manifest.version).toBe('0.2.0-rc.2')
+    expect(manifest.version).toBe('0.2.1-alpha.2')
     expect(manifest.main).toBe('lib/index.js')
     expect(manifest.dsh.bundle.patch).toBe('./cordis.patch.yml')
     expect(manifest.dsh.client.platform).toBe('web')
@@ -75,14 +75,12 @@ describe('calendar bundle manifest', () => {
       peerDependencies: Record<string, string>
       devDependencies: Record<string, string>
     }
-    for (const runtime of ['ical.js', '@deepseek-ai/dsh-typert-protocol']) {
-      expect(manifest.dependencies[runtime], `missing runtime ${runtime}`).toBeDefined()
-    }
+    expect(manifest.dependencies['ical.js'], 'missing runtime ical.js').toBeDefined()
     // Schedule and storage-domain exports are shared runtime identities — the
     // calendar compares a ScheduleInputError with `instanceof` and reads the
     // provider's own domain tables — so the installed Host must resolve the
     // provider's instance rather than a duplicate copy under this package.
-    for (const runtime of ['@deepseek-ai/dsh-schedule', '@deepseek-ai/dsh-storage-domain']) {
+    for (const runtime of ['@deepseek-ai/dsh-typert-protocol', '@deepseek-ai/dsh-schedule', '@deepseek-ai/dsh-storage-domain']) {
       expect(manifest.peerDependencies[runtime], `missing peer ${runtime}`).toBeDefined()
       expect(manifest.devDependencies[runtime], `missing dev link ${runtime}`).toBeDefined()
       expect(manifest.dependencies[runtime], `${runtime} must not be an ordinary dependency`).toBeUndefined()

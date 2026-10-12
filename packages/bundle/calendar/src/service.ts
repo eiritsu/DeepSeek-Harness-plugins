@@ -492,6 +492,9 @@ function unavailable(): { readonly ok: false; readonly code: CalendarTaskErrorCo
  */
 function inputFailure(error: unknown): { readonly ok: false; readonly code: CalendarTaskErrorCode; readonly message: string } {
   if (error instanceof ScheduleInputError) return { ok: false, code: error.code, message: error.message }
+  if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === 'subagent_session') {
+    return { ok: false, code: 'subagent_session', message: (error as { message?: string }).message ?? 'A delegated subagent cannot use reminders.' }
+  }
   return { ok: false, code: 'internal_error', message: 'The Schedule service rejected this request.' }
 }
 
@@ -505,6 +508,7 @@ function describeUpdateMiss(code: CalendarTaskErrorCode): string {
     case 'schedule_not_found': return 'That task no longer exists.'
     case 'schedule_ended': return 'That task has already ended and can no longer be changed.'
     case 'schedule_conflict': return 'That task changed since this page last read it. Reload and apply the edit again.'
+    case 'subagent_session': return 'A delegated subagent cannot use reminders.'
     case 'invalid_prompt':
     case 'invalid_selector':
     case 'invalid_rule':
