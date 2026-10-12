@@ -113,6 +113,7 @@
 .status { margin: 0; padding: 24px 12px; color: var(--dsw-alias-label-tertiary); text-align: center; }
 .error,.notice { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0 0; color: var(--dsw-alias-state-error-primary); }
 .notice { color: var(--dsw-alias-state-success-primary); }
+.warning { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0 0; padding: 8px 12px; border-radius: var(--dsw-radius-sm); background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-state-warning-primary, #d97706); font-size: 12px; }
 .errorDetails { color: var(--dsw-alias-label-secondary); font-size: 12px; }
 .errorDetails pre { max-width: 500px; max-height: 140px; margin: 6px 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 .pagination { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; color: var(--dsw-alias-label-secondary); font-size: 12px; }

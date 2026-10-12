@@ -32,6 +32,7 @@ it('shows the global skill list in the official Plugins item and matches the vis
   }
   render(<InstalledSkillsPage {...globalProps} view="page" api={api} t={translate} />)
   const region = await screen.findByRole('region', { name: en.managerTitle })
+  await screen.findByText('@publisher/catalog-skill')
   expect(region.textContent).toMatchInlineSnapshot('"SkillsThis list contains directories with SKILL.md files in the global DSH skills folder. Removing a skill permanently deletes its files from this computer.Refresh@publisher/catalog-skillRemovelocal-skillRemove"')
   expect(within(region).getAllByRole('button', { name: en.removeSkill })).toHaveLength(2)
 })

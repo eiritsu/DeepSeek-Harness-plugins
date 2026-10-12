@@ -272,16 +272,33 @@ describe('SkillsMP search and pinned GitHub installation', () => {
   })
 
   it.each([
-    ['omitted files', { limitReason: 'file_count', skippedFiles: 1, truncated: true }],
-    ['truncated files', { limitReason: null, skippedFiles: 1, truncated: true }],
-  ])('rejects a partial SkillsMP manifest with a typed error (%s)', async (_name, partial) => {
+    ['omitted files', { limitReason: 'file_count', skippedFiles: 1, truncated: true }, 1, 'file_count'],
+    ['truncated files', { limitReason: null, skippedFiles: 2, truncated: true }, 2, undefined],
+  ])('accepts a SkillsMP manifest with skipped files and retains metadata (%s)', async (_name, partial, expectedSkipped, expectedReason) => {
     const fixture = installHttpFixture()
     fixture.setManifest({ ...makeManifest(), ...partial })
     const root = await temporaryRoot()
     await withCatalog(root, async (catalog) => {
       await catalog.catalog('SEO')
-      await expect(catalog.detail(SKILL_URL)).rejects.toMatchObject({ code: 'skillsmp/manifest-incomplete' })
-      expect(fetchMock.mock.calls.some(([input]) => requestUrl(input).origin === 'https://raw.githubusercontent.com')).toBe(false)
+      const detail = await catalog.detail(SKILL_URL)
+      expect(detail.skippedFiles).toBe(expectedSkipped)
+      expect(detail.limitReason).toBe(expectedReason)
+      expect(detail.skillMarkdown).toContain('# Reviewed SEO skill')
+      const result = await catalog.installSkill(SKILL_URL, detail.commitSha, true)
+      expect(result.files).toBe(1)
+    })
+  })
+
+  it('rejects a manifest missing SKILL.md with a typed error', async () => {
+    const fixture = installHttpFixture()
+    fixture.setManifest({
+      ...makeManifest(),
+      files: [{ path: 'helper.sh', size: 10, rawUrl: rawUrl('helper.sh') }],
+    })
+    const root = await temporaryRoot()
+    await withCatalog(root, async (catalog) => {
+      await catalog.catalog('SEO')
+      await expect(catalog.detail(SKILL_URL)).rejects.toMatchObject({ code: 'skillsmp/skill-markdown-missing' })
     })
   })
 

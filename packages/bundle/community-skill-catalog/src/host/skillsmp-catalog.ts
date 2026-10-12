@@ -250,12 +250,14 @@ export class SkillsMpCatalog extends TypertRemoteService {
       }
     }
     if (skillMarkdown === undefined) throw new RemoteError('skillsmp/skill-markdown-missing', 'GitHub skill directory must contain a root SKILL.md file.', {})
-    const detail = {
+    const detail: SkillsMpDetail = {
       skill,
       commitSha: manifest.commitSha,
       files: reviewedFiles.map(({ path, size, sha }) => ({ path, size, sha })),
       totalBytes,
       skillMarkdown,
+      ...(manifest.skippedFiles !== undefined ? { skippedFiles: manifest.skippedFiles } : {}),
+      ...(manifest.limitReason !== undefined ? { limitReason: manifest.limitReason } : {}),
     }
     this.rememberReview({ ...detail, reviewedFiles, target })
     return detail
@@ -1084,7 +1086,12 @@ function parseDownloadManifest(
   maxFiles: number,
   maxFileBytes: number,
   maxTotalBytes: number,
-): { readonly commitSha: string; readonly files: readonly ManifestFile[] } {
+): {
+  readonly commitSha: string
+  readonly files: readonly ManifestFile[]
+  readonly skippedFiles?: number
+  readonly limitReason?: 'file_count' | 'file_size' | 'total_size'
+} {
   const raw = record(value)
   if (raw === undefined) throw new Error('SkillsMP returned an invalid source manifest.')
   const commitSha = safeSha(text(raw.commitSha, 'manifest commit SHA', 40))
@@ -1094,12 +1101,6 @@ function parseDownloadManifest(
     throw new Error('SkillsMP returned an invalid manifest limit reason.')
   }
   if (typeof raw.truncated !== 'boolean') throw new Error('SkillsMP returned an invalid manifest truncation flag.')
-  if (limitReason !== null || skippedFiles !== 0 || raw.truncated) {
-    throw new RemoteError('skillsmp/manifest-incomplete', 'SkillsMP could not provide a complete skill file manifest.', {
-      skippedFiles,
-      ...(limitReason === null ? {} : { limitReason }),
-    })
-  }
   if (!Array.isArray(raw.files)) throw new Error('SkillsMP returned an invalid manifest file list.')
   if (raw.files.length > Math.min(100, maxFiles)) {
     throw new RemoteError('skillsmp/manifest-incomplete', 'SkillsMP manifest exceeds the supported file count.', { skippedFiles: 0, limitReason: 'file_count' })
@@ -1131,7 +1132,12 @@ function parseDownloadManifest(
   if (!files.some(file => file.path === 'SKILL.md')) {
     throw new RemoteError('skillsmp/skill-markdown-missing', 'GitHub skill directory must contain a root SKILL.md file.', {})
   }
-  return { commitSha, files }
+  return {
+    commitSha,
+    files,
+    ...(skippedFiles > 0 ? { skippedFiles } : {}),
+    ...(limitReason !== null ? { limitReason } : {}),
+  }
 }
 
 function canonicalRawUrl(owner: string, repo: string, commitSha: string, path: readonly string[]): string {

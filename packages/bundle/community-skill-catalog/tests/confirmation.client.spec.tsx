@@ -420,6 +420,28 @@ describe('SkillsMP catalog', () => {
     expect(screen.getByText('Incomplete manifest').closest('details')?.open).toBe(false)
   })
 
+  it('renders a warning notice when the manifest skipped non-essential files without blocking installation', async () => {
+    const detailWithSkipped: SkillsMpDetail = {
+      ...detail,
+      skippedFiles: 2,
+      limitReason: 'file_size',
+    }
+    const install = vi.fn().mockResolvedValue({ ok: true, value: { id: skill.id, commitSha: detail.commitSha, path: '/skills/example', files: 1, totalBytes: 24 } })
+    renderPanel({
+      catalog: vi.fn().mockResolvedValue({ ok: true, value: page }),
+      detail: vi.fn().mockResolvedValue({ ok: true, value: detailWithSkipped }),
+      installSkill: install,
+    }, translateZh)
+    fireEvent.change(screen.getByRole('searchbox', { name: zh.searchPlaceholder }), { target: { value: 'example skill' } })
+    fireEvent.click(screen.getByRole('button', { name: zh.search }))
+    fireEvent.click(await screen.findByRole('button', { name: skill.name }))
+    expect(await screen.findByText('SKILL.md')).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toContain('2 个文件')
+    expect(screen.getByRole('status').textContent).toContain(zh.manifestFileSizeLimit)
+    const installButton = screen.getByRole('button', { name: zh.install })
+    expect(installButton).not.toHaveProperty('disabled', true)
+  })
+
   it('localizes source and review cache expiry prompts', async () => {
     const catalog = vi.fn().mockResolvedValue({
       ok: false,

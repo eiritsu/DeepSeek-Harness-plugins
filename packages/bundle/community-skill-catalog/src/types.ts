@@ -84,6 +84,10 @@ export interface SkillsMpDetail {
   readonly files: readonly { readonly path: string; readonly size: number; readonly sha: string }[]
   readonly totalBytes: number
   readonly skillMarkdown: string
+  /** Number of auxiliary or oversized files omitted by SkillsMP. */
+  readonly skippedFiles?: number
+  /** Limit category reported when files were omitted by SkillsMP. */
+  readonly limitReason?: 'file_count' | 'file_size' | 'total_size'
 }
 
 /** Result of installing a reviewed Git commit into the configured skill root. */

@@ -355,6 +355,12 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
           {error !== '' ? <div className={css.error} role="alert"><span>{error}</span>{errorDetails !== '' ? <details className={css.errorDetails}><summary>{t('technicalDetails')}</summary><pre>{errorDetails}</pre></details> : null}<Button variant="outline" size="sm" onClick={() => { setRetry(value => value + 1) }}>{t('retry')}</Button></div> : null}
           {selectedDetail === undefined ? error === '' ? <p className={css.status} role="status">{t('loading')}</p> : null : <section className={css.detail}>
             <h3>{selectedDetail.skill.name}</h3><p>{selectedDetail.skill.description}</p>
+            {selectedDetail.skippedFiles !== undefined && selectedDetail.skippedFiles > 0 ? <div className={css.warning} role="status">
+              <span>{t('manifestWarning', {
+                count: selectedDetail.skippedFiles.toLocaleString(),
+                limit: selectedDetail.limitReason !== undefined ? t(selectedDetail.limitReason === 'file_count' ? 'manifestFileCountLimit' : selectedDetail.limitReason === 'file_size' ? 'manifestFileSizeLimit' : 'manifestTotalSizeLimit') : '',
+              })}</span>
+            </div> : null}
             <dl><dt>{t('author')}</dt><dd>{selectedDetail.skill.author}</dd><dt>{t('contentLanguage')}</dt><dd>{selectedDetail.skill.contentLanguage}</dd><dt>{t('source')}</dt><dd><a href={selectedDetail.skill.url} target="_blank" rel="noopener noreferrer">{t('openSkillsMp')}</a> · <a href={selectedDetail.skill.githubUrl} target="_blank" rel="noopener noreferrer">{t('openGitHub')}</a></dd><dt>{t('commit')}</dt><dd><code>{selectedDetail.commitSha}</code></dd><dt>{t('stars')}</dt><dd>{selectedDetail.skill.stars.toLocaleString()} · {t('starsMeaning')}</dd><dt>{t('size')}</dt><dd>{t('bytes', { count: selectedDetail.totalBytes.toLocaleString() })}</dd></dl>
             <h4>{t('files')}</h4><ul className={css.files}>{selectedDetail.files.map(file => <li key={file.path}><code>{file.path}</code><span>{t('bytes', { count: file.size.toLocaleString() })}</span></li>)}</ul>
             <h4>{t('skillMarkdown')}</h4><pre className={css.markdownPreview}>{selectedDetail.skillMarkdown}</pre>
