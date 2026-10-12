@@ -9,7 +9,7 @@
 下表每个已发布插件的最后一列都是 Release 安装 URL。复制该 URL，粘贴到 Web 或 Desktop 应用的 **Plugins → Install**，安装器会按原样安装。Source 列用于阅读源码：GitHub 目录 URL 既不是 git 仓库也不是 tarball，安装器会拒绝它。当前的技能库安装地址是：
 
 ```text
-https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.1/deepseek-ai-dsh-community-skill-catalog-0.2.1-alpha.2.tgz
+https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.2/deepseek-ai-dsh-community-skill-catalog-0.2.1-alpha.2.tgz
 ```
 
 更新已安装的插件后请退出并重新打开应用：已打开的应用会继续提供更新前加载的版本。Desktop 通过自身的 Plugins 页面安装和更新插件；下面的 CLI 形式只适用于由 CLI 管理的 profile：
@@ -56,17 +56,17 @@ pnpm dsh web
 
 | 插件 | npm 包 | 功能和界面 | 源码（仅浏览） | 安装 URL |
 |---|---|---|---|---|
-| Calendar 日历 | `@deepseek-ai/dsh-calendar` | 汇总 Schedule 自动化、本地条目与用户自行提供的 iCalendar 订阅的日历视图；Web 与桌面 | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/calendar> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.1/deepseek-ai-dsh-calendar-0.2.1-alpha.2.tgz> |
-| 社区插件目录 | `@deepseek-ai/dsh-community-plugin-catalog` | 浏览和安装社区插件；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/community-plugin-catalog> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.1/deepseek-ai-dsh-community-plugin-catalog-0.2.1-alpha.2.tgz> |
-| 社区 Skill 目录 | `@deepseek-ai/dsh-community-skill-catalog` | 搜索 SkillsMP 并安装固定 Git commit 的 GitHub Skill；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/community-skill-catalog> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.1/deepseek-ai-dsh-community-skill-catalog-0.2.1-alpha.2.tgz> |
-| Lark 与飞书集成 | `@deepseek-ai/dsh-lark-integration` | 将获准用户的私聊转成 Harness Session，并配置连接；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/lark-integration> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.1/deepseek-ai-dsh-lark-integration-0.2.1-alpha.2.tgz> |
-| 工具与连接 | `@deepseek-ai/dsh-tools-connections` | 添加 Brave、Tavily 搜索提供者、Firecrawl 提取工具和设置页；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/tools-connections> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.1/deepseek-ai-dsh-tools-connections-0.2.1-alpha.2.tgz> |
+| Calendar 日历 | `@deepseek-ai/dsh-calendar` | 汇总 Schedule 自动化、本地条目与用户自行提供的 iCalendar 订阅的日历视图；Web 与桌面 | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/calendar> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.2/deepseek-ai-dsh-calendar-0.2.1-alpha.2.tgz> |
+| 社区插件目录 | `@deepseek-ai/dsh-community-plugin-catalog` | 浏览和安装社区插件；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/community-plugin-catalog> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.2/deepseek-ai-dsh-community-plugin-catalog-0.2.1-alpha.2.tgz> |
+| 社区 Skill 目录 | `@deepseek-ai/dsh-community-skill-catalog` | 搜索 SkillsMP 并安装固定 Git commit 的 GitHub Skill；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/community-skill-catalog> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.2/deepseek-ai-dsh-community-skill-catalog-0.2.1-alpha.2.tgz> |
+| Lark 与飞书集成 | `@deepseek-ai/dsh-lark-integration` | 将获准用户的私聊转成 Harness Session，并配置连接；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/lark-integration> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.2/deepseek-ai-dsh-lark-integration-0.2.1-alpha.2.tgz> |
+| 工具与连接 | `@deepseek-ai/dsh-tools-connections` | 添加 Brave、Tavily 搜索提供者、Firecrawl 提取工具和设置页；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/tools-connections> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.2/deepseek-ai-dsh-tools-connections-0.2.1-alpha.2.tgz> |
 
 `base`、`web-app`、`headless`、`sdk-app`、`sdk-minimal` 和 `acp-app` 是应用 profile 模板，不属于此处的用户扩展清单。
 
 ## 兼容性与软件包内容
 
-以上插件支持 Harness runtime base 和插件软件包版本均为 `0.2.1-alpha.2` 的 Eiritsu Web/Desktop 发行版；Release tag `v0.2.1-alpha.2.20261012.1` 不会改变兼容版本。目前公开的 Electron 安装包 shell `buildVersion` 是 `0.2.1-alpha.2.20261001.1`；只要其内置 runtime base 和插件软件包为 `0.2.1-alpha.2`，就与这些插件兼容。profile 组合包和 Harness runtime 软件包也必须保持此 base 版本。已安装旧版 Lark 集成的用户需要先卸载，再从[本次 Release 的 Lark 资源](https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.1/deepseek-ai-dsh-lark-integration-0.2.1-alpha.2.tgz)重新安装。Harness 公共 API 尚未稳定，这些插件使用了此发行版新增的 API；未修改的上游构建不足以运行它们。
+以上插件支持 Harness runtime base 和插件软件包版本均为 `0.2.1-alpha.2` 的 Eiritsu Web/Desktop 发行版；Release tag `v0.2.1-alpha.2.20261012.2` 不会改变兼容版本。目前公开的 Electron 安装包 shell `buildVersion` 是 `0.2.1-alpha.2.20261001.1`；只要其内置 runtime base 和插件软件包为 `0.2.1-alpha.2`，就与这些插件兼容。profile 组合包和 Harness runtime 软件包也必须保持此 base 版本。已安装旧版 Lark 集成的用户需要先卸载，再从[本次 Release 的 Lark 资源](https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-alpha.2.20261012.2/deepseek-ai-dsh-lark-integration-0.2.1-alpha.2.tgz)重新安装。Harness 公共 API 尚未稳定，这些插件使用了此发行版新增的 API；未修改的上游构建不足以运行它们。
 
 Release 资源包含各软件包 `files` 清单选取的构建后 JavaScript、类型声明、`cordis.patch.yml` 和运行时资源，不包含 monorepo 工作树或开发依赖。
 

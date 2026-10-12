@@ -536,7 +536,9 @@ export class PluginManager extends TypertRemoteService {
         const after = readProfileManifest('dsh', this.profile.dir).dependencies ?? {}
         const installed = Object.keys(after).filter(name => before[name] !== after[name])
         // Registry retries can retain the saved range after a partial installation.
-        if (installed.length === 0) installed.push(...Object.keys(after).filter(name => spec === name || spec.startsWith(`${name}@`)))
+        if (installed.length === 0) {
+          installed.push(...Object.keys(after).filter(name => spec === name || spec.startsWith(`${name}@`) || after[name] === spec))
+        }
         const target = installed[0]
         if (installed.length !== 1 || target === undefined) throw new ManagementFailure('ambiguous-install')
         name = target
