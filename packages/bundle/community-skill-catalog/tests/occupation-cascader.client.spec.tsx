@@ -417,13 +417,17 @@ describe('occupation menu', () => {
     ])
   })
 
-  it('scrolls the active row into view while the menu is open', () => {
+  it('scrolls the active row into view while the menu is open, but does not re-scroll on scroll events', () => {
     const scrollIntoView = vi.fn()
     Reflect.set(Element.prototype, 'scrollIntoView', scrollIntoView)
     try {
       const { trigger } = renderField()
       fireEvent.click(trigger())
+      expect(scrollIntoView).toHaveBeenCalledTimes(1)
       expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+
+      fireEvent.scroll(window)
+      expect(scrollIntoView).toHaveBeenCalledTimes(1)
     } finally {
       Reflect.deleteProperty(Element.prototype, 'scrollIntoView')
     }

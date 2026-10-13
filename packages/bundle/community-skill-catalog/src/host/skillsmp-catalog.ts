@@ -398,7 +398,9 @@ export class SkillsMpCatalog extends TypertRemoteService {
         }
       })
       await Promise.allSettled(workers)
-      if (firstError !== undefined) throw firstError
+      if (firstError !== undefined) {
+        throw firstError instanceof Error ? firstError : new Error(typeof firstError === 'string' ? firstError : 'SkillsMP download failed.')
+      }
       signal.throwIfAborted()
       if (total !== reviewed.totalBytes) throw new Error('Installed GitHub file bytes do not match the reviewed inventory.')
       await this.validateStagedSkill(operation, signal)

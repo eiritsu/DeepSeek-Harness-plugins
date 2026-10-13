@@ -259,7 +259,7 @@ export function OccupationCascader({
     if (!open) return
     const row = document.getElementById(rowId(scope, activeIndex))
     if (row !== null && typeof row.scrollIntoView === 'function') row.scrollIntoView({ block: 'nearest' })
-  })
+  }, [open, scope, activeIndex])
   useDismissOnOutsidePointer(rootRef, open, () => { close(false) }, menuRef)
   // The menu owns Escape at document capture so the catalog dialog behind it stays open.
   useMenuEscape(open, () => { close(true) })
