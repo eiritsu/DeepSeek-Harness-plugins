@@ -41,6 +41,25 @@ const SEARCH_RESPONSE = {
   meta: { requestId: 'sample', responseTimeMs: 350 },
 }
 
+const DEFAULT_SKILLS_RESPONSE = {
+  skills: [{
+    id: 'openclaw-openclaw-agents-skills-agent-transcript-skill-md',
+    name: 'agent-transcript',
+    author: 'openclaw',
+    description: 'Add a redacted agent transcript',
+    contentLanguage: 'en',
+    githubUrl: 'https://github.com/openclaw/openclaw/tree/main/.agents/skills/agent-transcript',
+    stars: 391533,
+    updatedAt: 1779808673,
+    route: {
+      ownerSlug: 'openclaw',
+      repoSlug: 'openclaw',
+      routeSlug: 'agents-skills-agent-transcript',
+    },
+  }],
+  pagination: { page: 1, limit: 24, total: 480, totalPages: 20, hasNext: true, hasPrev: false, totalIsExact: true },
+}
+
 const roots: string[] = []
 async function temporaryRoot(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'dsh-skillsmp-test-'))
@@ -65,18 +84,23 @@ function installHttpFixture(
   setToken(value: unknown): void
   setSearchResponse(value: unknown): void
   setSearchResponseFor(query: string, value: unknown): void
+  setSkillsResponse(value: unknown): void
 } {
   let skillContent = reviewedSkillContent
   let manifest: unknown = makeManifest(asset, reviewedSkillContent)
   let target: unknown = DOWNLOAD_TARGET
   let token: unknown = DOWNLOAD_TOKEN
   let searchResponse: unknown = SEARCH_RESPONSE
+  let skillsResponse: unknown = DEFAULT_SKILLS_RESPONSE
   const searchResponses = new Map<string, unknown>()
   lookupMock.mockReset().mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
   fetchMock.mockReset().mockImplementation(async (input: URL | RequestInfo) => {
     const url = requestUrl(input)
     if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/v1/skills/search') {
       return response(searchResponses.get(url.searchParams.get('q') ?? '') ?? searchResponse)
+    }
+    if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/skills') {
+      return response(skillsResponse)
     }
     if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/github-contents/token') {
       return response({ token, target })
@@ -94,6 +118,7 @@ function installHttpFixture(
     setToken(value) { token = value },
     setSearchResponse(value) { searchResponse = value },
     setSearchResponseFor(query, value) { searchResponses.set(query, value) },
+    setSkillsResponse(value) { skillsResponse = value },
   }
 }
 
@@ -159,6 +184,34 @@ describe('SkillsMP search and pinned GitHub installation', () => {
       const call = fetchMock.mock.calls.at(0)
       if (call === undefined) throw new Error('SkillsMP search did not issue an HTTP request.')
       expect(requestUrl(call[0]).searchParams.get('occupation')).toBe(occupation)
+    })
+  })
+
+  it('filters skills by occupation or category without a search query', async () => {
+    installHttpFixture()
+    const root = await temporaryRoot()
+    const occupation = 'software-developers'
+    await withCatalog(root, async (catalog) => {
+      const result = await catalog.catalog('', undefined, occupation)
+      expect(result.items).toHaveLength(1)
+      expect(result.items[0]).toEqual({
+        id: 'openclaw-openclaw-agents-skills-agent-transcript-skill-md',
+        name: 'agent-transcript',
+        author: 'openclaw',
+        description: 'Add a redacted agent transcript',
+        contentLanguage: 'en',
+        githubUrl: 'https://github.com/openclaw/openclaw/tree/main/.agents/skills/agent-transcript',
+        url: 'https://skillsmp.com/creators/openclaw/openclaw/agents-skills-agent-transcript',
+        stars: 391533,
+        updatedAt: 1779808673,
+      })
+      expect(result.total).toBe(480)
+      expect(result.totalIsExact).toBe(true)
+      const call = fetchMock.mock.calls.at(0)
+      if (call === undefined) throw new Error('SkillsMP search did not issue an HTTP request.')
+      expect(requestUrl(call[0]).pathname).toBe('/api/skills')
+      expect(requestUrl(call[0]).searchParams.get('occupation')).toBe(occupation)
+      expect(requestUrl(call[0]).searchParams.get('q')).toBeNull()
     })
   })
 

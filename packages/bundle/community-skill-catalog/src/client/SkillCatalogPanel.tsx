@@ -155,10 +155,12 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
     return () => { controller.abort() }
   }, [api, locale, open, taxonomyForceRefresh, t])
 
+  const hasFilter = query.trim() !== '' || category !== '' || occupation !== ''
+  const canSubmit = draft.trim() !== '' || categoryDraft.trim() !== '' || occupationDraft.trim() !== ''
   const requestKey = JSON.stringify([query, category, occupation, language, sort, pageNumber])
   const currentPage = resolvedKey === requestKey
   useEffect(() => {
-    if (!open || query.trim() === '' || selected !== undefined) {
+    if (!open || !hasFilter || selected !== undefined) {
       setBusy(false)
       return
     }
@@ -178,7 +180,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
       if (!controller.signal.aborted) { setError(errorMessage(reason, t)); setErrorDetails(diagnosticMessage(reason)) }
     }).finally(() => { if (!controller.signal.aborted) setBusy(false) })
     return () => { controller.abort() }
-  }, [api, category, language, occupation, open, pageNumber, query, requestKey, retry, selected, sort])
+  }, [api, category, hasFilter, language, occupation, open, pageNumber, query, requestKey, retry, selected, sort, t])
 
   useEffect(() => {
     if (!open || selected === undefined) return
@@ -199,13 +201,20 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
   const close = (): void => { setSelected(undefined); setDetail(undefined); actions.close() }
   const submit = (value: string): void => {
     const trimmed = value.trim()
+    const nextCategory = categoryDraft.trim()
+    const nextOccupation = occupationDraft.trim()
+    const nextLanguage = languageDraft.trim()
     setDraft(trimmed)
-    setCategory(categoryDraft.trim())
-    setOccupation(occupationDraft.trim())
-    setLanguage(languageDraft.trim())
+    setCategory(nextCategory)
+    setOccupation(nextOccupation)
+    setLanguage(nextLanguage)
     setSort(sortDraft)
     setPageNumber(1)
     setQuery(trimmed)
+    if (trimmed === '' && nextCategory === '' && nextOccupation === '') {
+      setPage(undefined)
+      setResolvedKey('')
+    }
   }
   const search = (event: FormEvent<HTMLFormElement>): void => { event.preventDefault(); submit(draft) }
   /**
@@ -220,6 +229,8 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
     setDraft(value)
     if (value.trim() !== '') return
     setQuery('')
+    setCategory('')
+    setOccupation('')
     setPage(undefined)
     setResolvedKey('')
     setPageNumber(1)
@@ -253,9 +264,9 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
         {selected === undefined ? <>
           <form className={css.search} onSubmit={search}>
             <Input type="search" value={draft} aria-label={t('searchPlaceholder')} placeholder={t('searchPlaceholder')} icon={<IconSearchOutlineRegular size={16} />} onChange={(event) => { editDraft(event.currentTarget.value) }} />
-            <Button variant="primary" type="submit" disabled={draft.trim() === ''}>{t('search')}</Button>
+            <Button variant="primary" type="submit" disabled={!canSubmit}>{t('search')}</Button>
           </form>
-          {query === '' ? <section className={css.scenarios} aria-label={t('useCasesTitle')}>
+          {!hasFilter ? <section className={css.scenarios} aria-label={t('useCasesTitle')}>
             <p className={css.scenarioHeading}>{t('useCasesTitle')}</p>
             <div className={css.scenarioButtons}>{USE_CASES.map(([key, value]) => <Button key={key} variant="primary" size="sm" onClick={() => { submit(value) }}>{t(key satisfies SkillCatalogKey)}</Button>)}</div>
           </section> : null}
@@ -319,7 +330,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
                 }}>
                   {SORTS.map(value => <option key={value} value={value}>{t(value satisfies SkillCatalogKey)}</option>)}
                 </select></label>
-                <Button variant="primary" size="sm" disabled={taxonomy === undefined || taxonomyBusy} onClick={() => { submit(query) }}>{t('applyFilters')}</Button>
+                <Button variant="primary" size="sm" disabled={taxonomy === undefined || taxonomyBusy || (!canSubmit && !hasFilter)} onClick={() => { submit(draft) }}>{t('applyFilters')}</Button>
               </div>
               {taxonomyBusy ? <p className={css.status} role="status">{t('taxonomyLoading')}</p> : null}
               <div className={css.taxonomyActions}>
@@ -331,7 +342,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
           {notice !== '' ? <p className={css.notice} role="status">{notice}</p> : null}
           {error !== '' ? <div className={css.error} role="alert"><span>{error}</span>{errorDetails !== '' ? <details className={css.errorDetails}><summary>{t('technicalDetails')}</summary><pre>{errorDetails}</pre></details> : null}<Button variant="outline" size="sm" onClick={() => { setRetry(value => value + 1) }}>{t('retry')}</Button></div> : null}
           <div className={css.results} aria-busy={busy}>
-            {query === '' ? <p className={css.status}>{t('searchPrompt')}</p> : null}
+            {!hasFilter ? <p className={css.status}>{t('searchPrompt')}</p> : null}
             {busy && !currentPage ? <p className={css.status} role="status">{t('loading')}</p> : null}
             {currentPage ? page?.items.map((skill, index) => <article key={`${skill.id}:${index}`} className={css.row}>
               <div className={css.skill}>

@@ -464,4 +464,31 @@ describe('SkillsMP catalog', () => {
     fireEvent.click(await screen.findByRole('button', { name: skill.name }))
     expect((await screen.findByRole('alert')).textContent).toContain(en.skillsMpReviewRequired)
   })
+
+  it('applies occupation filter without search query and renders results', async () => {
+    const catalog = vi.fn().mockResolvedValue({ ok: true, value: page })
+    const taxonomy = vi.fn().mockResolvedValue({
+      ok: true,
+      value: {
+        categories: [],
+        occupations: [{
+          slug: 'software-developers',
+          name: 'Software Developers',
+          level: 1,
+          skillCount: 480,
+        }],
+      },
+    })
+    renderPanel({ catalog, detail: vi.fn(), installSkill: vi.fn(), taxonomy })
+    fireEvent.click(screen.getByRole('button', { name: en.advancedFilters }))
+    const occupationTrigger = await screen.findByRole('button', { name: new RegExp(`^${en.occupation}:`, 'u') })
+    fireEvent.click(occupationTrigger)
+    fireEvent.change(screen.getByRole('combobox', { name: en.searchOccupations }), { target: { value: 'Software' } })
+    const option = await screen.findByRole('option', { name: /Software Developers/u })
+    fireEvent.click(option)
+    fireEvent.click(screen.getByRole('button', { name: en.applyFilters }))
+    await screen.findByRole('button', { name: skill.name })
+    expect(catalog).toHaveBeenCalledWith('', undefined, 'software-developers', undefined, 'stars', 1, 24, expect.any(AbortSignal))
+    expect(screen.queryByText(en.searchPrompt)).toBeNull()
+  })
 })

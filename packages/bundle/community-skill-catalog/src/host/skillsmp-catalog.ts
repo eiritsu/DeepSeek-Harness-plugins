@@ -150,31 +150,33 @@ export class SkillsMpCatalog extends TypertRemoteService {
   ): Promise<SkillsMpPage> {
     signal = this.callSignal(signal)
     const selectedQuery = bounded(query, 120)
-    if (selectedQuery.length === 0) throw new Error('SkillsMP search query must not be empty.')
     if (selectedQuery.includes('*')) throw new Error('SkillsMP wildcard searches are not supported.')
     const selectedCategory = bounded(category, 80)
     const selectedOccupation = bounded(occupation, 256)
+    if (selectedQuery.length === 0 && selectedCategory.length === 0 && selectedOccupation.length === 0) {
+      throw new Error('SkillsMP search query or filter must not be empty.')
+    }
     const selectedLanguage = bounded(language, 8)
     if (selectedLanguage !== '' && !LANGUAGES.has(selectedLanguage)) throw new Error('Unsupported SkillsMP language filter.')
     const selectedSort = sort ?? 'stars'
     if (!SORTS.has(selectedSort)) throw new Error('Unsupported SkillsMP sort key.')
     const selectedPage = integer(page ?? 1, 1, 10000)
     const selectedSize = integer(pageSize ?? 24, 1, MAX_PAGE_SIZE)
-    const url = new URL('/api/v1/skills/search', SEARCH_ORIGIN)
-    url.searchParams.set('q', selectedQuery)
+    const url = new URL(selectedQuery.length > 0 ? '/api/v1/skills/search' : '/api/skills', SEARCH_ORIGIN)
+    if (selectedQuery.length > 0) url.searchParams.set('q', selectedQuery)
     url.searchParams.set('limit', String(selectedSize))
     url.searchParams.set('page', String(selectedPage))
     url.searchParams.set('sortBy', selectedSort)
     if (selectedCategory !== '') url.searchParams.set('category', selectedCategory)
     if (selectedOccupation !== '') url.searchParams.set('occupation', selectedOccupation)
     if (selectedLanguage !== '') url.searchParams.set('language', selectedLanguage)
-    const key = url.search
+    const key = `${url.pathname}${url.search}`
     const cached = this.cachedSearch(key)
     if (cached !== undefined) return cached
     {
       const raw = record(await this.json(url, this.timeoutMs, this.maxResponseBytes, signal))
-      if (raw?.success !== true) throw new Error('SkillsMP returned an unsuccessful search response.')
-      const data = record(raw.data)
+      const data = raw?.data !== undefined ? record(raw.data) : raw
+      if (raw?.data !== undefined && raw.success !== true) throw new Error('SkillsMP returned an unsuccessful search response.')
       const pagination = record(data?.pagination)
       if (!Array.isArray(data?.skills) || pagination === undefined) throw new Error('SkillsMP returned an invalid search page.')
       const rows = data.skills.map(skillsMpSkill)
@@ -1023,7 +1025,14 @@ function skillsMpSkill(value: unknown): SkillsMpSkill {
   const raw = record(value)
   if (raw === undefined) throw new Error('SkillsMP returned an invalid skill record.')
   const githubUrl = normalizeGitHubUrl(text(raw.githubUrl, 'GitHub URL', 2048))
-  const url = new URL(text(raw.skillUrl, 'SkillsMP URL', 2048))
+  let rawSkillUrl = typeof raw.skillUrl === 'string' ? raw.skillUrl : ''
+  if (rawSkillUrl === '' && raw.route !== undefined) {
+    const route = record(raw.route)
+    if (route !== undefined && typeof route.ownerSlug === 'string' && typeof route.repoSlug === 'string' && typeof route.routeSlug === 'string') {
+      rawSkillUrl = `${SEARCH_ORIGIN}/creators/${route.ownerSlug}/${route.repoSlug}/${route.routeSlug}`
+    }
+  }
+  const url = new URL(text(rawSkillUrl, 'SkillsMP URL', 2048))
   if (url.protocol !== 'https:' || url.origin !== SEARCH_ORIGIN || url.username !== '' || url.password !== ''
     || url.search !== '' || url.hash !== '' || !url.pathname.startsWith('/creators/')) {
     throw new Error('SkillsMP returned an invalid skill URL.')
