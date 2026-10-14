@@ -32,7 +32,7 @@ The bundle accepts private-chat messages only from the configured user. Quick co
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
 
-The profile patch inserts one `lark` Host row with both the private-chat connection and `lark_cli` disabled. The package contains its Host wrapper, private-chat implementation, official Lark CLI launcher, and Client entry; the Client entry registers the bundle detail page only while the Host configuration is served. The Typert Loader registers the package's `./typert` contribution with the Host entry; direct plugin mounts register it only when the Loader has not already done so. App registration uses the official channel SDK. User device authorization and identity lookup use the official CLI through `ctx.subprocess`; the application secret is sent through stdin, never argv or environment variables, and device codes stay in the Host credential store. Only exact read-only commands in the bundle allowlist run without approval; other CLI commands request the official tool approval flow. Use `lark_cli` with `auth status` or `auth status --json` to inspect this bundle's CLI configuration, and use `im +chat-list` with supported read-only filters such as `--types p2p`, `--sort active_time`, `--page-size 5`, and `--format json` to list chats. A rejected approval means the requested operation did not run and gives no information about configuration. Connection state uses the existing `larkStatus` Remote from `dsh-lark`; setup actions use the bundle's separate `larkSetup` Remote.
+The profile patch inserts one `lark` Host row with both the private-chat connection and `lark_cli` disabled. The package contains its Host wrapper, private-chat implementation, official Lark CLI launcher, and Client entry; the Client entry registers the bundle detail page only while the Host configuration is served. The Typert Loader registers the package's `./typert` contribution with the Host entry; direct plugin mounts register it only when the Loader has not already done so. App registration uses the official channel SDK. User device authorization and identity lookup use the official CLI through `ctx.subprocess`; the application secret is sent through stdin, never argv or environment variables, and device codes stay in the Host credential store. Use `lark_cli` with `auth status` or `auth status --json` to inspect this bundle's CLI configuration, and use commands like `im +chat-list` to list chats. Connection state uses the existing `larkStatus` Remote from `dsh-lark`; setup actions use the bundle's separate `larkSetup` Remote.
 
 Load this package as the only Host owner of the Lark integration. Do not load the separate `@deepseek-ai/dsh-lark` Host entry in the same profile; duplicate descriptor ownership fails explicitly. The standalone package remains the implementation source used by this bundle.
 
@@ -69,9 +69,9 @@ No runtime invariant companion is published because this package has no independ
 | Capability | Current coverage |
 |---|---|
 | Private-chat Session bridge | Included for one configured user. |
-| Official Lark CLI | Included as an opt-in `lark_cli` tool; read-only commands are allowlisted and other commands request approval. |
+| Official Lark CLI | Included as an opt-in `lark_cli` tool. |
 | Quick app registration and user device authorization | Included for this integration's private-chat use. General OAuth setup and permission administration are not included. |
-| Permission administration | Not included; approval of one CLI call is not Lark permission management. |
+| Permission administration | Not included; Lark permission management is configured on the official Lark developer platform. |
 
 <a id="dev-note"></a>
 ### Dev Note

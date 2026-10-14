@@ -11,7 +11,7 @@ export { Config, name }
 /** Services used by private-chat ingress and the optional CLI tool. */
 export const inject = [...larkInject, 'configEditor', 'subprocess', 'tools']
 
-/** Mount private-chat ingress and an opt-in, approval-gated official CLI tool.
+/** Mount private-chat ingress and an opt-in official CLI tool.
  * The package's `./typert` artifact is generated into `lib/` by the host
  * bundle, and `dsh-typert-loader` registers it for this Loader entry; importing
  * it here would read an artifact this face has not produced yet.

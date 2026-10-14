@@ -3,7 +3,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
-import { defineTool, type PreToolDecision } from '@deepseek-ai/dsh-tools'
+import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { SubprocessHandle } from '@deepseek-ai/dsh-subprocess'
 import type { Config } from './host/lark/plugin.ts'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
@@ -46,36 +46,6 @@ interface CliSettings extends CliRunOptions {
   readonly brand: 'feishu' | 'lark'
 }
 
-/** Commands whose official CLI contract is read-only without external metadata. */
-export function isLarkCliReadOnly(args: readonly string[]): boolean {
-  if (args.length === 1 && (args[0] === '--help' || args[0] === '-h' || args[0] === 'doctor' || args[0] === 'schema')) return true
-  if (args[0] === 'im' && args[1] === '+chat-list') return isReadOnlyChatList(args.slice(2))
-  if (args.length === 2 && (args[0] === 'auth' && ['list', 'scopes', 'status'].includes(args[1] ?? '')
-    || args[0] === 'skills' && args[1] === 'list')) return true
-  if (args.length === 3 && args[0] === 'auth' && args[1] === 'status' && args[2] === '--json') return true
-  return args.length === 3 && args[0] === 'skills' && args[1] === 'read'
-}
-
-function isReadOnlyChatList(args: readonly string[]): boolean {
-  const seen = new Set<string>()
-  for (let index = 0; index < args.length; index++) {
-    const flag = args[index]
-    if (flag === '--json') {
-      if (seen.has(flag)) return false
-      seen.add(flag)
-      continue
-    }
-    if (flag !== '--types' && flag !== '--sort' && flag !== '--page-size' && flag !== '--format') return false
-    const value = args[++index]
-    if (value === undefined || value.startsWith('--') || seen.has(flag)) return false
-    if (flag === '--types' && !['p2p', 'group', 'p2p,group', 'group,p2p'].includes(value)) return false
-    if (flag === '--sort' && value !== 'active_time' && value !== 'create_time') return false
-    if (flag === '--page-size' && (!/^\d+$/.test(value) || Number(value) < 1 || Number(value) > 100)) return false
-    if (flag === '--format' && value !== 'json') return false
-    seen.add(flag)
-  }
-  return true
-}
 
 function result(handle: SubprocessHandle, timedOut: () => boolean) {
   return handle.done.then(outcome => ({
@@ -304,12 +274,12 @@ export function applyLarkCli(ctx: Context, config: Config): void {
         disposeTool?.()
         disposeTool = ctx.tools.register(defineTool({
           name: 'lark_cli',
-          description: 'Run the official Lark/Feishu CLI using the configured application. Use ["auth", "status"] to check this bundle’s CLI configuration. A rejected approval means the requested operation did not run; it does not indicate whether Lark is configured. Read-only status and query commands run directly; all other commands require user approval.',
+          description: 'Run the official Lark/Feishu CLI using the configured application. Use ["auth", "status"] to check this bundle’s CLI configuration.',
           parameters: {
             arguments: {
               type: 'array',
               required: true,
-              description: 'Arguments after lark-cli, for example ["calendar", "+agenda", "--json"]. Use ["auth", "status"] to inspect configuration; do not infer configuration state from a rejected approval.',
+              description: 'Arguments after lark-cli, for example ["calendar", "+agenda", "--json"]. Use ["auth", "status"] to inspect configuration.',
               items: { type: 'string' },
             },
           },
@@ -349,16 +319,9 @@ export function applyLarkCli(ctx: Context, config: Config): void {
       }
     }
     const stopVolatile = ctx.on('loader/volatile-update', sync)
-    const stopApproval = ctx.on('tools/pre-execute', async (exec, next): Promise<PreToolDecision> => {
-      if (exec.name !== 'lark_cli') return next()
-      const args = (exec.arguments as { arguments?: unknown } | undefined)?.arguments
-      if (Array.isArray(args) && args.every(value => typeof value === 'string') && isLarkCliReadOnly(args)) return next()
-      return { kind: 'ask', reason: 'This Lark CLI operation may change Lark or Feishu data.' }
-    })
     sync()
     return () => {
       stopVolatile()
-      stopApproval()
       disposeTool?.()
     }
   }, 'dsh-lark-integration: CLI tool')
