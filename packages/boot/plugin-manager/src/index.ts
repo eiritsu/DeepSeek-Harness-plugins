@@ -537,7 +537,14 @@ export class PluginManager extends TypertRemoteService {
         const installed = Object.keys(after).filter(name => before[name] !== after[name])
         // Registry retries can retain the saved range after a partial installation.
         if (installed.length === 0) {
-          installed.push(...Object.keys(after).filter(name => spec === name || spec.startsWith(`${name}@`) || after[name] === spec))
+          const normalizedSpec = spec.replace(/^(?:file|link):/, '')
+          installed.push(...Object.keys(after).filter(name => (
+            spec === name
+            || spec.startsWith(`${name}@`)
+            || after[name] === spec
+            || after[name] === `file:${spec}`
+            || after[name]?.replace(/^(?:file|link):/, '') === normalizedSpec
+          )))
         }
         const target = installed[0]
         if (installed.length !== 1 || target === undefined) throw new ManagementFailure('ambiguous-install')

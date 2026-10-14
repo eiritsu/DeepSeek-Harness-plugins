@@ -114,6 +114,6 @@ No model request context is changed.
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-None.
+No runtime invariant companion is published because this package has no independently observable runtime relationship that can diverge.
 
 </details>

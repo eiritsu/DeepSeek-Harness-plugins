@@ -814,6 +814,14 @@ it('reports repeated installs as requiring restart and ambiguous package changes
   onTestFinished(() => { install.mockRestore() })
   expect(await manager.installBundle('extra')).toMatchObject({ changed: false, application: 'restart-required' })
   expect(await manager.installBundle('extra@1')).toMatchObject({ changed: false, application: 'restart-required' })
+  const tarballPath = join(dir, 'extra-1.0.0.tgz')
+  const manifest = readProfileManifest('test', dir)
+  manifest.dependencies = { extra: `file:${tarballPath}` }
+  writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest))
+  expect(await manager.installBundle(tarballPath)).toMatchObject({ changed: false, application: 'restart-required' })
+  expect(await manager.installBundle(`file:${tarballPath}`)).toMatchObject({ changed: false, application: 'restart-required' })
+  manifest.dependencies = { extra: '1.0.0' }
+  writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest))
   expect(await manager.installBundle('extra-long@1')).toMatchObject({ changed: false, application: 'failed', error: { code: 'ambiguous-install' } })
   install.mockImplementationOnce(async () => {
     writeFileSync(join(dir, 'package.json'), '{}')
