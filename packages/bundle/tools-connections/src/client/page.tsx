@@ -20,6 +20,12 @@ export function ToolsConnectionsCard(props: ToolsConnectionsCardProps) {
   }
   return <SettingsForm labels={formLabels(t)} state={state} onSave={props.save} onDiscard={props.discard}>
     <div className={css.section}>
+      <div className={css.noticeBanner} role="note">
+        <div className={css.noticeHeading}>{t('routingNoticeTitle')}</div>
+        <p className={css.noticeText}>{t('routingNoticeText')}</p>
+        <pre className={css.codeBlock}><code>{t('routingNoticeCode')}</code></pre>
+        <p className={css.noticeText}>{t('routingNoticeFootnote')}</p>
+      </div>
       <section>
         <h3>{t('brave')}</h3>
         <Switch checked={state.braveEnabled.text === 'true'} label={t('braveEnabled')} disabled={disabled} onChange={(value) =>{  props.edit('braveEnabled', String(value)) }} />

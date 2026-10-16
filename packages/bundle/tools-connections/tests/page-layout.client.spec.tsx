@@ -60,4 +60,11 @@ describe('Tools & connections detail page layout', () => {
     expect(labels).toContain(en.firecrawlEnabled)
     expect(screen.getAllByLabelText(en.apiKey).length).toBeGreaterThanOrEqual(3)
   })
+
+  it('renders routing notice banner explaining web.searchProvider configuration', () => {
+    renderCard()
+    expect(screen.getByRole('note')).toBeDefined()
+    expect(screen.getByText(en.routingNoticeTitle)).toBeDefined()
+    expect(screen.getByText(en.routingNoticeText)).toBeDefined()
+  })
 })

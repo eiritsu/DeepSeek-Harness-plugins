@@ -1,7 +1,7 @@
 import type { SettingsFormLabels } from '@deepseek-ai/dsh-client-ui-primitives'
 
 /** Locale keys rendered by the settings page. */
-export type LocaleKey = 'title' | 'description' | 'brave' | 'tavily' | 'firecrawl' | 'braveEnabled' | 'tavilyEnabled' | 'firecrawlEnabled' | 'apiKey' | 'keyHint' | 'keySet' | 'keyMissing' | 'reference' | 'referenceHint' | 'endpoint' | 'endpointHint' | 'provider' | 'providerHint' | 'maxResults' | 'maxResultsHint' | 'requestTimeout' | 'requestTimeoutHint' | 'maxResponseBytes' | 'maxResponseBytesHint' | 'maxMarkdownChars' | 'maxMarkdownCharsHint' | 'otherPlugins' | 'save' | 'saving' | 'saveFailed' | 'unavailable' | 'readOnly' | 'overridden' | 'reset' | 'invalid'
+export type LocaleKey = 'title' | 'description' | 'brave' | 'tavily' | 'firecrawl' | 'braveEnabled' | 'tavilyEnabled' | 'firecrawlEnabled' | 'apiKey' | 'keyHint' | 'keySet' | 'keyMissing' | 'reference' | 'referenceHint' | 'endpoint' | 'endpointHint' | 'provider' | 'providerHint' | 'maxResults' | 'maxResultsHint' | 'requestTimeout' | 'requestTimeoutHint' | 'maxResponseBytes' | 'maxResponseBytesHint' | 'maxMarkdownChars' | 'maxMarkdownCharsHint' | 'otherPlugins' | 'routingNoticeTitle' | 'routingNoticeText' | 'routingNoticeCode' | 'routingNoticeFootnote' | 'save' | 'saving' | 'saveFailed' | 'unavailable' | 'readOnly' | 'overridden' | 'reset' | 'invalid'
 
 /** English settings labels. */
 export const en: Record<LocaleKey, string> = {
@@ -10,7 +10,12 @@ export const en: Record<LocaleKey, string> = {
   firecrawl: 'Firecrawl extraction', firecrawlEnabled: 'Offer Firecrawl extraction to the model', requestTimeout: 'Request timeout (ms)', requestTimeoutHint: 'Maximum duration of one Firecrawl tool call.', maxResponseBytes: 'Maximum response bytes', maxResponseBytesHint: 'Response bytes read before JSON parsing.', maxMarkdownChars: 'Maximum Markdown characters', maxMarkdownCharsHint: 'Markdown code points returned to the model.',
   keyHint: 'The key is stored in credentials, outside ordinary settings.', keySet: 'Key configured', keyMissing: 'No key configured',
   reference: 'Credential reference', referenceHint: 'The environment reference resolved by the credentials service.', endpoint: 'Endpoint', endpointHint: 'The vendor API origin.', provider: 'Native web search provider', providerHint: 'Set `web.searchProvider` to `brave` or `tavily` in the profile configuration. Provider selection is explicit; this plugin does not add fallback or priority routing.',
-  maxResults: 'Maximum results', maxResultsHint: 'Default result count when the search request has no limit.', otherPlugins: 'GitHub Code Search, Exa, Perplexity, and MCP are separate optional plugins. Install and manage them in Plugin Manager.', save: 'Save', saving: 'Saving…', saveFailed: 'The settings were not accepted.',
+  maxResults: 'Maximum results', maxResultsHint: 'Default result count when the search request has no limit.', otherPlugins: 'GitHub Code Search, Exa, Perplexity, and MCP are separate optional plugins. Install and manage them in Plugin Manager.',
+  routingNoticeTitle: 'Web Search Routing Notice',
+  routingNoticeText: 'Brave and Tavily register as web search providers. To route model web_search calls through them, explicitly configure the web service in your profile (e.g. cordis.patch.yml):',
+  routingNoticeCode: '- id: tools-connections\n  name: "@deepseek-ai/dsh-tools-connections"\n  config:\n    tavilyEnabled: true\n    firecrawlEnabled: true\n- id: web\n  name: "@deepseek-ai/dsh-web"\n  config:\n    searchProvider: tavily  # or brave',
+  routingNoticeFootnote: 'Note: Firecrawl extraction is an independent tool and works directly once enabled without web routing.',
+  save: 'Save', saving: 'Saving…', saveFailed: 'The settings were not accepted.',
   unavailable: 'This plugin is not loaded.', readOnly: 'Settings are read-only.', overridden: 'Overridden', reset: 'Reset', invalid: 'Enter a valid value.',
 }
 
@@ -21,7 +26,12 @@ export const zh: Record<LocaleKey, string> = {
   firecrawl: 'Firecrawl 页面抽取', firecrawlEnabled: '向模型提供 Firecrawl 抽取工具', requestTimeout: '请求超时（毫秒）', requestTimeoutHint: '单次 Firecrawl 工具调用的最长时间。', maxResponseBytes: '最大响应字节数', maxResponseBytesHint: '解析 JSON 前读取的响应字节上限。', maxMarkdownChars: '最大 Markdown 字符数', maxMarkdownCharsHint: '返回给模型的 Markdown 码点上限。',
   keyHint: '密钥存储在普通设置之外的凭据库中。', keySet: '已配置密钥', keyMissing: '未配置密钥',
   reference: '凭据引用', referenceHint: '由凭据服务解析的环境变量引用。', endpoint: '接口地址', endpointHint: '厂商 API origin。', provider: '原生网页搜索提供方', providerHint: '在 profile 配置中将 `web.searchProvider` 设为 `brave` 或 `tavily`。提供方必须显式选择；此插件不添加 fallback 或优先级路由。',
-  maxResults: '最多结果数', maxResultsHint: '搜索请求未指定上限时采用的默认结果数。', otherPlugins: 'GitHub Code Search、Exa、Perplexity 和 MCP 是独立的可选插件，可在 Plugin Manager 中安装和管理。', save: '保存', saving: '保存中…', saveFailed: '设置未被接受。',
+  maxResults: '最多结果数', maxResultsHint: '搜索请求未指定上限时采用的默认结果数。', otherPlugins: 'GitHub Code Search、Exa、Perplexity 和 MCP 是独立的可选插件，可在 Plugin Manager 中安装和管理。',
+  routingNoticeTitle: '原生网页搜索路由说明',
+  routingNoticeText: '开启 Brave 或 Tavily 仅注册搜索提供方。若要让模型 web_search 调用生效，需在当前 Profile 的 cordis.patch.yml 中为 web 服务指定路由配置：',
+  routingNoticeCode: '- id: tools-connections\n  name: "@deepseek-ai/dsh-tools-connections"\n  config:\n    tavilyEnabled: true\n    firecrawlEnabled: true\n- id: web\n  name: "@deepseek-ai/dsh-web"\n  config:\n    searchProvider: tavily  # 或 brave',
+  routingNoticeFootnote: '注：Firecrawl 页面抽取为独立工具，开启并保存后即可直接使用，无需修改 web 路由。',
+  save: '保存', saving: '保存中…', saveFailed: '设置未被接受。',
   unavailable: '此插件未加载。', readOnly: '设置为只读。', overridden: '已覆盖', reset: '重置', invalid: '请输入有效值。',
 }
 
