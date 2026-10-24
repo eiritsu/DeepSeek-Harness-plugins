@@ -52,7 +52,7 @@ describe('calendar bundle manifest', () => {
       dsh: { bundle: { patch: string }; client: { platform: string } }
     }
     expect(manifest.name).toBe('@deepseek-ai/dsh-calendar')
-    expect(manifest.version).toBe('0.2.1-alpha.2')
+    expect(manifest.version).toBe('0.2.1-rc.3')
     expect(manifest.main).toBe('lib/index.js')
     expect(manifest.dsh.bundle.patch).toBe('./cordis.patch.yml')
     expect(manifest.dsh.client.platform).toBe('web')

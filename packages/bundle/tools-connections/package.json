@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tools-connections",
   "description": "Opt-in Brave and Tavily search providers and Firecrawl extraction with a settings page",
-  "version": "0.2.1-alpha.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -51,9 +51,9 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-credentials": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
-    "@deepseek-ai/dsh-tools": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
-    "@deepseek-ai/dsh-web": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-credentials": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-tools": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-web": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
     "@deepseek-ai/schemastery": "workspace:~"
   },
   "devDependencies": {

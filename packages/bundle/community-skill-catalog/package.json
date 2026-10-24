@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-community-skill-catalog",
   "description": "Opt-in SkillsMP GitHub skill discovery and confirmed commit installation for Web and Desktop UI profiles",
-  "version": "0.2.1-alpha.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -79,13 +79,13 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
-    "@deepseek-ai/dsh-credentials": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
-    "@deepseek-ai/dsh-fs": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
-    "@deepseek-ai/dsh-home-paths": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
-    "@deepseek-ai/dsh-http-proxy": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
-    "@deepseek-ai/dsh-skill": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
-    "@deepseek-ai/dsh-skill-filesystem": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
-    "@deepseek-ai/dsh-typert-protocol": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-credentials": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-fs": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-home-paths": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-http-proxy": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-skill": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-skill-filesystem": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/dsh-typert-protocol": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || >=0.2.0-rc.2 <0.3.0",
     "@deepseek-ai/schemastery": "workspace:~"
   },
   "devDependencies": {
