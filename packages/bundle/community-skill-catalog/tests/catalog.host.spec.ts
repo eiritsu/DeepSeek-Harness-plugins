@@ -85,11 +85,13 @@ function installHttpFixture(
   setSearchResponse(value: unknown): void
   setSearchResponseFor(query: string, value: unknown): void
   setSkillsResponse(value: unknown): void
+  setTokenStatus(status: number): void
 } {
   let skillContent = reviewedSkillContent
   let manifest: unknown = makeManifest(asset, reviewedSkillContent)
   let target: unknown = DOWNLOAD_TARGET
   let token: unknown = DOWNLOAD_TOKEN
+  let tokenStatus = 200
   let searchResponse: unknown = SEARCH_RESPONSE
   let skillsResponse: unknown = DEFAULT_SKILLS_RESPONSE
   const searchResponses = new Map<string, unknown>()
@@ -103,9 +105,16 @@ function installHttpFixture(
       return response(skillsResponse)
     }
     if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/github-contents/token') {
+      if (tokenStatus !== 200) return response({ message: 'Forbidden' }, tokenStatus)
       return response({ token, target })
     }
     if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/github-contents') return response(manifest)
+    if (url.origin === 'https://api.github.com' && url.pathname.includes('/commits/')) {
+      return response({ sha: COMMIT })
+    }
+    if (url.origin === 'https://api.github.com' && url.pathname.includes('/contents')) {
+      return response([{ name: 'SKILL.md', path: 'skills/seo/SKILL.md', type: 'file', size: skillContent.byteLength }])
+    }
     if (url.origin === 'https://raw.githubusercontent.com') {
       return response(url.pathname.endsWith('/assets/image.bin') && asset !== undefined ? asset : skillContent)
     }
@@ -116,6 +125,7 @@ function installHttpFixture(
     setManifest(value) { manifest = value },
     setTarget(value) { target = value },
     setToken(value) { token = value },
+    setTokenStatus(status) { tokenStatus = status },
     setSearchResponse(value) { searchResponse = value },
     setSearchResponseFor(query, value) { searchResponses.set(query, value) },
     setSkillsResponse(value) { skillsResponse = value },
@@ -391,6 +401,18 @@ describe('SkillsMP search and pinned GitHub installation', () => {
       await expect(catalog.detail(SKILL_URL)).rejects.toThrow('invalid download authorization')
       expect(fetchMock.mock.calls.some(([input]) => requestUrl(input).pathname === '/api/github-contents')).toBe(false)
       expect(fetchMock.mock.calls.some(([input]) => requestUrl(input).origin === 'https://raw.githubusercontent.com')).toBe(false)
+    })
+  })
+
+  it('falls back to GitHub API when SkillsMP returns HTTP 403 (Cloudflare challenge)', async () => {
+    const fixture = installHttpFixture()
+    fixture.setTokenStatus(403)
+    await withCatalog(await temporaryRoot(), async (catalog) => {
+      await catalog.catalog('SEO')
+      const detail = await catalog.detail(SKILL_URL)
+      expect(detail.commitSha).toBe(COMMIT)
+      expect(detail.skillMarkdown).toBe(SKILL_MARKDOWN)
+      expect(detail.files).toEqual([{ path: 'SKILL.md', size: SKILL_BYTES.byteLength, sha: BLOB_SHA }])
     })
   })
 

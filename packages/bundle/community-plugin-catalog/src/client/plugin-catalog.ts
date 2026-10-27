@@ -25,12 +25,14 @@ export const inject = ['slots', 'locale', 'remote', 'pluginNavigation']
  */
 export async function apply(ctx: Context): Promise<() => Promise<void>> {
   const disposeRemote = await ctx.remote.$mount(TYPERT_REMOTE)
-  const scope = ctx.inject(['slots', 'locale', 'remote', 'remote.pluginCatalog'], (clientCtx) => {
+  const scope = ctx.inject(['slots', 'locale', 'remote', 'remote.pluginCatalog', 'pluginNavigation'], (clientCtx) => {
     clientCtx.effect(() => clientCtx.locale.register(NS, { en, zh }), 'community-plugin-catalog: dictionaries')
     const store = createPluginCatalogStore()
     const injection = () => ({
       api: clientCtx.remote.pluginCatalog,
-      openInstall: (spec: string) =>{  clientCtx.pluginNavigation.openInstall(spec) },
+      openInstall: (spec: string) => {
+        clientCtx.pluginNavigation.openInstall(spec)
+      },
       language: () => clientCtx.locale.getSnapshot().active === 'zh' ? 'zh' : 'en',
     })
     clientCtx.slots.inject('sidebar.footer.action', () => clientCtx.slots.register({

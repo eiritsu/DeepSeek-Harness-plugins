@@ -24,7 +24,8 @@ import type {
 
 const SEARCH_ORIGIN = 'https://skillsmp.com'
 const GITHUB_RAW_ORIGIN = 'https://raw.githubusercontent.com'
-const ALLOWED_ORIGINS = new Set([SEARCH_ORIGIN, GITHUB_RAW_ORIGIN])
+const GITHUB_API_ORIGIN = 'https://api.github.com'
+const ALLOWED_ORIGINS = new Set([SEARCH_ORIGIN, GITHUB_RAW_ORIGIN, GITHUB_API_ORIGIN])
 const TUN_BENCHMARK_RANGE = ipaddr.parseCIDR('198.18.0.0/15')
 const MAX_PAGE_SIZE = 50
 const MAX_MANIFEST_RESPONSE_BYTES = 512 * 1024
@@ -224,16 +225,33 @@ export class SkillsMpCatalog extends TypertRemoteService {
     signal = this.operationSignal(this.callSignal(signal))
     const skill = this.knownSkill(githubUrl)
     const parsed = parseGitHubSkillUrl(skill.githubUrl)
-    const authorization = await this.downloadTarget(skill, signal)
-    const target = authorization.target
-    validateTargetForSource(parsed, target)
-    const manifest = parseDownloadManifest(
-      await this.downloadManifest(target, authorization.token, signal),
-      target,
-      this.maxFiles,
-      this.maxFileBytes,
-      this.maxTotalBytes,
-    )
+    let target: GithubContentsTarget
+    let manifest: {
+      readonly commitSha: string
+      readonly files: readonly ManifestFile[]
+      readonly skippedFiles?: number
+      readonly limitReason?: 'file_count' | 'file_size' | 'total_size'
+    }
+
+    try {
+      const authorization = await this.downloadTarget(skill, signal)
+      target = authorization.target
+      validateTargetForSource(parsed, target)
+      manifest = parseDownloadManifest(
+        await this.downloadManifest(target, authorization.token, signal),
+        target,
+        this.maxFiles,
+        this.maxFileBytes,
+        this.maxTotalBytes,
+      )
+    } catch (error: unknown) {
+      if (error instanceof RemoteError && error.code === 'skillsmp/forbidden') {
+        target = targetFromParsed(parsed)
+        manifest = await this.fetchGitHubManifest(target, signal)
+      } else {
+        throw error
+      }
+    }
     const files = manifest.files
     const skillFile = files.find(file => file.path === 'SKILL.md')
     if (skillFile === undefined) {
@@ -499,6 +517,114 @@ export class SkillsMpCatalog extends TypertRemoteService {
       if (error instanceof RemoteError) throw error
       throw new Error('SkillsMP returned an invalid source manifest.', { cause: error })
     } finally { await response.close() }
+  }
+
+  private async fetchGitHubManifest(
+    target: GithubContentsTarget,
+    signal: AbortSignal,
+  ): Promise<{ readonly commitSha: string; readonly files: readonly ManifestFile[] }> {
+    let commitSha: string | undefined
+    const branchToTry = target.branch && target.branch !== 'HEAD' ? target.branch : 'HEAD'
+    const commitUrl = new URL(
+      `/repos/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}/commits/${encodeURIComponent(branchToTry)}`,
+      GITHUB_API_ORIGIN,
+    )
+    let commitResponse = await requestPublic(commitUrl, this.timeoutMs, signal, {
+      'user-agent': 'DeepSeek-Harness',
+      accept: 'application/json',
+    })
+    try {
+      if (commitResponse.status === 404 && branchToTry !== 'HEAD') {
+        await commitResponse.close()
+        const headUrl = new URL(
+          `/repos/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}/commits/HEAD`,
+          GITHUB_API_ORIGIN,
+        )
+        commitResponse = await requestPublic(headUrl, this.timeoutMs, signal, {
+          'user-agent': 'DeepSeek-Harness',
+          accept: 'application/json',
+        })
+      }
+      if (commitResponse.status !== 200) {
+        throw new Error(`GitHub commit lookup returned HTTP ${commitResponse.status}.`)
+      }
+      const bytes = await readBounded(commitResponse, 65536)
+      const body = record(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)))
+      if (body !== undefined && typeof body.sha === 'string' && SHA.test(body.sha)) {
+        commitSha = body.sha.toLowerCase()
+      }
+    } finally {
+      await commitResponse.close()
+    }
+    if (commitSha === undefined) {
+      throw new Error('SkillsMP failed to resolve commit SHA from GitHub.')
+    }
+
+    const files: ManifestFile[] = []
+    const queue = [target.path]
+    const rootSegments = target.path === '' ? [] : target.path.split('/')
+    let totalBytes = 0
+
+    while (queue.length > 0) {
+      signal.throwIfAborted()
+      const currentPath = queue.shift()
+      if (currentPath === undefined) break
+      const encodedPath = currentPath === '' ? '' : currentPath.split('/').map(encodeURIComponent).join('/')
+      const contentsUrl = new URL(
+        `/repos/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}/contents${encodedPath === '' ? '' : `/${encodedPath}`}`,
+        GITHUB_API_ORIGIN,
+      )
+      contentsUrl.searchParams.set('ref', commitSha)
+      const contentsResponse = await requestPublic(contentsUrl, this.timeoutMs, signal, {
+        'user-agent': 'DeepSeek-Harness',
+        accept: 'application/json',
+      })
+      let items: unknown
+      try {
+        if (contentsResponse.status !== 200) {
+          throw new Error(`GitHub contents returned HTTP ${contentsResponse.status}.`)
+        }
+        const bytes = await readBounded(contentsResponse, this.maxResponseBytes)
+        items = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes))
+      } finally {
+        await contentsResponse.close()
+      }
+      if (!Array.isArray(items)) {
+        throw new Error('GitHub contents returned an unexpected response.')
+      }
+
+      for (const entry of items) {
+        const item = record(entry)
+        if (item === undefined) continue
+        const type = item.type
+        const itemPath = text(item.path, 'file path', 2048)
+        if (type === 'dir') {
+          queue.push(itemPath)
+        } else if (type === 'file') {
+          const relPath = target.path === '' ? itemPath : itemPath.slice(target.path.length + 1)
+          const segments = safeRelativePath(relPath)
+          const size = integerValue(item.size, `size for ${relPath}`)
+          if (size > Math.min(512_000, this.maxFileBytes)) {
+            throw new RemoteError('skillsmp/manifest-incomplete', 'SkillsMP manifest exceeds the supported file size.', { skippedFiles: 0, limitReason: 'file_size' })
+          }
+          totalBytes += size
+          if (totalBytes > Math.min(5 * 1024 * 1024, this.maxTotalBytes)) {
+            throw new RemoteError('skillsmp/manifest-incomplete', 'SkillsMP manifest exceeds the supported total size.', { skippedFiles: 0, limitReason: 'total_size' })
+          }
+          const rawUrl = canonicalRawUrl(target.owner, target.repo, commitSha, [...rootSegments, ...segments])
+          files.push({ path: relPath, size, rawUrl })
+          if (files.length > Math.min(100, this.maxFiles)) {
+            throw new RemoteError('skillsmp/manifest-incomplete', 'SkillsMP manifest exceeds the supported file count.', { skippedFiles: 0, limitReason: 'file_count' })
+          }
+        }
+      }
+    }
+
+    if (!files.some(file => file.path === 'SKILL.md')) {
+      throw new RemoteError('skillsmp/skill-markdown-missing', 'GitHub skill directory must contain a root SKILL.md file.', {})
+    }
+
+    return { commitSha, files }
   }
 
   private async fetchRawBytes(
@@ -1117,6 +1243,19 @@ function parseGithubContentsTarget(value: unknown): GithubContentsTarget {
   return { owner, repo, branch, path }
 }
 
+function targetFromParsed(
+  parsed: { readonly owner: string; readonly repo: string; readonly tail: readonly string[] },
+): GithubContentsTarget {
+  const owner = parsed.owner
+  const repo = parsed.repo
+  if (parsed.tail.length === 0) {
+    return { owner, repo, branch: 'HEAD', path: '' }
+  }
+  const branch = parsed.tail[0] ?? 'HEAD'
+  const path = parsed.tail.slice(1).join('/')
+  return { owner, repo, branch, path }
+}
+
 function validateTargetForSource(
   source: { readonly owner: string; readonly repo: string; readonly tail: readonly string[] },
   target: GithubContentsTarget,
@@ -1217,6 +1356,7 @@ function skillsMpStatusError(status: 403 | 429): Error {
   return new RemoteError('skillsmp/rate-limited', 'SkillsMP search quota is exhausted.', { status: 429 })
 }
 function throwSourceStatus(status: number): void {
+  if (status === 403) throw new RemoteError('skillsmp/forbidden', 'SkillsMP rejected the source download request.', { status: 403 })
   if (status === 429) throw new RemoteError('skillsmp/rate-limited', 'SkillsMP source download quota is exhausted.', { status: 429 })
   if (status === 503) throw new RemoteError('skillsmp/source-unavailable', 'SkillsMP source manifest is temporarily unavailable.', { status: 503 })
 }
