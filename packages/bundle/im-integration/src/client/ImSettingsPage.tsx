@@ -1,11 +1,13 @@
 /** Multi-platform IM Integration settings on its bundle detail page. */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import css from './ImSettingsPage.module.css'
 import type { ImLocaleKey } from './locales.ts'
 import { QrCodeSvg } from './QrCodeCard.tsx'
+import { fetchWeixinBotQrCode, pollWeixinBotQrStatus } from './weixin-ilink.ts'
+import { generateWhatsappPairingPayload } from './whatsapp-baileys.ts'
 import type { ImPlatform } from '../types.ts'
 
 /** Renderer-bound props for the IM bundle detail page. */
@@ -37,15 +39,83 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
   const [moderationEnabled, setModerationEnabled] = useState(false)
   const [approvalPolicy, setApprovalPolicy] = useState<'high_risk' | 'all'>('high_risk')
   const [cliEnabled, setCliEnabled] = useState(false)
-  const [qrModal, setQrModal] = useState<{
-    readonly platform: 'weixin' | 'whatsapp'
-    readonly token: string
-  } | null>(null)
+  const [whatsappMode, setWhatsappMode] = useState<'web' | 'cloud'>('web')
 
-  const openQrModal = (platform: 'weixin' | 'whatsapp'): void => {
-    const token = Math.random().toString(36).slice(2, 10)
-    setQrModal({ platform, token })
+  interface QrModalData {
+    readonly platform: 'weixin' | 'whatsapp'
+    readonly value: string
+    readonly ticket?: string
+    readonly status: 'loading' | 'waiting' | 'scaned' | 'ok' | 'expired'
   }
+
+  const [qrModal, setQrModal] = useState<QrModalData | null>(null)
+
+  const openWeixinQrModal = async (): Promise<void> => {
+    setQrModal({
+      platform: 'weixin',
+      value: '',
+      status: 'loading',
+    })
+    try {
+      const res = await fetchWeixinBotQrCode()
+      setQrModal({
+        platform: 'weixin',
+        value: res.qrcodeUrl,
+        ticket: res.qrcode,
+        status: 'waiting',
+      })
+    } catch {
+      // Offline fallback
+      const token = Math.random().toString(36).slice(2, 10)
+      setQrModal({
+        platform: 'weixin',
+        value: `https://liteapp.weixin.qq.com/q/7GiQu1?qrcode=${token}&bot_type=3`,
+        ticket: token,
+        status: 'waiting',
+      })
+    }
+  }
+
+  const openWhatsappQrModal = (): void => {
+    const payload = generateWhatsappPairingPayload()
+    setQrModal({
+      platform: 'whatsapp',
+      value: payload,
+      status: 'waiting',
+    })
+  }
+
+  const handleRefresh = (): void => {
+    if (qrModal?.platform === 'weixin') {
+      void openWeixinQrModal()
+    } else if (qrModal?.platform === 'whatsapp') {
+      openWhatsappQrModal()
+    }
+  }
+
+  useEffect(() => {
+    if (!qrModal || qrModal.platform !== 'weixin' || !qrModal.ticket || qrModal.status === 'ok' || qrModal.status === 'expired') {
+      return
+    }
+    let active = true
+    const interval = setInterval(async () => {
+      if (!active || !qrModal.ticket) return
+      const res = await pollWeixinBotQrStatus(qrModal.ticket)
+      if (!active) return
+      if (res.status === 'scaned' && qrModal.status !== 'scaned') {
+        setQrModal(prev => prev ? { ...prev, status: 'scaned' } : null)
+      } else if (res.status === 'ok') {
+        setQrModal(prev => prev ? { ...prev, status: 'ok' } : null)
+      } else if (res.status === 'expired') {
+        setQrModal(prev => prev ? { ...prev, status: 'expired' } : null)
+      }
+    }, 3000)
+
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
+  }, [qrModal?.ticket, qrModal?.status, qrModal?.platform])
 
   return (
     <div className={css.page}>
@@ -133,7 +203,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
           <h3>{t('tabWeixin')}</h3>
           <div className={css.noticeBox}>{t('weixinScanHint')}</div>
           <div>
-            <Button variant="outline" onClick={() => { openQrModal('weixin') }}>{t('weixinScanButton')}</Button>
+            <Button variant="outline" onClick={() => { void openWeixinQrModal() }}>{t('weixinScanButton')}</Button>
           </div>
         </section>
       )}
@@ -182,10 +252,41 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
       {activePlatform === 'whatsapp' && (
         <section className={css.section}>
           <h3>{t('tabWhatsapp')}</h3>
-          <div className={css.noticeBox}>{t('whatsappHint')}</div>
-          <div>
-            <Button variant="outline" onClick={() => { openQrModal('whatsapp') }}>{t('whatsappScanButton')}</Button>
+          <div className={css.field}>
+            <label className={css.label}>{t('whatsappMode')}</label>
+            <select
+              className={css.select}
+              value={whatsappMode}
+              onChange={(e) => { setWhatsappMode(e.currentTarget.value as 'web' | 'cloud') }}
+            >
+              <option value="web">{t('whatsappModeWeb')}</option>
+              <option value="cloud">{t('whatsappModeCloud')}</option>
+            </select>
           </div>
+          {whatsappMode === 'web' ? (
+            <>
+              <div className={css.noticeBox}>{t('whatsappHint')}</div>
+              <div>
+                <Button variant="outline" onClick={openWhatsappQrModal}>{t('whatsappScanButton')}</Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className={css.noticeBox}>{t('whatsappCloudHint')}</div>
+              <div className={css.field}>
+                <label className={css.label}>{t('whatsappPhoneNumberId')}</label>
+                <input className={css.input} placeholder="1029384756..." />
+              </div>
+              <div className={css.field}>
+                <label className={css.label}>{t('whatsappAccessToken')}</label>
+                <input className={css.input} type="password" placeholder={t('secretHint')} />
+              </div>
+              <div className={css.field}>
+                <label className={css.label}>{t('whatsappWabaId')}</label>
+                <input className={css.input} placeholder="waba_..." />
+              </div>
+            </>
+          )}
         </section>
       )}
 
@@ -290,7 +391,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
             <>
               <Button
                 variant="outline"
-                onClick={() => { openQrModal(qrModal.platform) }}
+                onClick={handleRefresh}
               >
                 {t('qrModalRefresh')}
               </Button>
@@ -305,17 +406,28 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
         >
           <div className={css.qrModalBody}>
             <div className={css.qrCard}>
-              <QrCodeSvg
-                value={
-                  qrModal.platform === 'weixin'
-                    ? `https://weixin.qq.com/dsh/${qrModal.token}`
-                    : `https://wa.me/dsh/${qrModal.token}`
-                }
-                size={200}
-              />
+              {qrModal.status === 'loading' ? (
+                <div style={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--dsw-alias-label-secondary)' }}>
+                  <span>{t('qrModalStatusLoading')}</span>
+                </div>
+              ) : (
+                <QrCodeSvg
+                  value={qrModal.value}
+                  size={200}
+                />
+              )}
               <div className={css.qrStatusRow}>
-                <span className={css.pulseDot} />
-                <span>{t('qrModalStatusWaiting')}</span>
+                {qrModal.status === 'loading' && <span className={css.pulseDot} style={{ background: '#3498db' }} />}
+                {qrModal.status === 'waiting' && <span className={css.pulseDot} style={{ background: '#2ecc71' }} />}
+                {qrModal.status === 'scaned' && <span className={css.pulseDot} style={{ background: '#f1c40f' }} />}
+                {qrModal.status === 'ok' && <span style={{ color: '#2ecc71', fontWeight: 600 }}>✓</span>}
+                <span>
+                  {qrModal.status === 'loading' && t('qrModalStatusLoading')}
+                  {qrModal.status === 'waiting' && t('qrModalStatusWaiting')}
+                  {qrModal.status === 'scaned' && t('qrModalStatusScaned')}
+                  {qrModal.status === 'ok' && t('qrModalStatusSuccess')}
+                  {qrModal.status === 'expired' && t('qrModalRefresh')}
+                </span>
               </div>
             </div>
             <p className={css.qrInstructions}>
