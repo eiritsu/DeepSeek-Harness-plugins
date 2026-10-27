@@ -141,6 +141,7 @@
     { "path": "./packages/bundle/calendar/tsconfig.client.json" },
     { "path": "./packages/bundle/community-plugin-catalog/tsconfig.client.json" },
     { "path": "./packages/bundle/community-skill-catalog/tsconfig.client.json" },
+    { "path": "./packages/bundle/im-integration/tsconfig.client.json" },
     { "path": "./packages/bundle/lark-integration/tsconfig.client.json" },
     { "path": "./packages/bundle/tools-connections/tsconfig.client.json" },
     { "path": "./packages/client/ui-settings-plugin-inventory" },

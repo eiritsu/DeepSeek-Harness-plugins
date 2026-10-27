@@ -1,0 +1,6 @@
+# Optional multi-platform IM integration bundle.
+- insert:
+    - id: im
+      name: '@deepseek-ai/dsh-im-integration'
+      config:
+        enabled: false

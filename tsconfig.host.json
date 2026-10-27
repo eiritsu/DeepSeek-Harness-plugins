@@ -424,6 +424,7 @@
     { "path": "./packages/bundle/calendar/tsconfig.host.json" },
     { "path": "./packages/bundle/community-plugin-catalog/tsconfig.host.json" },
     { "path": "./packages/bundle/community-skill-catalog/tsconfig.host.json" },
+    { "path": "./packages/bundle/im-integration/tsconfig.host.json" },
     { "path": "./packages/bundle/lark-integration/tsconfig.host.json" },
     { "path": "./packages/bundle/tools-connections/tsconfig.host.json" },
     { "path": "./packages/bundle/headless" },
