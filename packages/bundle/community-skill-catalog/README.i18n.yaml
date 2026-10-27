@@ -2,42 +2,9 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bundle/community-skill-catalog/README.md
-/:
-  en: 1103d451cd0d4569
-  zh: 0177037e24533c51
 /deepseek-ai-dsh-community-skill-catalog:
   en: 98caa99df5934232
   zh: d26b0149c7a50adc
-/deepseek-ai-dsh-community-skill-catalog/summary:
-  en: 25a24986bbe45eef
-  zh: 15ba87acea34de72
-/deepseek-ai-dsh-community-skill-catalog/table-of-contents:
-  en: d152484eb41ac6b4
-  zh: 6b2d5a3e9ebd49ff
-/deepseek-ai-dsh-community-skill-catalog/use-this-package:
-  en: 9bd003175ff04ae4
-  zh: 2a8ba6ce8b400061
-/deepseek-ai-dsh-community-skill-catalog/use-this-package/skillsmp-credentials:
-  en: 0599963d46c6add5
-  zh: 21fb2c1ed094195e
-/deepseek-ai-dsh-community-skill-catalog/use-this-package/host-configuration:
-  en: a97c41dfb504ffc3
-  zh: 1b39aed1d4bddce0
-/deepseek-ai-dsh-community-skill-catalog/understand-the-implementation:
-  en: 2898b25977ddc397
-  zh: 0a1865b450f933de
-/deepseek-ai-dsh-community-skill-catalog/further-exploration:
-  en: b6eb1f3460c47d66
-  zh: c3c7ec6fa790b40b
-/deepseek-ai-dsh-community-skill-catalog/model-experience:
-  en: 4450a1fdcf67a87a
-  zh: c33e025f42ce27ab
-/deepseek-ai-dsh-community-skill-catalog/model-experience/kv-cache-effect:
-  en: 92592c1ca7d1b7e7
-  zh: b86b4f7a4dde4763
-/deepseek-ai-dsh-community-skill-catalog/known-limitations-and-deferred-work:
-  en: 2300f8b1e49c1b52
-  zh: 73ab6658dfbb713e
-/deepseek-ai-dsh-community-skill-catalog/known-limitations-and-deferred-work/dev-note:
-  en: e67f633dc6fe7773
-  zh: 6c5f9788c6536776
+/deepseek-ai-dsh-community-skill-catalog/quick-start:
+  en: 159e123b177a997b
+  zh: a36353b2821165da
