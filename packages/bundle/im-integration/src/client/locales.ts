@@ -84,6 +84,17 @@ export const zh = {
   // WhatsApp Specific
   whatsappHint: '支持 WhatsApp Web 扫码配对免商户资质接入。',
   whatsappScanButton: '扫码配对',
+
+  // QR Code Modal
+  qrModalTitleWeixin: '微信扫码授权',
+  qrModalTitleWhatsapp: 'WhatsApp 扫码配对',
+  qrModalDescWeixin: '请使用微信扫描下方二维码，完成账号授权接入。',
+  qrModalDescWhatsapp: '请使用手机 WhatsApp 扫描此二维码完成配对关联。',
+  qrModalHintWeixin: '使用手机微信“扫一扫”扫描上方二维码，并在手机上确认登录。',
+  qrModalHintWhatsapp: '手机打开 WhatsApp > 设置 > 关联设备 > 扫描此二维码。',
+  qrModalStatusWaiting: '等待扫码中...',
+  qrModalRefresh: '刷新二维码',
+  qrModalClose: '关闭',
 }
 
 export const en = {
@@ -170,6 +181,17 @@ export const en = {
   // WhatsApp Specific
   whatsappHint: 'Supports WhatsApp Web QR code pairing without enterprise qualification.',
   whatsappScanButton: 'Scan Pairing QR Code',
+
+  // QR Code Modal
+  qrModalTitleWeixin: 'WeChat QR Code Authorization',
+  qrModalTitleWhatsapp: 'WhatsApp Web QR Pairing',
+  qrModalDescWeixin: 'Scan the QR code below with WeChat to complete account authorization.',
+  qrModalDescWhatsapp: 'Scan this QR code with WhatsApp on your phone to complete device pairing.',
+  qrModalHintWeixin: 'Open WeChat > Scan, and tap "Confirm Login" on your phone.',
+  qrModalHintWhatsapp: 'Open WhatsApp on your phone > Settings > Linked Devices > Scan QR code.',
+  qrModalStatusWaiting: 'Waiting for scan...',
+  qrModalRefresh: 'Refresh',
+  qrModalClose: 'Close',
 }
 
 export type ImLocaleKey = keyof typeof zh

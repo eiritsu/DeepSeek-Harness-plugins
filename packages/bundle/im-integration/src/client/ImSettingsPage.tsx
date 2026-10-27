@@ -1,10 +1,11 @@
 /** Multi-platform IM Integration settings on its bundle detail page. */
 
 import { useState } from 'react'
-import { Button } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import css from './ImSettingsPage.module.css'
 import type { ImLocaleKey } from './locales.ts'
+import { QrCodeSvg } from './QrCodeCard.tsx'
 import type { ImPlatform } from '../types.ts'
 
 /** Renderer-bound props for the IM bundle detail page. */
@@ -36,6 +37,15 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
   const [moderationEnabled, setModerationEnabled] = useState(false)
   const [approvalPolicy, setApprovalPolicy] = useState<'high_risk' | 'all'>('high_risk')
   const [cliEnabled, setCliEnabled] = useState(false)
+  const [qrModal, setQrModal] = useState<{
+    readonly platform: 'weixin' | 'whatsapp'
+    readonly token: string
+  } | null>(null)
+
+  const openQrModal = (platform: 'weixin' | 'whatsapp'): void => {
+    const token = Math.random().toString(36).slice(2, 10)
+    setQrModal({ platform, token })
+  }
 
   return (
     <div className={css.page}>
@@ -123,7 +133,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
           <h3>{t('tabWeixin')}</h3>
           <div className={css.noticeBox}>{t('weixinScanHint')}</div>
           <div>
-            <Button variant="outline">{t('weixinScanButton')}</Button>
+            <Button variant="outline" onClick={() => { openQrModal('weixin') }}>{t('weixinScanButton')}</Button>
           </div>
         </section>
       )}
@@ -174,7 +184,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
           <h3>{t('tabWhatsapp')}</h3>
           <div className={css.noticeBox}>{t('whatsappHint')}</div>
           <div>
-            <Button variant="outline">{t('whatsappScanButton')}</Button>
+            <Button variant="outline" onClick={() => { openQrModal('whatsapp') }}>{t('whatsappScanButton')}</Button>
           </div>
         </section>
       )}
@@ -267,6 +277,55 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
           <Button variant="primary">{t('saveSettings')}</Button>
         </div>
       </section>
+
+      {/* 8. QR Code Authorization & Pairing Modal */}
+      {qrModal !== null && (
+        <Modal
+          open
+          onClose={() => { setQrModal(null) }}
+          title={qrModal.platform === 'weixin' ? t('qrModalTitleWeixin') : t('qrModalTitleWhatsapp')}
+          description={qrModal.platform === 'weixin' ? t('qrModalDescWeixin') : t('qrModalDescWhatsapp')}
+          closeLabel={t('qrModalClose')}
+          footer={(
+            <>
+              <Button
+                variant="outline"
+                onClick={() => { openQrModal(qrModal.platform) }}
+              >
+                {t('qrModalRefresh')}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => { setQrModal(null) }}
+              >
+                {t('qrModalClose')}
+              </Button>
+            </>
+          )}
+        >
+          <div className={css.qrModalBody}>
+            <div className={css.qrCard}>
+              <QrCodeSvg
+                value={
+                  qrModal.platform === 'weixin'
+                    ? `https://weixin.qq.com/dsh/${qrModal.token}`
+                    : `https://wa.me/dsh/${qrModal.token}`
+                }
+                size={200}
+              />
+              <div className={css.qrStatusRow}>
+                <span className={css.pulseDot} />
+                <span>{t('qrModalStatusWaiting')}</span>
+              </div>
+            </div>
+            <p className={css.qrInstructions}>
+              {qrModal.platform === 'weixin'
+                ? t('qrModalHintWeixin')
+                : t('qrModalHintWhatsapp')}
+            </p>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
