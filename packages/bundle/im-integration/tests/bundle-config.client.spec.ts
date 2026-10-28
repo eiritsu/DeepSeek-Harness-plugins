@@ -15,8 +15,10 @@ describe('IM integration bundle detail configuration', () => {
       const locale = new LocaleRuntime(ctx)
       locale.setLocale('en')
       ctx.provide('locale', locale)
-
-      new TestRemote(ctx, {
+      const statusWatch = vi.fn(async () => (async function* () {
+        yield { platform: 'lark' as const, state: 'disabled' as const }
+      })())
+      const remote = new TestRemote(ctx, {
         settings: {
           describe: async () => ({
             ok: true as const,
@@ -34,8 +36,30 @@ describe('IM integration bundle detail configuration', () => {
             },
           }),
         },
+        credentials: {
+          describe: async () => ({ ok: true as const, value: {} }),
+          set: async () => ({ ok: true as const, value: undefined }),
+        },
+        imStatus: { watch: statusWatch },
+        imSetup: {
+          commitWeixinAuthorization: async () => ({ ok: true as const, value: { ok: true as const } }),
+          clearWeixinAuthorization: async () => ({ ok: true as const, value: { ok: true as const } }),
+        },
       })
-
+      const statusStream = {
+        async *[Symbol.asyncIterator]() {
+          yield { value: { platform: 'lark' as const, state: 'disabled' as const }, accept: vi.fn() }
+        },
+        dispose: vi.fn(async () => {}),
+      }
+      const mountRemote = vi.fn(async () => vi.fn(async () => {}))
+      Object.assign(remote, {
+        $mount: mountRemote,
+        $stream: vi.fn((options: { open: (signal: AbortSignal) => unknown }) => {
+          void options.open(new AbortController().signal)
+          return statusStream
+        }),
+      })
       await ctx.plugin({ inject: [...settingsInject], apply: settingsApply }).await()
       disposeRoot = ctx.slots.register({
         name: 'root',
@@ -52,11 +76,14 @@ describe('IM integration bundle detail configuration', () => {
       expect(ctx.slots.entries('plugins.bundle.config')[0]?.options).toMatchObject({
         key: '@deepseek-ai/dsh-im-integration',
       })
+      expect(mountRemote).toHaveBeenCalledOnce()
+      expect(statusWatch).toHaveBeenCalledOnce()
 
       await fiber.dispose()
       expect(ctx.slots.entries('plugins.bundle.config')).toHaveLength(0)
     } finally {
       disposeRoot?.()
+      await ctx.fiber.dispose()
     }
   })
 })

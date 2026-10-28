@@ -4,6 +4,7 @@
   "include": ["src/client", "src/types.ts"],
   "references": [
     { "path": "../../../vendor/cordis" },
+    { "path": "../../api/gateway/tsconfig.client.json" },
     { "path": "../../api/remotes/tsconfig.client.json" },
     { "path": "../../client/locale/tsconfig.client.json" },
     { "path": "../../client/store" },
@@ -11,6 +12,7 @@
     { "path": "../../client/ui-plugin-manager/tsconfig.client.json" },
     { "path": "../../client/ui-renderer" },
     { "path": "../../client/ui-settings/tsconfig.client.json" },
-    { "path": "../../client/ui-slots" }
+    { "path": "../../client/ui-slots" },
+    { "path": "./tsconfig.host.json" }
   ]
 }

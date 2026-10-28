@@ -30,7 +30,6 @@ describe('ImStatusService', () => {
       }
     })()
 
-    // Publish a third update
     service.publish({ platform: 'wecom', state: 'connected' })
 
     await readPromise
@@ -66,11 +65,9 @@ describe('ImStatusService', () => {
     expect(qrData.qrcode).toBe('test_ticket_123')
     expect(qrData.qrcodeUrl).toContain('test_ticket_123')
 
-    // Test missing qrcode
     const missingRes = await handleWeixinQrStatus(new Request('http://localhost/api/im.weixin.status'))
     expect(missingRes.status).toBe(400)
 
-    // Test valid status polling
     const statusRes = await handleWeixinQrStatus(new Request('http://localhost/api/im.weixin.status?qrcode=test_ticket_123'))
     expect(statusRes.status).toBe(200)
     const statusData = (await statusRes.json()) as { ok: boolean; status: string }

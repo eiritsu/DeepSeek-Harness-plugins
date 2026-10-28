@@ -24,6 +24,18 @@ export interface ImIntegrationStatusValue {
   readonly reason?: 'missing-identity' | 'missing-credential' | 'connection-failed' | 'unauthorized'
 }
 
+/** Safe result from a setup action; secret values never cross the Remote return. */
+export type ImSetupResult<T extends object = Record<never, never>> =
+  | { readonly ok: true } & T
+  | { readonly ok: false; readonly code: 'cancelled' | 'not-configured' | 'not-ready' | 'operation-failed' }
+
+/** Authorization payload the Client sends once after a successful WeChat QR scan. */
+export interface WeixinAuthorizationPayload {
+  readonly token: string
+  readonly botId?: string
+  readonly userId?: string
+}
+
 /** Inbound normalized message delivered by an IM channel. */
 export interface InboundImMessage {
   readonly platform: ImPlatform

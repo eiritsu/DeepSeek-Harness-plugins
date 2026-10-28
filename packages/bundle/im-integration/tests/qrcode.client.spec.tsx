@@ -1,24 +1,104 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
-import type { GlobalStandardProps, TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { bindSnapshotSelector } from '@deepseek-ai/dsh-client-test-runtime'
+import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
+import type { SettingsFieldState, SettingsFormShell } from '@deepseek-ai/dsh-client-ui-primitives'
 import { generateQrPath } from '../src/client/QrCodeCard.tsx'
-import { ImSettingsPage } from '../src/client/ImSettingsPage.tsx'
+import { ImSettingsPage, type ImSettingsPageProps } from '../src/client/ImSettingsPage.tsx'
+import type { ImSettingsState } from '../src/client/controller.ts'
 import { zh, type ImLocaleKey } from '../src/client/locales.ts'
 import { generateWhatsappPairingPayload } from '../src/client/whatsapp-baileys.ts'
 
 afterEach(cleanup)
 
-const t: TranslateNS<'settings.im'> = key => zh[key as ImLocaleKey] ?? key
+const shell: SettingsFormShell = {
+  available: true, writable: true, dirty: false, invalid: false, saving: false, failed: false,
+}
+const field = (text = ''): SettingsFieldState => ({ text, overridden: false, invalid: false })
 
-const unusedHook = (): never => { throw new Error('IM configuration fixture does not provide global state') }
-const standard: Pick<GlobalStandardProps, 'usePanelInfo' | 'useSessions' | 'useSessionStatus' | 'useSessionRetainInfo' | 'useResource' | 'useWorkspaces'> = {
-  usePanelInfo: unusedHook,
-  useSessions: unusedHook,
-  useSessionStatus: unusedHook,
-  useSessionRetainInfo: unusedHook,
-  useResource: unusedHook,
-  useWorkspaces: unusedHook,
+function buildState(overrides: Partial<ImSettingsState> = {}): ImSettingsState {
+  return {
+    ...shell,
+    activePlatform: field('lark'),
+    enabled: field('false'),
+    whitelistEnabled: field('false'),
+    authorizedUsers: field(''),
+    moderationEnabled: field('false'),
+    approvalPolicy: field('high_risk'),
+    sensitiveKeywords: field(''),
+    cliEnabled: field('false'),
+    larkAppId: field(''),
+    larkAppSecretEnv: field('LARK_APP_SECRET'),
+    larkBrand: field('feishu'),
+    dingtalkClientId: field(''),
+    dingtalkClientSecretEnv: field('DINGTALK_CLIENT_SECRET'),
+    wecomBotId: field(''),
+    wecomBotSecretEnv: field('WECOM_BOT_SECRET'),
+    weixinEnabled: field('false'),
+    weixinBotTokenEnv: field('WEIXIN_BOT_TOKEN'),
+    qqAppId: field(''),
+    qqAppSecretEnv: field('QQ_BOT_SECRET'),
+    qqSandbox: field('false'),
+    telegramBotTokenEnv: field('TELEGRAM_BOT_TOKEN'),
+    discordBotTokenEnv: field('DISCORD_BOT_TOKEN'),
+    whatsappEnabled: field('false'),
+    whatsappAccessTokenEnv: field('WHATSAPP_ACCESS_TOKEN'),
+    connectionStatus: { platform: 'lark', state: 'disabled' },
+    larkAppSecret: field(''),
+    dingtalkClientSecret: field(''),
+    wecomBotSecret: field(''),
+    qqAppSecret: field(''),
+    telegramBotToken: field(''),
+    discordBotToken: field(''),
+    whatsappAccessToken: field(''),
+    secretsConfigured: {
+      larkAppSecret: false,
+      dingtalkClientSecret: false,
+      wecomBotSecret: false,
+      qqAppSecret: false,
+      telegramBotToken: false,
+      discordBotToken: false,
+      whatsappAccessToken: false,
+    },
+    setupBusy: false,
+    ...overrides,
+  }
+}
+
+function renderPage(state: ImSettingsState = buildState()) {
+  const store = createSnapshotStore(state)
+  const props = {
+    t: (key: ImLocaleKey) => zh[key],
+    view: 'page' as const,
+    useImSettings: bindSnapshotSelector(store),
+    edit: vi.fn((fieldName: string, text: string) => {
+      const current = store.getSnapshot()
+      const next = { ...current }
+      if (fieldName in next && typeof (next as Record<string, unknown>)[fieldName] === 'object') {
+        ;(next as Record<string, SettingsFieldState>)[fieldName] = field(text)
+      }
+      if (fieldName === 'activePlatform') {
+        next.activePlatform = field(text)
+        next.connectionStatus = { platform: text as ImSettingsState['connectionStatus']['platform'], state: 'disabled' }
+      }
+      store.set(next)
+    }),
+    resetField: vi.fn(),
+    save: vi.fn(),
+    discard: vi.fn(),
+    selectPlatform: vi.fn((platform: ImSettingsState['connectionStatus']['platform']) => {
+      const current = store.getSnapshot()
+      store.set({
+        ...current,
+        activePlatform: field(platform),
+        connectionStatus: { platform, state: current.connectionStatus.state },
+      })
+    }),
+    commitWeixinAuthorization: vi.fn(async () => true),
+    clearWeixinAuthorization: vi.fn(async () => {}),
+  } as unknown as ImSettingsPageProps
+  return render(<ImSettingsPage {...props} />)
 }
 
 describe('IM QR Code Generation & Modal', () => {
@@ -45,68 +125,47 @@ describe('IM QR Code Generation & Modal', () => {
   })
 
   it('opens and closes WeChat QR code modal when clicking scan button', async () => {
-    render(<ImSettingsPage t={t} view="page" {...standard} />)
+    renderPage()
 
-    // Switch to WeChat tab
-    const weixinTab = screen.getByRole('button', { name: zh.tabWeixin })
-    fireEvent.click(weixinTab)
+    fireEvent.click(screen.getByRole('button', { name: zh.tabWeixin }))
+    fireEvent.click(screen.getByRole('button', { name: zh.weixinScanButton }))
 
-    // Button to open QR code
-    const scanBtn = screen.getByRole('button', { name: zh.weixinScanButton })
-    fireEvent.click(scanBtn)
-
-    // Modal should now be visible
     expect(screen.getByRole('dialog', { name: zh.qrModalTitleWeixin })).toBeTruthy()
     expect(screen.getByText(zh.qrModalHintWeixin)).toBeTruthy()
 
-    // Close button should close modal
     const closeBtns = screen.getAllByRole('button', { name: zh.qrModalClose })
     fireEvent.click(closeBtns[0]!)
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('opens WhatsApp QR code modal and allows switching between Web and Cloud API modes', () => {
-    render(<ImSettingsPage t={t} view="page" {...standard} />)
+    renderPage()
 
-    // Switch to WhatsApp tab
-    const whatsappTab = screen.getByRole('button', { name: zh.tabWhatsapp })
-    fireEvent.click(whatsappTab)
+    fireEvent.click(screen.getByRole('button', { name: zh.tabWhatsapp }))
+    fireEvent.click(screen.getByRole('button', { name: zh.whatsappScanButton }))
 
-    // Initially in Web pairing mode
-    const pairBtn = screen.getByRole('button', { name: zh.whatsappScanButton })
-    fireEvent.click(pairBtn)
-
-    // Modal should now be visible with Noise pairing payload
     expect(screen.getByRole('dialog', { name: zh.qrModalTitleWhatsapp })).toBeTruthy()
     expect(screen.getByText(zh.qrModalStatusWaiting)).toBeTruthy()
     expect(screen.getByText(zh.qrModalHintWhatsapp)).toBeTruthy()
 
-    // Close modal
     const closeBtns = screen.getAllByRole('button', { name: zh.qrModalClose })
     fireEvent.click(closeBtns[0]!)
 
-    // Switch to Cloud API mode
-    const select = screen.getByRole('combobox')
+    const select = screen.getByDisplayValue(zh.whatsappModeWeb)
     fireEvent.change(select, { target: { value: 'cloud' } })
-    expect(screen.getByText(zh.whatsappPhoneNumberId)).toBeTruthy()
     expect(screen.getByText(zh.whatsappAccessToken)).toBeTruthy()
-    expect(screen.getByText(zh.whatsappWabaId)).toBeTruthy()
+    expect(screen.getByText(zh.whatsappCloudHint)).toBeTruthy()
   })
 
   it('renders expired overlay when QR status transitions to expired', async () => {
-    render(<ImSettingsPage t={t} view="page" {...standard} />)
+    renderPage()
 
-    const weixinTab = screen.getByRole('button', { name: zh.tabWeixin })
-    fireEvent.click(weixinTab)
-
-    const scanBtn = screen.getByRole('button', { name: zh.weixinScanButton })
-    fireEvent.click(scanBtn)
+    fireEvent.click(screen.getByRole('button', { name: zh.tabWeixin }))
+    fireEvent.click(screen.getByRole('button', { name: zh.weixinScanButton }))
 
     expect(screen.getByRole('dialog', { name: zh.qrModalTitleWeixin })).toBeTruthy()
 
-    // Trigger refresh button
-    const refreshBtn = screen.getByRole('button', { name: zh.qrModalRefresh })
-    fireEvent.click(refreshBtn)
+    fireEvent.click(screen.getByRole('button', { name: zh.qrModalRefresh }))
     expect(screen.getByRole('dialog', { name: zh.qrModalTitleWeixin })).toBeTruthy()
   })
 })

@@ -19,6 +19,14 @@ export const zh = {
   statusError: '连接异常',
   statusUnavailable: '服务不可用',
   statusPendingAuthorization: '等待授权',
+  statusMissingCredential: '缺少凭证',
+  statusConnectionFailed: '连接失败',
+  setupComplete: '授权已保存',
+  setupCancelled: '已取消授权流程',
+  setupNotConfigured: '尚未完成配置',
+  setupNotReady: '授权尚未就绪',
+  setupFailed: '授权失败，请重试',
+  weixinDisconnect: '断开微信授权',
 
   // Common Access Control (Whitelist)
   whitelistTitle: '访问控制与用户白名单',
@@ -43,6 +51,10 @@ export const zh = {
   enablePlatform: '启用此平台连接',
   enableCliTool: '允许 Agent 调用官方命令行工具',
   saveSettings: '保存平台设置',
+  unavailable: '主机配置暂不可用',
+  readOnly: '当前部署为只读，无法修改配置',
+  saveFailed: '保存失败',
+  saving: '保存中…',
   secretConfigured: '已配置',
   secretHint: '密钥已加密保存在凭据存储中，页面不会明文读取。',
 
@@ -136,6 +148,14 @@ export const en = {
   statusError: 'Error',
   statusUnavailable: 'Unavailable',
   statusPendingAuthorization: 'Pending Authorization',
+  statusMissingCredential: 'Missing credential',
+  statusConnectionFailed: 'Connection failed',
+  setupComplete: 'Authorization saved',
+  setupCancelled: 'Authorization cancelled',
+  setupNotConfigured: 'Not configured yet',
+  setupNotReady: 'Authorization not ready',
+  setupFailed: 'Authorization failed. Please retry.',
+  weixinDisconnect: 'Disconnect WeChat',
 
   // Common Access Control (Whitelist)
   whitelistTitle: 'Access Control & User Whitelist',
@@ -160,6 +180,10 @@ export const en = {
   enablePlatform: 'Enable connection for this platform',
   enableCliTool: 'Allow Agent to execute official CLI tool',
   saveSettings: 'Save Platform Settings',
+  unavailable: 'Host configuration is unavailable',
+  readOnly: 'This deployment stores settings read-only',
+  saveFailed: 'Save failed',
+  saving: 'Saving…',
   secretConfigured: 'Configured',
   secretHint: 'Secret is safely saved in credentials store and not exposed in plaintext.',
 

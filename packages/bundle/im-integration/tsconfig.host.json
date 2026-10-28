@@ -3,8 +3,11 @@
   "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
   "include": [
     "src/index.ts",
+    "src/config.ts",
     "src/types.ts",
     "src/status.ts",
+    "src/setup.ts",
+    "src/runtime.ts",
     "src/weixin-proxy.ts",
     "src/workspace.ts",
     "src/conversation.ts"
@@ -16,6 +19,8 @@
     { "path": "../../core/agent-default-model" },
     { "path": "../../attachment/attachment" },
     { "path": "../../credentials/credentials" },
+    { "path": "../../boot/config-editor" },
+    { "path": "../../typert/protocol" },
     { "path": "../../util/home-paths" },
     { "path": "../../core/session" },
     { "path": "../../session/session-persistence" },
