@@ -74,15 +74,20 @@ function renderPage(state: ImSettingsState = buildState()) {
     useImSettings: bindSnapshotSelector(store),
     edit: vi.fn((fieldName: string, text: string) => {
       const current = store.getSnapshot()
-      const next = { ...current }
-      if (fieldName in next && typeof (next as Record<string, unknown>)[fieldName] === 'object') {
-        ;(next as Record<string, SettingsFieldState>)[fieldName] = field(text)
-      }
       if (fieldName === 'activePlatform') {
-        next.activePlatform = field(text)
-        next.connectionStatus = { platform: text as ImSettingsState['connectionStatus']['platform'], state: 'disabled' }
+        store.set({
+          ...current,
+          activePlatform: field(text),
+          connectionStatus: {
+            platform: text as ImSettingsState['connectionStatus']['platform'],
+            state: 'disabled',
+          },
+        })
+        return
       }
-      store.set(next)
+      if (fieldName in current) {
+        store.set({ ...current, [fieldName]: field(text) })
+      }
     }),
     resetField: vi.fn(),
     save: vi.fn(),
