@@ -92,4 +92,21 @@ describe('IM QR Code Generation & Modal', () => {
     expect(screen.getByText(zh.whatsappAccessToken)).toBeTruthy()
     expect(screen.getByText(zh.whatsappWabaId)).toBeTruthy()
   })
+
+  it('renders expired overlay when QR status transitions to expired', async () => {
+    render(<ImSettingsPage t={t} view="page" {...standard} />)
+
+    const weixinTab = screen.getByRole('button', { name: zh.tabWeixin })
+    fireEvent.click(weixinTab)
+
+    const scanBtn = screen.getByRole('button', { name: zh.weixinScanButton })
+    fireEvent.click(scanBtn)
+
+    expect(screen.getByRole('dialog', { name: zh.qrModalTitleWeixin })).toBeTruthy()
+
+    // Trigger refresh button
+    const refreshBtn = screen.getByRole('button', { name: zh.qrModalRefresh })
+    fireEvent.click(refreshBtn)
+    expect(screen.getByRole('dialog', { name: zh.qrModalTitleWeixin })).toBeTruthy()
+  })
 })

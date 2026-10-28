@@ -1,25 +1,12 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
-  "include": ["src/index.ts", "src/types.ts", "src/status.ts", "src/host/**/*.ts"],
+  "include": ["src/index.ts", "src/types.ts", "src/status.ts", "src/weixin-proxy.ts"],
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../../vendor/schemastery" },
-    { "path": "../../core/tools" },
-    { "path": "../../subprocess/subprocess" },
-    { "path": "../../typert/protocol" },
-    { "path": "../../typert/registry" },
     { "path": "../../credentials/credentials" },
-    { "path": "../../util/home-paths" },
-    { "path": "../../core/agent" },
-    { "path": "../../core/agent-default-model" },
-    { "path": "../../attachment/attachment" },
-    { "path": "../../llm/llm" },
-    { "path": "../../core/session" },
-    { "path": "../../session/session-persistence" },
-    { "path": "../../session-query/session-query" },
-    { "path": "../../settings/settings" },
-    { "path": "../../context/time-context" },
-    { "path": "../../workspace/workspace" }
+    { "path": "../../typert/protocol" },
+    { "path": "../../client/connection/tsconfig.host.json" }
   ]
 }

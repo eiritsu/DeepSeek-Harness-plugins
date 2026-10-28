@@ -3,12 +3,24 @@
 import type { Context, Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
-import type {} from '@deepseek-ai/dsh-config-editor'
+import type {} from '@deepseek-ai/dsh-client-connection'
 import { ImStatusService } from './status.ts'
 import type { ImPlatform } from './types.ts'
+import {
+  handleWeixinQrCode,
+  handleWeixinQrStatus,
+  WEIXIN_QRCODE_PATH,
+  WEIXIN_STATUS_PATH,
+} from './weixin-proxy.ts'
 
 export { ImStatusService } from './status.ts'
 export type { ImConnectionStatus, ImPlatform } from './types.ts'
+export {
+  handleWeixinQrCode,
+  handleWeixinQrStatus,
+  WEIXIN_QRCODE_PATH,
+  WEIXIN_STATUS_PATH,
+} from './weixin-proxy.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'im'
@@ -144,4 +156,25 @@ export function apply(ctx: Context, _config: Config): void {
   status.publish({ platform: 'telegram', state: 'disabled' })
   status.publish({ platform: 'discord', state: 'disabled' })
   status.publish({ platform: 'whatsapp', state: 'disabled' })
+
+  ctx.inject(['connection'], (connectionCtx) => {
+    connectionCtx.effect(
+      () => connectionCtx.connection.fetch.register({
+        path: WEIXIN_QRCODE_PATH,
+        methods: ['POST'],
+        requestBody: 'buffered',
+        fetch: request => handleWeixinQrCode(request),
+      }),
+      'im: weixin qr code route',
+    )
+    connectionCtx.effect(
+      () => connectionCtx.connection.fetch.register({
+        path: WEIXIN_STATUS_PATH,
+        methods: ['GET'],
+        requestBody: 'buffered',
+        fetch: request => handleWeixinQrStatus(request),
+      }),
+      'im: weixin qr status route',
+    )
+  })
 }

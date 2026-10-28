@@ -45,10 +45,13 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
     readonly platform: 'weixin' | 'whatsapp'
     readonly value: string
     readonly ticket?: string
-    readonly status: 'loading' | 'waiting' | 'scaned' | 'ok' | 'expired'
+    readonly status: 'loading' | 'waiting' | 'scaned' | 'need_verifycode' | 'ok' | 'expired' | 'error'
   }
 
   const [qrModal, setQrModal] = useState<QrModalData | null>(null)
+  const [verifyCodeInput, setVerifyCodeInput] = useState('')
+  const [pendingVerifyCode, setPendingVerifyCode] = useState<string | undefined>(undefined)
+  const [countdown, setCountdown] = useState<number>(120)
 
   const openWeixinQrModal = async (): Promise<void> => {
     setQrModal({
@@ -56,6 +59,9 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
       value: '',
       status: 'loading',
     })
+    setVerifyCodeInput('')
+    setPendingVerifyCode(undefined)
+    setCountdown(120)
     try {
       const res = await fetchWeixinBotQrCode()
       setQrModal({
@@ -65,13 +71,10 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
         status: 'waiting',
       })
     } catch {
-      // Offline fallback
-      const token = Math.random().toString(36).slice(2, 10)
       setQrModal({
         platform: 'weixin',
-        value: `https://liteapp.weixin.qq.com/q/7GiQu1?qrcode=${token}&bot_type=3`,
-        ticket: token,
-        status: 'waiting',
+        value: '',
+        status: 'error',
       })
     }
   }
@@ -83,6 +86,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
       value: payload,
       status: 'waiting',
     })
+    setCountdown(30)
   }
 
   const handleRefresh = (): void => {
@@ -94,28 +98,46 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
   }
 
   useEffect(() => {
-    if (!qrModal || qrModal.platform !== 'weixin' || !qrModal.ticket || qrModal.status === 'ok' || qrModal.status === 'expired') {
+    if (!qrModal || qrModal.status !== 'waiting') return
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          setQrModal(curr => (curr ? { ...curr, status: 'expired' } : null))
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => { clearInterval(timer) }
+  }, [qrModal?.status])
+
+  useEffect(() => {
+    if (!qrModal || qrModal.platform !== 'weixin' || !qrModal.ticket || qrModal.status === 'ok' || qrModal.status === 'expired' || qrModal.status === 'error') {
       return
     }
     let active = true
-    const interval = setInterval(async () => {
+    const poll = async (): Promise<void> => {
       if (!active || !qrModal.ticket) return
-      const res = await pollWeixinBotQrStatus(qrModal.ticket)
+      const res = await pollWeixinBotQrStatus(qrModal.ticket, pendingVerifyCode)
       if (!active) return
       if (res.status === 'scaned' && qrModal.status !== 'scaned') {
-        setQrModal(prev => prev ? { ...prev, status: 'scaned' } : null)
+        setQrModal(prev => (prev ? { ...prev, status: 'scaned' } : null))
+      } else if (res.status === 'need_verifycode' && qrModal.status !== 'need_verifycode') {
+        setQrModal(prev => (prev ? { ...prev, status: 'need_verifycode' } : null))
       } else if (res.status === 'ok') {
-        setQrModal(prev => prev ? { ...prev, status: 'ok' } : null)
+        setQrModal(prev => (prev ? { ...prev, status: 'ok' } : null))
       } else if (res.status === 'expired') {
-        setQrModal(prev => prev ? { ...prev, status: 'expired' } : null)
+        setQrModal(prev => (prev ? { ...prev, status: 'expired' } : null))
       }
-    }, 3000)
+    }
+    const interval = setInterval(() => { void poll() }, 3000)
+    void poll()
 
     return () => {
       active = false
       clearInterval(interval)
     }
-  }, [qrModal?.ticket, qrModal?.status, qrModal?.platform])
+  }, [qrModal?.ticket, qrModal?.status, qrModal?.platform, pendingVerifyCode])
 
   return (
     <div className={css.page}>
@@ -410,31 +432,90 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
                 <div style={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--dsw-alias-label-secondary)' }}>
                   <span>{t('qrModalStatusLoading')}</span>
                 </div>
+              ) : qrModal.status === 'error' ? (
+                <div style={{ width: 200, height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 13, color: '#e74c3c', textAlign: 'center', padding: 12 }}>
+                  <span>{t('qrModalStatusError')}</span>
+                  <button type="button" className={css.qrRefreshOverlayButton} onClick={handleRefresh}>{t('qrModalClickToRefresh')}</button>
+                </div>
               ) : (
                 <QrCodeSvg
                   value={qrModal.value}
                   size={200}
                 />
               )}
+
+              {qrModal.status === 'expired' && (
+                <div className={css.qrExpiredOverlay}>
+                  <span className={css.qrExpiredText}>{t('qrModalExpired')}</span>
+                  <button
+                    type="button"
+                    className={css.qrRefreshOverlayButton}
+                    onClick={handleRefresh}
+                  >
+                    {t('qrModalClickToRefresh')}
+                  </button>
+                </div>
+              )}
+
               <div className={css.qrStatusRow}>
                 {qrModal.status === 'loading' && <span className={css.pulseDot} style={{ background: '#3498db' }} />}
                 {qrModal.status === 'waiting' && <span className={css.pulseDot} style={{ background: '#2ecc71' }} />}
                 {qrModal.status === 'scaned' && <span className={css.pulseDot} style={{ background: '#f1c40f' }} />}
+                {qrModal.status === 'need_verifycode' && <span className={css.pulseDot} style={{ background: '#e67e22' }} />}
                 {qrModal.status === 'ok' && <span style={{ color: '#2ecc71', fontWeight: 600 }}>✓</span>}
+                {qrModal.status === 'expired' && <span style={{ color: '#e74c3c', fontWeight: 600 }}>✕</span>}
                 <span>
                   {qrModal.status === 'loading' && t('qrModalStatusLoading')}
                   {qrModal.status === 'waiting' && t('qrModalStatusWaiting')}
                   {qrModal.status === 'scaned' && t('qrModalStatusScaned')}
+                  {qrModal.status === 'need_verifycode' && t('qrModalVerifying')}
                   {qrModal.status === 'ok' && t('qrModalStatusSuccess')}
-                  {qrModal.status === 'expired' && t('qrModalRefresh')}
+                  {qrModal.status === 'expired' && t('qrModalExpired')}
+                  {qrModal.status === 'error' && t('qrModalStatusError')}
                 </span>
               </div>
+
+              {qrModal.status === 'waiting' && (
+                <span className={css.qrCountdown}>
+                  {t('qrExpiresIn')}{countdown}{t('seconds')}
+                </span>
+              )}
             </div>
+
+            {qrModal.status === 'need_verifycode' && (
+              <div className={css.verifyCodePanel}>
+                <div className={css.verifyCodePrompt}>{t('qrModalNeedVerifyCode')}</div>
+                <div className={css.verifyCodeRow}>
+                  <input
+                    type="text"
+                    className={css.verifyCodeInput}
+                    placeholder={t('qrModalVerifyCodePlaceholder')}
+                    value={verifyCodeInput}
+                    onChange={(e) => { setVerifyCodeInput(e.target.value) }}
+                    maxLength={8}
+                  />
+                  <button
+                    type="button"
+                    className={css.verifyCodeSubmit}
+                    onClick={() => { setPendingVerifyCode(verifyCodeInput.trim()) }}
+                  >
+                    {t('qrModalSubmitCode')}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <p className={css.qrInstructions}>
               {qrModal.platform === 'weixin'
                 ? t('qrModalHintWeixin')
                 : t('qrModalHintWhatsapp')}
             </p>
+
+            {qrModal.platform === 'whatsapp' && (
+              <p className={css.qrInstructions} style={{ fontSize: 11, opacity: 0.85 }}>
+                {t('whatsappWebTip')}
+              </p>
+            )}
           </div>
         </Modal>
       )}
