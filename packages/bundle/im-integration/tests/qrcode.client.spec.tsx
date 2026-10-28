@@ -9,6 +9,7 @@ import { ImSettingsPage, type ImSettingsPageProps } from '../src/client/ImSettin
 import type { ImSettingsState } from '../src/client/controller.ts'
 import { zh, type ImLocaleKey } from '../src/client/locales.ts'
 import { generateWhatsappPairingPayload } from '../src/client/whatsapp-baileys.ts'
+// Keep Baileys payload unit coverage even though Settings no longer offers a live Web QR.
 
 afterEach(cleanup)
 
@@ -43,6 +44,8 @@ function buildState(overrides: Partial<ImSettingsState> = {}): ImSettingsState {
     telegramBotTokenEnv: field('TELEGRAM_BOT_TOKEN'),
     discordBotTokenEnv: field('DISCORD_BOT_TOKEN'),
     whatsappEnabled: field('false'),
+    whatsappPhoneNumberId: field(''),
+    whatsappWabaId: field(''),
     whatsappAccessTokenEnv: field('WHATSAPP_ACCESS_TOKEN'),
     connectionStatus: { platform: 'lark', state: 'disabled' },
     larkAppSecret: field(''),
@@ -143,23 +146,19 @@ describe('IM QR Code Generation & Modal', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('opens WhatsApp QR code modal and allows switching between Web and Cloud API modes', () => {
+  it('defaults WhatsApp to Cloud API fields and marks Web pairing unavailable', () => {
     renderPage()
 
     fireEvent.click(screen.getByRole('button', { name: zh.tabWhatsapp }))
-    fireEvent.click(screen.getByRole('button', { name: zh.whatsappScanButton }))
-
-    expect(screen.getByRole('dialog', { name: zh.qrModalTitleWhatsapp })).toBeTruthy()
-    expect(screen.getByText(zh.qrModalStatusWaiting)).toBeTruthy()
-    expect(screen.getByText(zh.qrModalHintWhatsapp)).toBeTruthy()
-
-    const closeBtns = screen.getAllByRole('button', { name: zh.qrModalClose })
-    fireEvent.click(closeBtns[0]!)
-
-    const select = screen.getByDisplayValue(zh.whatsappModeWeb)
-    fireEvent.change(select, { target: { value: 'cloud' } })
-    expect(screen.getByText(zh.whatsappAccessToken)).toBeTruthy()
     expect(screen.getByText(zh.whatsappCloudHint)).toBeTruthy()
+    expect(screen.getByText(zh.whatsappPhoneNumberId)).toBeTruthy()
+    expect(screen.getByText(zh.whatsappWabaId)).toBeTruthy()
+    expect(screen.getByText(zh.whatsappAccessToken)).toBeTruthy()
+
+    const select = screen.getByDisplayValue(zh.whatsappModeCloud)
+    fireEvent.change(select, { target: { value: 'web' } })
+    expect(screen.getByText(zh.whatsappWebUnavailable)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: zh.whatsappScanButton })).toBeNull()
   })
 
   it('renders expired overlay when QR status transitions to expired', async () => {

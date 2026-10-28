@@ -103,6 +103,7 @@ export const zh = {
   whatsappAccessToken: '访问令牌 (System User Access Token)',
   whatsappWabaId: '商业账号 ID (WABA ID)',
   whatsappCloudHint: '通过 Meta for Developers 官方 Graph API 接入，免扫码、免设备常驻、永久稳定不掉线。',
+  whatsappWebUnavailable: 'WhatsApp Web / Baileys 扫码配对尚未接入真实协议握手，当前不可用。请改用 Cloud API 填写下方凭证。',
 
   // QR Code Modal
   qrModalTitleWeixin: '微信 ClawBot 扫码授权',
@@ -232,6 +233,7 @@ export const en = {
   whatsappAccessToken: 'System User Access Token',
   whatsappWabaId: 'WhatsApp Business Account ID (WABA ID)',
   whatsappCloudHint: 'Direct connection via Meta for Developers Graph API. No QR scanning or mobile companion required.',
+  whatsappWebUnavailable: 'WhatsApp Web / Baileys pairing is not wired to a real handshake yet. Use Cloud API credentials instead.',
 
   // QR Code Modal
   qrModalTitleWeixin: 'WeChat ClawBot Authorization',

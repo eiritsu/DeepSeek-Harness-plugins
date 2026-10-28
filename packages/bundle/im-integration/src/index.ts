@@ -75,7 +75,7 @@ export function apply(ctx: Context, config: Config): void {
         path: WEIXIN_QRCODE_PATH,
         methods: ['POST'],
         requestBody: 'buffered',
-        fetch: request => handleWeixinQrCode(request),
+        fetch: () => handleWeixinQrCode(ctx, config),
       }),
       'im: weixin qr code route',
     )

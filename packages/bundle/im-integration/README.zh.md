@@ -22,4 +22,6 @@
 ## 已知限制
 
 - 钉钉、企业微信、QQ、Telegram、Discord、WhatsApp 的实时收发桥尚未交付；状态表示凭证是否就绪（身份与密钥齐全时为 `connected`）。
+- WhatsApp Web / Baileys 扫码尚未接入真实握手，仅支持 Cloud API 身份字段。
 - 飞书/Lark 私聊接入仍由 `@deepseek-ai/dsh-lark-integration` 负责；本包 Lark 标签仅保存多平台设置页共用的身份字段。
+- 手机微信点「连接」出现「网络错误」仍可能来自腾讯 iLink（见 openclaw-weixin#242）。本包已对齐官方长轮询头与客户端版本；上游故障不在 Host 可控范围。

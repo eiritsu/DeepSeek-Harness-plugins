@@ -1,7 +1,7 @@
 {
   "extends": "../../../tsconfig.base.client.json",
   "compilerOptions": { "rootDir": "src", "outDir": "lib/types" },
-  "include": ["src/client", "src/types.ts"],
+  "include": ["src/client", "src/types.ts", "src/weixin-ilink-protocol.ts"],
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../api/gateway/tsconfig.client.json" },

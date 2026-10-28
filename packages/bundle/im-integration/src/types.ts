@@ -34,6 +34,8 @@ export interface WeixinAuthorizationPayload {
   readonly token: string
   readonly botId?: string
   readonly userId?: string
+  /** Account-specific iLink API base returned on confirm. */
+  readonly baseUrl?: string
 }
 
 /** Inbound normalized message delivered by an IM channel. */

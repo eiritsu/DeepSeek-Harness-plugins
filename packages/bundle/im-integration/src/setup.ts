@@ -35,10 +35,12 @@ export class ImSetupService extends TypertRemoteService {
     if (token.length === 0) return { ok: false, code: 'not-configured' }
     const botId = authorization.botId?.trim()
     const userId = authorization.userId?.trim()
+    const baseUrl = authorization.baseUrl?.trim()
     const payload = JSON.stringify({
       token,
       ...(botId === undefined || botId.length === 0 ? {} : { botId }),
       ...(userId === undefined || userId.length === 0 ? {} : { userId }),
+      ...(baseUrl === undefined || baseUrl.length === 0 ? {} : { baseUrl }),
     })
     try {
       return await this.withSetupMutation(async () => {

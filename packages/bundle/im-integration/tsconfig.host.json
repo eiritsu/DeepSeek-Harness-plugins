@@ -8,6 +8,7 @@
     "src/status.ts",
     "src/setup.ts",
     "src/runtime.ts",
+    "src/weixin-ilink-protocol.ts",
     "src/weixin-proxy.ts",
     "src/workspace.ts",
     "src/conversation.ts"

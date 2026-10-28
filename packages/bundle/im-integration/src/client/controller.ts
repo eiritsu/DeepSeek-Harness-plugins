@@ -48,6 +48,8 @@ export interface ImSettings {
   telegramBotTokenEnv?: string
   discordBotTokenEnv?: string
   whatsappEnabled?: boolean
+  whatsappPhoneNumberId?: string
+  whatsappWabaId?: string
   whatsappAccessTokenEnv?: string
 }
 
@@ -76,6 +78,8 @@ export interface ImSettingsState extends SettingsFormShell {
   telegramBotTokenEnv: SettingsFieldState
   discordBotTokenEnv: SettingsFieldState
   whatsappEnabled: SettingsFieldState
+  whatsappPhoneNumberId: SettingsFieldState
+  whatsappWabaId: SettingsFieldState
   whatsappAccessTokenEnv: SettingsFieldState
   connectionStatus: ImIntegrationStatusValue
   statusDiagnostic?: string
@@ -145,6 +149,8 @@ export class ImSettingsController {
       settingsTextField('telegramBotTokenEnv'),
       settingsTextField('discordBotTokenEnv'),
       booleanField('whatsappEnabled'),
+      settingsTextField('whatsappPhoneNumberId'),
+      settingsTextField('whatsappWabaId'),
       settingsTextField('whatsappAccessTokenEnv'),
     ], Object.entries(SECRET_FIELDS).map(([field, envField]) => ({
       field,
@@ -195,6 +201,8 @@ export class ImSettingsController {
       telegramBotTokenEnv: this.form.field('telegramBotTokenEnv'),
       discordBotTokenEnv: this.form.field('discordBotTokenEnv'),
       whatsappEnabled: this.form.field('whatsappEnabled'),
+      whatsappPhoneNumberId: this.form.field('whatsappPhoneNumberId'),
+      whatsappWabaId: this.form.field('whatsappWabaId'),
       whatsappAccessTokenEnv: this.form.field('whatsappAccessTokenEnv'),
       connectionStatus: status,
       ...(this.statusDiagnostic === undefined ? {} : { statusDiagnostic: this.statusDiagnostic }),

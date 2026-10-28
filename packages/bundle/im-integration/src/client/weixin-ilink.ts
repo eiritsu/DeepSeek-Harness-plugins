@@ -1,15 +1,25 @@
 /** Tencent WeChat iLink Bot Protocol integration (WeChat ClawBot). */
 
+import {
+  ILINK_BASE_URL,
+  ILINK_BOT_TYPE,
+  ILINK_CLIENT_VERSION,
+  ilinkQrIssueHeaders,
+  ilinkQrStatusHeaders,
+} from '../weixin-ilink-protocol.ts'
+
 export interface WeixinBotQrResult {
   readonly qrcode: string
   readonly qrcodeUrl: string
 }
 
 export interface WeixinBotQrStatus {
-  readonly status: 'wait' | 'scaned' | 'need_verifycode' | 'ok' | 'expired'
+  readonly status: 'wait' | 'scaned' | 'need_verifycode' | 'ok' | 'expired' | 'blocked'
   readonly token?: string | undefined
   readonly botId?: string | undefined
   readonly userId?: string | undefined
+  /** Upstream API base after `scaned_but_redirect` / `binded_redirect`. */
+  readonly baseUrl?: string | undefined
 }
 
 /**
@@ -43,25 +53,14 @@ export async function fetchWeixinBotQrCode(): Promise<WeixinBotQrResult> {
   }
 
   // 2. Direct upstream fallback (works in Node.js / non-browser environments)
-  const randomBytes = new Uint8Array(4)
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(randomBytes)
-  }
-  const uint32 = ((randomBytes[0] ?? 0) << 24) | ((randomBytes[1] ?? 0) << 16) | ((randomBytes[2] ?? 0) << 8) | (randomBytes[3] ?? 0)
-  const uin = btoa(String(uint32))
-  const clientVersion = 65546
-
-  const response = await fetch('https://ilinkai.weixin.qq.com/ilink/bot/get_bot_qrcode?bot_type=3', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      AuthorizationType: 'ilink_bot_token',
-      'X-WECHAT-UIN': uin,
-      'iLink-App-Id': 'bot',
-      'iLink-App-ClientVersion': String(clientVersion),
+  const response = await fetch(
+    `${ILINK_BASE_URL}/ilink/bot/get_bot_qrcode?bot_type=${encodeURIComponent(ILINK_BOT_TYPE)}`,
+    {
+      method: 'POST',
+      headers: ilinkQrIssueHeaders(randomWechatUin()),
+      body: JSON.stringify({ local_token_list: [] }),
     },
-    body: JSON.stringify({ local_token_list: [] }),
-  })
+  )
 
   if (!response.ok) {
     throw new Error(`iLink HTTP error ${response.status}: ${response.statusText}`)
@@ -89,18 +88,23 @@ export async function fetchWeixinBotQrCode(): Promise<WeixinBotQrResult> {
  * @param qrcode - The active QR code ticket returned by fetchWeixinBotQrCode.
  * @param verifyCode - Optional verification digits when status is `need_verifycode`.
  * @param signal - Optional cancellation for overlapping Client polls.
- * @returns Status: 'wait' | 'scaned' | 'need_verifycode' | 'ok' | 'expired'.
+ * @param baseUrl - Optional redirected API base from a previous status frame.
+ * @returns Status: wait / scaned / need_verifycode / ok / expired / blocked.
  */
 export async function pollWeixinBotQrStatus(
   qrcode: string,
   verifyCode?: string,
   signal?: AbortSignal,
+  baseUrl?: string,
 ): Promise<WeixinBotQrStatus> {
   // 1. Try host proxy route first
   try {
     const params = new URLSearchParams({ qrcode })
     if (verifyCode) {
       params.set('verify_code', verifyCode)
+    }
+    if (baseUrl) {
+      params.set('base_url', baseUrl)
     }
     const response = await fetch(`/api/im.weixin.status?${params.toString()}`, {
       method: 'GET',
@@ -113,48 +117,25 @@ export async function pollWeixinBotQrStatus(
         readonly token?: string
         readonly botId?: string
         readonly userId?: string
+        readonly baseUrl?: string
+        readonly redirectHost?: string
       }
-      if (data.status === 'confirmed' || data.status === 'ok') {
-        return { status: 'ok', token: data.token, botId: data.botId, userId: data.userId }
-      }
-      if (data.status === 'need_verifycode') {
-        return { status: 'need_verifycode' }
-      }
-      if (data.status === 'scaned') {
-        return { status: 'scaned' }
-      }
-      if (data.status === 'expired') {
-        return { status: 'expired' }
-      }
-      return { status: 'wait' }
+      return mapStatus(data)
     }
   } catch {
     // Fall through to direct poll
   }
 
   // 2. Direct upstream fallback
-  const randomBytes = new Uint8Array(4)
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(randomBytes)
-  }
-  const uint32 = ((randomBytes[0] ?? 0) << 24) | ((randomBytes[1] ?? 0) << 16) | ((randomBytes[2] ?? 0) << 8) | (randomBytes[3] ?? 0)
-  const uin = btoa(String(uint32))
-  const clientVersion = 65546
-
   try {
-    let endpoint = `https://ilinkai.weixin.qq.com/ilink/bot/get_qrcode_status?qrcode=${encodeURIComponent(qrcode)}`
+    const apiBase = baseUrl && /^https:\/\//.test(baseUrl) ? baseUrl.replace(/\/$/, '') : ILINK_BASE_URL
+    let endpoint = `${apiBase}/ilink/bot/get_qrcode_status?qrcode=${encodeURIComponent(qrcode)}`
     if (verifyCode) {
       endpoint += `&verify_code=${encodeURIComponent(verifyCode)}`
     }
     const response = await fetch(endpoint, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        AuthorizationType: 'ilink_bot_token',
-        'X-WECHAT-UIN': uin,
-        'iLink-App-Id': 'bot',
-        'iLink-App-ClientVersion': String(clientVersion),
-      },
+      headers: ilinkQrStatusHeaders(),
       ...(signal === undefined ? {} : { signal }),
     })
 
@@ -167,21 +148,18 @@ export async function pollWeixinBotQrStatus(
       readonly bot_token?: string
       readonly ilink_bot_id?: string
       readonly ilink_user_id?: string
+      readonly baseurl?: string
+      readonly redirect_host?: string
     }
 
-    if (data.status === 'confirmed' || data.status === 'ok') {
-      return { status: 'ok', token: data.bot_token, botId: data.ilink_bot_id, userId: data.ilink_user_id }
-    }
-    if (data.status === 'need_verifycode') {
-      return { status: 'need_verifycode' }
-    }
-    if (data.status === 'scaned') {
-      return { status: 'scaned' }
-    }
-    if (data.status === 'expired') {
-      return { status: 'expired' }
-    }
-    return { status: 'wait' }
+    return mapStatus({
+      status: data.status,
+      token: data.bot_token,
+      botId: data.ilink_bot_id,
+      userId: data.ilink_user_id,
+      baseUrl: data.baseurl,
+      redirectHost: data.redirect_host,
+    })
   } catch (error: unknown) {
     if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
       return { status: 'wait' }
@@ -189,3 +167,69 @@ export async function pollWeixinBotQrStatus(
     return { status: 'wait' }
   }
 }
+
+function mapStatus(data: {
+  readonly status?: string
+  readonly token?: string
+  readonly botId?: string
+  readonly userId?: string
+  readonly baseUrl?: string
+  readonly redirectHost?: string
+}): WeixinBotQrStatus {
+  const redirect = normalizeRedirectBase(data.baseUrl ?? data.redirectHost)
+  if (data.status === 'confirmed' || data.status === 'ok' || data.status === 'binded_redirect') {
+    return {
+      status: 'ok',
+      token: data.token,
+      botId: data.botId,
+      userId: data.userId,
+      ...(redirect === undefined ? {} : { baseUrl: redirect }),
+    }
+  }
+  if (data.status === 'need_verifycode') {
+    return { status: 'need_verifycode', ...(redirect === undefined ? {} : { baseUrl: redirect }) }
+  }
+  if (data.status === 'verify_code_blocked') {
+    return { status: 'blocked', ...(redirect === undefined ? {} : { baseUrl: redirect }) }
+  }
+  if (data.status === 'scaned' || data.status === 'scaned_but_redirect') {
+    return { status: 'scaned', ...(redirect === undefined ? {} : { baseUrl: redirect }) }
+  }
+  if (data.status === 'expired') {
+    return { status: 'expired' }
+  }
+  return { status: 'wait', ...(redirect === undefined ? {} : { baseUrl: redirect }) }
+}
+
+function normalizeRedirectBase(value: string | undefined): string | undefined {
+  if (value === undefined || value.length === 0) return undefined
+  try {
+    // Official `redirect_host` is a bare hostname; `baseurl` is a full https origin.
+    const candidate = value.startsWith('https://') || value.startsWith('http://')
+      ? value
+      : `https://${value.replace(/^\/\//, '')}`
+    const url = new URL(candidate)
+    if (url.protocol !== 'https:') return undefined
+    if (!url.hostname.endsWith('.weixin.qq.com') && url.hostname !== 'ilinkai.weixin.qq.com') {
+      return undefined
+    }
+    return url.origin
+  } catch {
+    return undefined
+  }
+}
+
+function randomWechatUin(): string {
+  const randomBytes = new Uint8Array(4)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(randomBytes)
+  }
+  const uint32 = ((randomBytes[0] ?? 0) << 24)
+    | ((randomBytes[1] ?? 0) << 16)
+    | ((randomBytes[2] ?? 0) << 8)
+    | (randomBytes[3] ?? 0)
+  return btoa(String(uint32 >>> 0))
+}
+
+/** Exposed for diagnostics and tests. */
+export const WEIXIN_ILINK_CLIENT_VERSION = ILINK_CLIENT_VERSION

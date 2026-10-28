@@ -64,6 +64,10 @@ export interface Config {
 
   /** Whether the WhatsApp channel is enabled. */
   whatsappEnabled: Volatile<boolean>
+  /** WhatsApp Cloud API phone number id. */
+  whatsappPhoneNumberId: Volatile<string>
+  /** WhatsApp Business Account id. */
+  whatsappWabaId: Volatile<string>
   /** Credential reference for WhatsApp Cloud API access token. */
   whatsappAccessTokenEnv: Volatile<string>
 }
@@ -106,5 +110,7 @@ export const Config = z.object({
   discordBotTokenEnv: z.string().role('credential-ref').default(String(credentialRef('DISCORD_BOT_TOKEN'))).volatile(),
 
   whatsappEnabled: z.boolean().default(false).volatile(),
+  whatsappPhoneNumberId: z.string().default('').volatile(),
+  whatsappWabaId: z.string().default('').volatile(),
   whatsappAccessTokenEnv: z.string().role('credential-ref').default(String(credentialRef('WHATSAPP_ACCESS_TOKEN'))).volatile(),
 })

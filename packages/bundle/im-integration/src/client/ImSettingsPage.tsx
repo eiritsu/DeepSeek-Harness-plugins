@@ -8,7 +8,6 @@ import type { ImSettingsFace, ImSettingsState } from './controller.ts'
 import type { ImLocaleKey } from './locales.ts'
 import { QrCodeSvg } from './QrCodeCard.tsx'
 import { fetchWeixinBotQrCode, pollWeixinBotQrStatus } from './weixin-ilink.ts'
-import { generateWhatsappPairingPayload } from './whatsapp-baileys.ts'
 import type { ImPlatform } from '../types.ts'
 
 /** Renderer-bound props for the IM bundle detail page. */
@@ -67,13 +66,15 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
   const [qrModal, setQrModal] = useState<QrModalData | null>(null)
   const [verifyCodeInput, setVerifyCodeInput] = useState('')
   const [pendingVerifyCode, setPendingVerifyCode] = useState<string | undefined>(undefined)
+  const [weixinPollBaseUrl, setWeixinPollBaseUrl] = useState<string | undefined>(undefined)
   const [countdown, setCountdown] = useState<number>(120)
-  const [whatsappMode, setWhatsappMode] = useState<'web' | 'cloud'>('web')
+  const [whatsappMode, setWhatsappMode] = useState<'web' | 'cloud'>('cloud')
 
   const openWeixinQrModal = async (): Promise<void> => {
     setQrModal({ platform: 'weixin', value: '', status: 'loading' })
     setVerifyCodeInput('')
     setPendingVerifyCode(undefined)
+    setWeixinPollBaseUrl(undefined)
     setCountdown(120)
     try {
       const res = await fetchWeixinBotQrCode()
@@ -88,15 +89,8 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
     }
   }
 
-  const openWhatsappQrModal = (): void => {
-    const payload = generateWhatsappPairingPayload()
-    setQrModal({ platform: 'whatsapp', value: payload, status: 'waiting' })
-    setCountdown(30)
-  }
-
   const handleRefresh = (): void => {
     if (qrModal?.platform === 'weixin') void openWeixinQrModal()
-    else if (qrModal?.platform === 'whatsapp') openWhatsappQrModal()
   }
 
   useEffect(() => {
@@ -113,59 +107,74 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
     return () => { clearInterval(timer) }
   }, [qrModal?.status])
 
+  // Sequential official long-polls (≤35s each). Do not interval-abort: cutting the
+  // Host poll mid-flight prevents WeChat from completing "连接" on the phone.
   useEffect(() => {
-    if (
-      !qrModal
-      || qrModal.platform !== 'weixin'
-      || !qrModal.ticket
-      || qrModal.status === 'ok'
-      || qrModal.status === 'expired'
-      || qrModal.status === 'error'
-    ) {
-      return
-    }
-    let active = true
-    let inFlight: AbortController | undefined
-    const poll = async (): Promise<void> => {
-      if (!active || !qrModal.ticket) return
-      inFlight?.abort()
-      const controller = new AbortController()
-      inFlight = controller
-      try {
-        const res = await pollWeixinBotQrStatus(qrModal.ticket, pendingVerifyCode, controller.signal)
-        if (!active || controller.signal.aborted) return
-        if (res.status === 'scaned' && qrModal.status !== 'scaned') {
-          setQrModal(prev => (prev ? { ...prev, status: 'scaned' } : null))
-        } else if (res.status === 'need_verifycode' && qrModal.status !== 'need_verifycode') {
-          setQrModal(prev => (prev ? { ...prev, status: 'need_verifycode' } : null))
-        } else if (res.status === 'ok') {
-          const token = res.token?.trim()
-          if (token !== undefined && token.length > 0) {
-            const committed = await props.commitWeixinAuthorization({
-              token,
-              ...(res.botId === undefined ? {} : { botId: res.botId }),
-              ...(res.userId === undefined ? {} : { userId: res.userId }),
-            })
-            if (!active) return
-            setQrModal(prev => (prev ? { ...prev, status: committed ? 'ok' : 'error' } : null))
-          } else {
-            setQrModal(prev => (prev ? { ...prev, status: 'error' } : null))
+    if (!qrModal || qrModal.platform !== 'weixin' || !qrModal.ticket) return
+    if (qrModal.status === 'ok' || qrModal.status === 'expired' || qrModal.status === 'error') return
+
+    const ticket = qrModal.ticket
+    const controller = new AbortController()
+    let stopped = false
+    let pollBase = weixinPollBaseUrl
+
+    void (async () => {
+      while (!stopped && !controller.signal.aborted) {
+        try {
+          const res = await pollWeixinBotQrStatus(
+            ticket,
+            pendingVerifyCode,
+            controller.signal,
+            pollBase,
+          )
+          if (stopped || controller.signal.aborted) return
+          if (res.baseUrl !== undefined) {
+            pollBase = res.baseUrl
+            setWeixinPollBaseUrl(res.baseUrl)
           }
-        } else if (res.status === 'expired') {
-          setQrModal(prev => (prev ? { ...prev, status: 'expired' } : null))
+          if (res.status === 'scaned') {
+            setQrModal(prev => (prev && prev.status !== 'scaned' ? { ...prev, status: 'scaned' } : prev))
+          } else if (res.status === 'need_verifycode') {
+            setQrModal(prev => (prev && prev.status !== 'need_verifycode'
+              ? { ...prev, status: 'need_verifycode' }
+              : prev))
+          } else if (res.status === 'ok') {
+            const token = res.token?.trim()
+            if (token !== undefined && token.length > 0) {
+              const committed = await props.commitWeixinAuthorization({
+                token,
+                ...(res.botId === undefined ? {} : { botId: res.botId }),
+                ...(res.userId === undefined ? {} : { userId: res.userId }),
+                ...(res.baseUrl === undefined ? {} : { baseUrl: res.baseUrl }),
+              })
+              if (stopped) return
+              setQrModal(prev => (prev ? { ...prev, status: committed ? 'ok' : 'error' } : null))
+            } else {
+              setQrModal(prev => (prev ? { ...prev, status: 'ok' } : null))
+            }
+            return
+          } else if (res.status === 'blocked' || res.status === 'expired') {
+            setQrModal(prev => (prev ? { ...prev, status: 'expired' } : null))
+            return
+          }
+        } catch {
+          if (stopped || controller.signal.aborted) return
         }
-      } catch {
-        // Aborted or transient network errors keep waiting until the next tick.
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(resolve, 1_000)
+          controller.signal.addEventListener('abort', () => {
+            clearTimeout(timer)
+            resolve()
+          }, { once: true })
+        })
       }
-    }
-    const interval = setInterval(() => { void poll() }, 3000)
-    void poll()
+    })()
+
     return () => {
-      active = false
-      inFlight?.abort()
-      clearInterval(interval)
+      stopped = true
+      controller.abort()
     }
-  }, [qrModal?.ticket, qrModal?.status, qrModal?.platform, pendingVerifyCode, props])
+  }, [qrModal?.ticket, qrModal?.platform, pendingVerifyCode, props])
 
   return (
     <SettingsForm
@@ -412,20 +421,44 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
                 value={whatsappMode}
                 onChange={(e) => { setWhatsappMode(e.currentTarget.value as 'web' | 'cloud') }}
               >
-                <option value="web">{t('whatsappModeWeb')}</option>
                 <option value="cloud">{t('whatsappModeCloud')}</option>
+                <option value="web">{t('whatsappModeWeb')}</option>
               </select>
             </div>
             {whatsappMode === 'web' ? (
-              <>
-                <div className={css.noticeBox}>{t('whatsappHint')}</div>
-                <div>
-                  <Button variant="outline" disabled={disabled} onClick={openWhatsappQrModal}>{t('whatsappScanButton')}</Button>
-                </div>
-              </>
+              <div className={css.noticeBox}>{t('whatsappWebUnavailable')}</div>
             ) : (
               <>
                 <div className={css.noticeBox}>{t('whatsappCloudHint')}</div>
+                <label className={css.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={state.whatsappEnabled.text === 'true'}
+                    disabled={disabled}
+                    onChange={(event) => { props.edit('whatsappEnabled', String(event.currentTarget.checked)) }}
+                  />
+                  <span>{t('enablePlatform')}</span>
+                </label>
+                <div className={css.field}>
+                  <label className={css.label}>{t('whatsappPhoneNumberId')}</label>
+                  <input
+                    className={css.input}
+                    disabled={disabled}
+                    value={state.whatsappPhoneNumberId.text}
+                    placeholder="1029384756..."
+                    onChange={(event) => { props.edit('whatsappPhoneNumberId', event.currentTarget.value) }}
+                  />
+                </div>
+                <div className={css.field}>
+                  <label className={css.label}>{t('whatsappWabaId')}</label>
+                  <input
+                    className={css.input}
+                    disabled={disabled}
+                    value={state.whatsappWabaId.text}
+                    placeholder="waba_..."
+                    onChange={(event) => { props.edit('whatsappWabaId', event.currentTarget.value) }}
+                  />
+                </div>
                 <div className={css.field}>
                   <label className={css.label}>{t('whatsappAccessToken')}</label>
                   <input

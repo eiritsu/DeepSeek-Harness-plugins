@@ -22,4 +22,6 @@ Each IM channel conversation opens only after an independent Workspace exists fo
 ## Known Limitations
 
 - Live inbound/outbound message bridges for DingTalk, WeCom, QQ, Telegram, Discord, and WhatsApp are not shipped yet. Status reports credential readiness (`connected` once identity and secrets are present).
+- WhatsApp Web / Baileys QR pairing is not implemented; only Cloud API identity fields are accepted.
 - Dedicated Lark private-chat ingress remains `@deepseek-ai/dsh-lark-integration`; this bundle's Lark tab stores shared identity fields for multi-platform Settings only.
+- Phone-side WeChat “网络错误” during Connect can still come from Tencent iLink (see openclaw-weixin#242). This package matches the official QR long-poll headers and client version; upstream outages remain outside Host control.

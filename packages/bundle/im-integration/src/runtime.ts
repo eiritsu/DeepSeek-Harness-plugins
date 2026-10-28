@@ -146,7 +146,7 @@ function identityFor(config: Config, platform: ImPlatform): IdentityCheck {
       }
     case 'whatsapp':
       return {
-        identityPresent: true,
+        identityPresent: config.whatsappPhoneNumberId.get().trim().length > 0,
         credentialRef: config.whatsappAccessTokenEnv.get().trim() || 'WHATSAPP_ACCESS_TOKEN',
         channelEnabled: config.whatsappEnabled.get(),
         requiresIdentity: true,
