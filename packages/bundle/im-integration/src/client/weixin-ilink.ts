@@ -153,12 +153,12 @@ export async function pollWeixinBotQrStatus(
     }
 
     return mapStatus({
-      status: data.status,
-      token: data.bot_token,
-      botId: data.ilink_bot_id,
-      userId: data.ilink_user_id,
-      baseUrl: data.baseurl,
-      redirectHost: data.redirect_host,
+      ...(data.status === undefined ? {} : { status: data.status }),
+      ...(data.bot_token === undefined ? {} : { token: data.bot_token }),
+      ...(data.ilink_bot_id === undefined ? {} : { botId: data.ilink_bot_id }),
+      ...(data.ilink_user_id === undefined ? {} : { userId: data.ilink_user_id }),
+      ...(data.baseurl === undefined ? {} : { baseUrl: data.baseurl }),
+      ...(data.redirect_host === undefined ? {} : { redirectHost: data.redirect_host }),
     })
   } catch (error: unknown) {
     if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
