@@ -4,6 +4,12 @@ import type { Context, Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import type {} from '@deepseek-ai/dsh-client-connection'
+import type {} from '@deepseek-ai/dsh-agent'
+import type {} from '@deepseek-ai/dsh-agent-default-model'
+import type {} from '@deepseek-ai/dsh-attachment'
+import type {} from '@deepseek-ai/dsh-session-persistence'
+import type {} from '@deepseek-ai/dsh-session-query'
+import type {} from '@deepseek-ai/dsh-workspace'
 import { ImStatusService } from './status.ts'
 import type { ImPlatform } from './types.ts'
 import {
@@ -21,6 +27,14 @@ export {
   WEIXIN_QRCODE_PATH,
   WEIXIN_STATUS_PATH,
 } from './weixin-proxy.ts'
+export {
+  imConversationCwd,
+  imConversationDigest,
+  ensureImConversationWorkspace,
+} from './workspace.ts'
+export type { ImConversationWorkspace } from './workspace.ts'
+export { imSessionId, openImConversation } from './conversation.ts'
+export type { OpenImConversationOptions, OpenImConversationResult } from './conversation.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'im'
@@ -130,7 +144,10 @@ export const Config = z.object({
   whatsappEnabled: z.boolean().default(false).volatile(),
 })
 
-/** Services required for IM integration. */
+/**
+ * Services required before an IM channel may open a conversation Session.
+ * Matches the create/resume + Workspace path used by {@link openImConversation}.
+ */
 export const inject = [
   'agentDefaultModel',
   'agents',
@@ -139,15 +156,11 @@ export const inject = [
   'sessionPersistence',
   'sessionQuery',
   'workspaceRegistry',
-  'configEditor',
-  'subprocess',
-  'tools',
 ]
 
 /** Mount the IM integration host services. */
 export function apply(ctx: Context, _config: Config): void {
   const status = new ImStatusService(ctx)
-  // Register initial platform states
   status.publish({ platform: 'lark', state: 'disabled' })
   status.publish({ platform: 'dingtalk', state: 'disabled' })
   status.publish({ platform: 'wecom', state: 'disabled' })

@@ -88,11 +88,13 @@ export async function fetchWeixinBotQrCode(): Promise<WeixinBotQrResult> {
  * Routes through the Host proxy `/api/im.weixin.status`.
  * @param qrcode - The active QR code ticket returned by fetchWeixinBotQrCode.
  * @param verifyCode - Optional verification digits when status is `need_verifycode`.
+ * @param signal - Optional cancellation for overlapping Client polls.
  * @returns Status: 'wait' | 'scaned' | 'need_verifycode' | 'ok' | 'expired'.
  */
 export async function pollWeixinBotQrStatus(
   qrcode: string,
   verifyCode?: string,
+  signal?: AbortSignal,
 ): Promise<WeixinBotQrStatus> {
   // 1. Try host proxy route first
   try {
@@ -102,6 +104,7 @@ export async function pollWeixinBotQrStatus(
     }
     const response = await fetch(`/api/im.weixin.status?${params.toString()}`, {
       method: 'GET',
+      ...(signal === undefined ? {} : { signal }),
     })
     if (response.ok) {
       const data = (await response.json()) as {
@@ -152,6 +155,7 @@ export async function pollWeixinBotQrStatus(
         'iLink-App-Id': 'bot',
         'iLink-App-ClientVersion': String(clientVersion),
       },
+      ...(signal === undefined ? {} : { signal }),
     })
 
     if (!response.ok) {
@@ -178,7 +182,10 @@ export async function pollWeixinBotQrStatus(
       return { status: 'expired' }
     }
     return { status: 'wait' }
-  } catch {
+  } catch (error: unknown) {
+    if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
+      return { status: 'wait' }
+    }
     return { status: 'wait' }
   }
 }

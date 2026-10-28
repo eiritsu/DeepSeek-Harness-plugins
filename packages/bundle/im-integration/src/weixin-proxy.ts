@@ -93,6 +93,7 @@ export async function handleWeixinQrStatus(request: Request): Promise<Response> 
       endpoint += `&verify_code=${encodeURIComponent(verifyCode)}`
     }
 
+    // Keep upstream polls short so overlapping Client polls cannot pile up and stall the Host.
     const upstream = await fetch(endpoint, {
       method: 'GET',
       headers: {
@@ -102,7 +103,7 @@ export async function handleWeixinQrStatus(request: Request): Promise<Response> 
         'iLink-App-Id': 'bot',
         'iLink-App-ClientVersion': ILINK_CLIENT_VERSION,
       },
-      signal: AbortSignal.timeout(35_000),
+      signal: AbortSignal.timeout(8_000),
     })
 
     if (!upstream.ok) {

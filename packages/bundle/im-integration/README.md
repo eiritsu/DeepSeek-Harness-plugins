@@ -10,3 +10,7 @@ English | [中文](README.zh.md)
    - **Whitelist**: Enable to restrict agent access to authorized User IDs or Open IDs; disable to allow all incoming users.
    - **Moderation**: Enable to inspect and approve sensitive commands; disable for full agent autonomy.
 4. **Enable**: Toggle the switch in the top-right corner to activate the integration.
+
+## Conversation Workspaces
+
+Each IM channel conversation opens only after an independent Workspace exists for that conversation under `~/.dsh/workspaces/im/<platform>/`. Channels never share a working directory; Host code must call `openImConversation` (or `ensureImConversationWorkspace`) before creating or resuming a Session.

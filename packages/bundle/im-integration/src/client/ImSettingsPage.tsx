@@ -116,18 +116,26 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
       return
     }
     let active = true
+    let inFlight: AbortController | undefined
     const poll = async (): Promise<void> => {
       if (!active || !qrModal.ticket) return
-      const res = await pollWeixinBotQrStatus(qrModal.ticket, pendingVerifyCode)
-      if (!active) return
-      if (res.status === 'scaned' && qrModal.status !== 'scaned') {
-        setQrModal(prev => (prev ? { ...prev, status: 'scaned' } : null))
-      } else if (res.status === 'need_verifycode' && qrModal.status !== 'need_verifycode') {
-        setQrModal(prev => (prev ? { ...prev, status: 'need_verifycode' } : null))
-      } else if (res.status === 'ok') {
-        setQrModal(prev => (prev ? { ...prev, status: 'ok' } : null))
-      } else if (res.status === 'expired') {
-        setQrModal(prev => (prev ? { ...prev, status: 'expired' } : null))
+      inFlight?.abort()
+      const controller = new AbortController()
+      inFlight = controller
+      try {
+        const res = await pollWeixinBotQrStatus(qrModal.ticket, pendingVerifyCode, controller.signal)
+        if (!active || controller.signal.aborted) return
+        if (res.status === 'scaned' && qrModal.status !== 'scaned') {
+          setQrModal(prev => (prev ? { ...prev, status: 'scaned' } : null))
+        } else if (res.status === 'need_verifycode' && qrModal.status !== 'need_verifycode') {
+          setQrModal(prev => (prev ? { ...prev, status: 'need_verifycode' } : null))
+        } else if (res.status === 'ok') {
+          setQrModal(prev => (prev ? { ...prev, status: 'ok' } : null))
+        } else if (res.status === 'expired') {
+          setQrModal(prev => (prev ? { ...prev, status: 'expired' } : null))
+        }
+      } catch {
+        // Aborted or transient network errors keep waiting until the next tick.
       }
     }
     const interval = setInterval(() => { void poll() }, 3000)
@@ -135,6 +143,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
 
     return () => {
       active = false
+      inFlight?.abort()
       clearInterval(interval)
     }
   }, [qrModal?.ticket, qrModal?.status, qrModal?.platform, pendingVerifyCode])

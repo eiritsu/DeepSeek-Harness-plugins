@@ -1,17 +1,19 @@
-/** Host-owned connection state stream for IM integration. */
+/** Host-owned connection state for IM integration platforms. */
 
-import type { Context } from '@deepseek-ai/cordis'
-import { Remote, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import { Context, Service } from '@deepseek-ai/cordis'
 import type { ImConnectionStatus, ImPlatform } from './types.ts'
 
 export type { ImConnectionStatus }
 
-/** Publish the current Host connection state across platforms to mounted Client observers. */
-export class ImStatusService extends TypertRemoteService {
+/**
+ * Publish the current Host connection state across platforms.
+ * Local observers only until a Client Remote surface is wired with Typert artifacts.
+ */
+export class ImStatusService extends Service {
   private readonly platformStatuses = new Map<ImPlatform, ImConnectionStatus>()
   private readonly listeners = new Set<(status: ImConnectionStatus) => void>()
 
-  /** @param ctx - Host context that owns the IM connection and Remote service. */
+  /** @param ctx - Host context that owns the IM connection status. */
   constructor(ctx: Context) {
     super(ctx, 'imStatus')
   }
@@ -26,16 +28,14 @@ export class ImStatusService extends TypertRemoteService {
     for (const listener of this.listeners) listener(status)
   }
 
-  /** Stream the current state and subsequent changes until the Client disconnects.
-   * @param signal - cancellation owned by the Remote stream carrier.
+  /** Stream the current state and subsequent changes until aborted.
+   * @param signal - cancellation owned by the caller.
    * @returns the latest connection state whenever it changes.
    */
-  @Remote({ mode: 'stream' })
   async *watch(signal: AbortSignal): AsyncIterable<ImConnectionStatus> {
     const queue: ImConnectionStatus[] = []
     let wake: (() => void) | undefined
 
-    // Yield initial statuses for all known platforms
     for (const status of this.platformStatuses.values()) {
       queue.push(status)
     }
