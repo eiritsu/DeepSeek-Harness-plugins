@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer'
+
 /** Shared Tencent iLink Bot (WeChat ClawBot) protocol constants.
  * Values follow `@tencent-weixin/openclaw-weixin` protocol docs.
  */
@@ -61,4 +63,71 @@ export function ilinkQrIssueHeaders(wechatUin: string): Record<string, string> {
  */
 export function ilinkQrStatusHeaders(): Record<string, string> {
   return ilinkAppHeaders()
+}
+
+/** Default long-poll budget for authenticated `getUpdates` (matches openclaw-weixin). */
+export const ILINK_LONG_POLL_TIMEOUT_MS = 35_000
+
+/** Default timeout for authenticated send / notify calls. */
+export const ILINK_API_TIMEOUT_MS = 15_000
+
+/** Server errcode when the bot token is stale or expired. */
+export const ILINK_STALE_TOKEN_ERRCODE = -14
+
+/** proto: MessageType — inbound user messages vs bot replies. */
+export const ILINK_MESSAGE_TYPE = {
+  NONE: 0,
+  USER: 1,
+  BOT: 2,
+} as const
+
+/** proto: MessageItemType — text is required for the first DSH bridge path. */
+export const ILINK_MESSAGE_ITEM_TYPE = {
+  NONE: 0,
+  TEXT: 1,
+  IMAGE: 2,
+  VOICE: 3,
+  FILE: 4,
+  VIDEO: 5,
+} as const
+
+/** proto: MessageState for outbound bot replies. */
+export const ILINK_MESSAGE_STATE = {
+  NEW: 0,
+  GENERATING: 1,
+  FINISH: 2,
+} as const
+
+/** `base_info` attached to every authenticated iLink POST body. */
+export function ilinkBaseInfo(): { channel_version: string; bot_agent: string } {
+  return {
+    channel_version: ILINK_PLUGIN_VERSION,
+    bot_agent: `DeepSeekHarness/im/${ILINK_PLUGIN_VERSION}`,
+  }
+}
+
+/**
+ * Headers for authenticated bot token calls (`getUpdates`, `sendmessage`, …).
+ * @param token - bot token from QR authorization; when empty, Authorization is omitted.
+ */
+export function ilinkBotTokenHeaders(token: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    AuthorizationType: 'ilink_bot_token',
+    'X-WECHAT-UIN': randomWechatUin(),
+    ...ilinkAppHeaders(),
+  }
+  const trimmed = token.trim()
+  if (trimmed.length > 0) headers.Authorization = `Bearer ${trimmed}`
+  return headers
+}
+
+function randomWechatUin(): string {
+  const bytes = new Uint8Array(4)
+  crypto.getRandomValues(bytes)
+  const uint32 = ((bytes[0] ?? 0) << 24)
+    | ((bytes[1] ?? 0) << 16)
+    | ((bytes[2] ?? 0) << 8)
+    | (bytes[3] ?? 0)
+  return Buffer.from(String(uint32 >>> 0), 'utf-8').toString('base64')
 }

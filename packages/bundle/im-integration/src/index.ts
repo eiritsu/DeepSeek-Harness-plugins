@@ -39,6 +39,21 @@ export {
 export type { ImConversationWorkspace } from './workspace.ts'
 export { imSessionId, openImConversation } from './conversation.ts'
 export type { OpenImConversationOptions, OpenImConversationResult } from './conversation.ts'
+export { WeixinConversationBridge } from './weixin-bridge.ts'
+export type { WeixinConversationOptions } from './weixin-bridge.ts'
+export { LarkConversationBridge } from './lark-bridge.ts'
+export type { LarkConversationOptions } from './lark-bridge.ts'
+export {
+  extractWeixinText,
+  parseWeixinApiJson,
+  parseWeixinBotCredential,
+  weixinMessageId,
+} from './weixin-api.ts'
+export type {
+  WeixinBotCredential,
+  WeixinMessage,
+  WeixinMessageItem,
+} from './weixin-api.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'im'

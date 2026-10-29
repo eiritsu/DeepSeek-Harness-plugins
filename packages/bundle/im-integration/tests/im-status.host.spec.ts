@@ -60,12 +60,12 @@ describe('ImStatusService', () => {
     })
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = String(input)
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
       const headers = new Headers(init?.headers)
       if (url.includes('/get_bot_qrcode')) {
         expect(headers.get('iLink-App-ClientVersion')).toBe('132106')
         expect(headers.get('AuthorizationType')).toBe('ilink_bot_token')
-        const body = JSON.parse(String(init?.body ?? '{}')) as { local_token_list?: unknown }
+        const body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as { local_token_list?: unknown }
         expect(body.local_token_list).toEqual([])
         return new Response(JSON.stringify({
           ret: 0,
@@ -110,7 +110,7 @@ describe('ImStatusService', () => {
     })
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
-      const body = JSON.parse(String(init?.body ?? '{}')) as { local_token_list?: string[] }
+      const body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as { local_token_list?: string[] }
       expect(body.local_token_list).toEqual(['stored-bot-token'])
       return new Response(JSON.stringify({
         ret: 0,
@@ -124,12 +124,32 @@ describe('ImStatusService', () => {
   })
 
   it('reconciles platform status to connected when WeChat credentials exist', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      if (url.includes('/notifystart') || url.includes('/notifystop')) return new Response('{}')
+      if (url.includes('/getupdates')) {
+        await new Promise<void>((resolve) => {
+          const signal = init?.signal
+          if (signal?.aborted) {
+            resolve()
+            return
+          }
+          signal?.addEventListener('abort', () => { resolve() }, { once: true })
+        })
+        return new Response(JSON.stringify({ ret: 0, msgs: [] }))
+      }
+      return new Response('{}')
+    })
+
     const ctx = new Context()
     ctx.provide('credentials', {
       resolve: async (ref: { toString(): string }) =>
         String(ref) === 'WEIXIN_BOT_TOKEN'
           ? { value: JSON.stringify({ token: 'tok_active' }), source: 'test' }
           : undefined,
+    })
+    ctx.provide('agentDefaultModel', {
+      currentSelection: () => ({ provider: 'deepseek', model: 'deepseek-chat' }),
     })
     const { applyImRuntime } = await import('../src/runtime.ts')
     const service = new ImStatusService(ctx)
@@ -140,6 +160,8 @@ describe('ImStatusService', () => {
       enabled: { get: () => true },
       weixinEnabled: { get: () => true },
       weixinBotTokenEnv: { get: () => 'WEIXIN_BOT_TOKEN' },
+      whitelistEnabled: { get: () => false },
+      authorizedUsers: { get: () => '' },
       larkAppId: { get: () => '' },
       larkAppSecretEnv: { get: () => '' },
       dingtalkClientId: { get: () => '' },
@@ -156,10 +178,13 @@ describe('ImStatusService', () => {
     } as unknown as Config
 
     const dispose = applyImRuntime(ctx, config, service)
-    await new Promise(resolve => setTimeout(resolve, 50))
-    dispose()
-
-    const weixinStatus = published.find(p => p.platform === 'weixin')
-    expect(weixinStatus).toEqual({ platform: 'weixin', state: 'connected' })
+    try {
+      await vi.waitFor(() => {
+        const weixinStatus = published.findLast(p => p.platform === 'weixin')
+        expect(weixinStatus).toEqual({ platform: 'weixin', state: 'connected' })
+      }, { timeout: 5_000 })
+    } finally {
+      await dispose()
+    }
   })
 })

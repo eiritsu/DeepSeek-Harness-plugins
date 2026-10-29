@@ -11,7 +11,10 @@
     "src/weixin-ilink-protocol.ts",
     "src/weixin-proxy.ts",
     "src/workspace.ts",
-    "src/conversation.ts"
+    "src/conversation.ts",
+    "src/weixin-api.ts",
+    "src/weixin-bridge.ts",
+    "src/lark-bridge.ts"
   ],
   "references": [
     { "path": "../../../vendor/cordis" },
@@ -23,6 +26,7 @@
     { "path": "../../boot/config-editor" },
     { "path": "../../typert/protocol" },
     { "path": "../../util/home-paths" },
+    { "path": "../../llm/llm" },
     { "path": "../../core/session" },
     { "path": "../../session/session-persistence" },
     { "path": "../../session-query/session-query" },
