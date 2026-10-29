@@ -67,7 +67,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
   const [verifyCodeInput, setVerifyCodeInput] = useState('')
   const [pendingVerifyCode, setPendingVerifyCode] = useState<string | undefined>(undefined)
   const [weixinPollBaseUrl, setWeixinPollBaseUrl] = useState<string | undefined>(undefined)
-  const [countdown, setCountdown] = useState<number>(120)
+  const [countdown, setCountdown] = useState<number>(300)
   const [whatsappMode, setWhatsappMode] = useState<'web' | 'cloud'>('cloud')
 
   const openWeixinQrModal = async (): Promise<void> => {
@@ -75,7 +75,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
     setVerifyCodeInput('')
     setPendingVerifyCode(undefined)
     setWeixinPollBaseUrl(undefined)
-    setCountdown(120)
+    setCountdown(300)
     try {
       const res = await fetchWeixinBotQrCode()
       setQrModal({

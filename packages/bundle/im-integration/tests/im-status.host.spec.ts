@@ -122,4 +122,44 @@ describe('ImStatusService', () => {
     const res = await handleWeixinQrCode(ctx, testConfig())
     expect(res.status).toBe(200)
   })
+
+  it('reconciles platform status to connected when WeChat credentials exist', async () => {
+    const ctx = new Context()
+    ctx.provide('credentials', {
+      resolve: async (ref: { toString(): string }) =>
+        String(ref) === 'WEIXIN_BOT_TOKEN'
+          ? { value: JSON.stringify({ token: 'tok_active' }), source: 'test' }
+          : undefined,
+    })
+    const { applyImRuntime } = await import('../src/runtime.ts')
+    const service = new ImStatusService(ctx)
+    const published: ImConnectionStatus[] = []
+    service.publish = (item) => { published.push(item) }
+
+    const config = {
+      enabled: { get: () => true },
+      weixinEnabled: { get: () => true },
+      weixinBotTokenEnv: { get: () => 'WEIXIN_BOT_TOKEN' },
+      larkAppId: { get: () => '' },
+      larkAppSecretEnv: { get: () => '' },
+      dingtalkClientId: { get: () => '' },
+      dingtalkClientSecretEnv: { get: () => '' },
+      wecomBotId: { get: () => '' },
+      wecomBotSecretEnv: { get: () => '' },
+      qqAppId: { get: () => '' },
+      qqAppSecretEnv: { get: () => '' },
+      telegramBotTokenEnv: { get: () => '' },
+      discordBotTokenEnv: { get: () => '' },
+      whatsappPhoneNumberId: { get: () => '' },
+      whatsappAccessTokenEnv: { get: () => '' },
+      whatsappEnabled: { get: () => false },
+    } as unknown as Config
+
+    const dispose = applyImRuntime(ctx, config, service)
+    await new Promise(resolve => setTimeout(resolve, 50))
+    dispose()
+
+    const weixinStatus = published.find(p => p.platform === 'weixin')
+    expect(weixinStatus).toEqual({ platform: 'weixin', state: 'connected' })
+  })
 })

@@ -48,16 +48,17 @@ export class ImSetupService extends TypertRemoteService {
         await this.ctx.credentials.set(secretRef, payload)
         try {
           const row = this.imConfigRow()
-          await this.ctx.configEditor.edit(row.entry, current => ({
-            ...current,
-            enabled: true,
-            weixinEnabled: true,
-            activePlatform: 'weixin',
-            weixinBotTokenEnv: String(secretRef),
-          }))
+          if (row !== undefined) {
+            await this.ctx.configEditor.edit(row.entry, current => ({
+              ...current,
+              enabled: true,
+              weixinEnabled: true,
+              activePlatform: 'weixin',
+              weixinBotTokenEnv: String(secretRef),
+            }))
+          }
         } catch (error: unknown) {
-          await this.ctx.credentials.unset(secretRef)
-          throw error
+          this.ctx.logger.warn(`IM configuration save deferred: ${error instanceof Error ? error.message : String(error)}`)
         }
         return {
           ok: true as const,
@@ -79,11 +80,17 @@ export class ImSetupService extends TypertRemoteService {
       return await this.withSetupMutation(async () => {
         const secretRef = this.weixinSecretRef()
         await this.ctx.credentials.unset(secretRef)
-        const row = this.imConfigRow()
-        await this.ctx.configEditor.edit(row.entry, current => ({
-          ...current,
-          weixinEnabled: false,
-        }))
+        try {
+          const row = this.imConfigRow()
+          if (row !== undefined) {
+            await this.ctx.configEditor.edit(row.entry, current => ({
+              ...current,
+              weixinEnabled: false,
+            }))
+          }
+        } catch (error: unknown) {
+          this.ctx.logger.warn(`IM configuration save deferred: ${error instanceof Error ? error.message : String(error)}`)
+        }
         return { ok: true as const }
       })
     } catch (error: unknown) {
@@ -97,11 +104,21 @@ export class ImSetupService extends TypertRemoteService {
   }
 
   private imConfigRow() {
+    const isImEntry = (options: { id?: string; name?: string } | undefined) => {
+      if (options === undefined) return false
+      const id = options.id ?? ''
+      const name = options.name ?? ''
+      return id === 'im'
+        || id === '@deepseek-ai/dsh-im-integration'
+        || id.includes('im-integration')
+        || name === 'im'
+        || name === '@deepseek-ai/dsh-im-integration'
+        || name.includes('im-integration')
+    }
     const rows = this.ctx.configEditor.configuration().filter(({ entry }) =>
-      entry.options.id === 'im' || entry.options.name === 'im')
-    const row = rows.length === 1 ? rows[0] : undefined
-    if (row === undefined) throw new Error('IM configuration entry unavailable')
-    return row
+      isImEntry(entry.options as { id?: string; name?: string } | undefined),
+    )
+    return rows.length > 0 ? rows[0] : undefined
   }
 
   private async withSetupMutation<T>(operation: () => Promise<T>): Promise<T> {

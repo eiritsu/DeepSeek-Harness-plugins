@@ -65,4 +65,39 @@ describe('ImSetupService WeChat authorization', () => {
     expect(result).toEqual({ ok: false, code: 'not-configured' })
     expect(set).not.toHaveBeenCalled()
   })
+
+  it('matches entry with package name @deepseek-ai/dsh-im-integration', async () => {
+    const values = new Map<string, string>()
+    let edited: Record<string, unknown> | undefined
+    const ctx = new Context()
+    ctx.provide('credentials', {
+      async resolve(ref: { toString(): string }) {
+        const value = values.get(String(ref))
+        return value === undefined ? undefined : { value, source: 'test' }
+      },
+      async set(ref: { toString(): string }, value: string) { values.set(String(ref), value) },
+      async unset(ref: { toString(): string }) { values.delete(String(ref)) },
+    })
+    ctx.provide('configEditor', {
+      configuration: () => [{
+        entry: { options: { id: '@deepseek-ai/dsh-im-integration', name: '@deepseek-ai/dsh-im-integration' } },
+      }],
+      edit: vi.fn(async (_entry: unknown, mutate: (current: Record<string, unknown>) => Record<string, unknown>) => {
+        edited = mutate({})
+      }),
+    })
+
+    const setup = new ImSetupService(ctx, makeConfig())
+    const result = await setup.commitWeixinAuthorization({
+      token: 'bot-token-pkg',
+      botId: 'bot_pkg',
+    })
+
+    expect(result).toEqual({ ok: true, botId: 'bot_pkg' })
+    expect(edited).toMatchObject({
+      enabled: true,
+      weixinEnabled: true,
+      activePlatform: 'weixin',
+    })
+  })
 })

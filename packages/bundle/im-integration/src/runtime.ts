@@ -121,7 +121,7 @@ function identityFor(config: Config, platform: ImPlatform): IdentityCheck {
         identityPresent: true,
         credentialRef: config.weixinBotTokenEnv.get().trim() || 'WEIXIN_BOT_TOKEN',
         channelEnabled: config.weixinEnabled.get(),
-        requiresIdentity: true,
+        requiresIdentity: false,
       }
     case 'qq':
       return {

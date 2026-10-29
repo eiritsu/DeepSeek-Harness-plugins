@@ -77,7 +77,7 @@ export const Config = z.object({
   activePlatform: z.union([
     'lark', 'dingtalk', 'wecom', 'weixin', 'qq', 'telegram', 'discord', 'whatsapp',
   ] as const).default('lark').volatile(),
-  enabled: z.boolean().default(false).volatile(),
+  enabled: z.boolean().default(true).volatile(),
 
   whitelistEnabled: z.boolean().default(false).volatile(),
   authorizedUsers: z.string().default('').volatile(),
@@ -98,7 +98,7 @@ export const Config = z.object({
   wecomBotId: z.string().default('').volatile(),
   wecomBotSecretEnv: z.string().role('credential-ref').default(String(credentialRef('WECOM_BOT_SECRET'))).volatile(),
 
-  weixinEnabled: z.boolean().default(false).volatile(),
+  weixinEnabled: z.boolean().default(true).volatile(),
   weixinBotTokenEnv: z.string().role('credential-ref').default(String(credentialRef('WEIXIN_BOT_TOKEN'))).volatile(),
 
   qqAppId: z.string().default('').volatile(),
