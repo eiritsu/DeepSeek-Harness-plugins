@@ -26,6 +26,18 @@ export interface Config {
 
   /** Whether the model may call official channel CLI tools. Defaults false. */
   cliEnabled: Volatile<boolean>
+  /** Whether `lark_cli` is offered while `cliEnabled` is on. Defaults true. */
+  larkCliEnabled: Volatile<boolean>
+  /** Whether `wecom_cli` is offered while `cliEnabled` is on. Defaults false. */
+  wecomCliEnabled: Volatile<boolean>
+  /** Whether `dingtalk_cli` is offered while `cliEnabled` is on. Defaults false. */
+  dingtalkCliEnabled: Volatile<boolean>
+  /** Per-process CLI deadline in milliseconds. */
+  cliTimeoutMs: Volatile<number>
+  /** Maximum retained bytes of each CLI output stream. */
+  cliMaxOutputBytes: Volatile<number>
+  /** CLI process termination grace in milliseconds. */
+  cliGraceMs: Volatile<number>
 
   /** Lark / Feishu application id. */
   larkAppId: Volatile<string>
@@ -87,6 +99,12 @@ export const Config = z.object({
   sensitiveKeywords: z.string().default('').volatile(),
 
   cliEnabled: z.boolean().default(false).volatile(),
+  larkCliEnabled: z.boolean().default(true).volatile(),
+  wecomCliEnabled: z.boolean().default(false).volatile(),
+  dingtalkCliEnabled: z.boolean().default(false).volatile(),
+  cliTimeoutMs: z.number().step(1).min(1_000).max(5 * 60_000).default(30_000).volatile(),
+  cliMaxOutputBytes: z.number().step(1).min(1_024).max(4 * 1024 * 1024).default(256 * 1024).volatile(),
+  cliGraceMs: z.number().step(1).min(100).max(30_000).default(2_000).volatile(),
 
   larkAppId: z.string().default('').volatile(),
   larkAppSecretEnv: z.string().role('credential-ref').default(String(credentialRef('LARK_APP_SECRET'))).volatile(),

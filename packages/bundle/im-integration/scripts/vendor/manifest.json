@@ -1,0 +1,188 @@
+{
+  "channels": {
+    "lark": {
+      "version": "1.0.90",
+      "layout": "release",
+      "binary": "lark-cli",
+      "assets": {
+        "darwin-amd64": {
+          "archive": "lark-cli-1.0.90-darwin-amd64.tar.gz",
+          "sha256": "d5fac57d8b0b674144a5ff2f1f408d0cca8ec9a1d923ed136d6e08522c3b01f0",
+          "urls": [
+            "https://github.com/larksuite/cli/releases/download/v1.0.90/lark-cli-1.0.90-darwin-amd64.tar.gz",
+            "https://registry.npmmirror.com/-/binary/lark-cli/v1.0.90/lark-cli-1.0.90-darwin-amd64.tar.gz"
+          ]
+        },
+        "darwin-arm64": {
+          "archive": "lark-cli-1.0.90-darwin-arm64.tar.gz",
+          "sha256": "894c68176bd4015e8478094ded6d9c7ad76abf9d9cd5679d36b23d0b74d4db02",
+          "urls": [
+            "https://github.com/larksuite/cli/releases/download/v1.0.90/lark-cli-1.0.90-darwin-arm64.tar.gz",
+            "https://registry.npmmirror.com/-/binary/lark-cli/v1.0.90/lark-cli-1.0.90-darwin-arm64.tar.gz"
+          ]
+        },
+        "linux-amd64": {
+          "archive": "lark-cli-1.0.90-linux-amd64.tar.gz",
+          "sha256": "301db5eb6d64b295e8bd366036dd839cc6686471c68e54c2602d274de0bf032a",
+          "urls": [
+            "https://github.com/larksuite/cli/releases/download/v1.0.90/lark-cli-1.0.90-linux-amd64.tar.gz",
+            "https://registry.npmmirror.com/-/binary/lark-cli/v1.0.90/lark-cli-1.0.90-linux-amd64.tar.gz"
+          ]
+        },
+        "linux-arm64": {
+          "archive": "lark-cli-1.0.90-linux-arm64.tar.gz",
+          "sha256": "dd591e9ae956d8cf34bed23901017ab842d25534fe1579e9b9bbabed267864d7",
+          "urls": [
+            "https://github.com/larksuite/cli/releases/download/v1.0.90/lark-cli-1.0.90-linux-arm64.tar.gz",
+            "https://registry.npmmirror.com/-/binary/lark-cli/v1.0.90/lark-cli-1.0.90-linux-arm64.tar.gz"
+          ]
+        },
+        "linux-riscv64": {
+          "archive": "lark-cli-1.0.90-linux-riscv64.tar.gz",
+          "sha256": "d9bad6cb02451785a04e5676eef632c09aeda2effcdf9607b389538c450b60ee",
+          "urls": [
+            "https://github.com/larksuite/cli/releases/download/v1.0.90/lark-cli-1.0.90-linux-riscv64.tar.gz",
+            "https://registry.npmmirror.com/-/binary/lark-cli/v1.0.90/lark-cli-1.0.90-linux-riscv64.tar.gz"
+          ]
+        },
+        "windows-amd64": {
+          "archive": "lark-cli-1.0.90-windows-amd64.zip",
+          "sha256": "7c5adfaf212a00533a658dfe7754a80564f2512f3e2adefc80c3cc3ab22fa30f",
+          "urls": [
+            "https://github.com/larksuite/cli/releases/download/v1.0.90/lark-cli-1.0.90-windows-amd64.zip",
+            "https://registry.npmmirror.com/-/binary/lark-cli/v1.0.90/lark-cli-1.0.90-windows-amd64.zip"
+          ]
+        },
+        "windows-arm64": {
+          "archive": "lark-cli-1.0.90-windows-arm64.zip",
+          "sha256": "be3fee31b950837d0eceb6b154dfe0258098d948deed0ac4f9c3f68284abfdb6",
+          "urls": [
+            "https://github.com/larksuite/cli/releases/download/v1.0.90/lark-cli-1.0.90-windows-arm64.zip",
+            "https://registry.npmmirror.com/-/binary/lark-cli/v1.0.90/lark-cli-1.0.90-windows-arm64.zip"
+          ]
+        }
+      }
+    },
+    "wecom": {
+      "version": "1.3.4",
+      "layout": "npm",
+      "binary": "wecom-cli",
+      "assets": {
+        "darwin-arm64": {
+          "archive": "cli-darwin-arm64-1.3.4.tgz",
+          "integrity": "sha512-mktTGWYWqwE5exPs/vdiYcwas77G7DPEhAmj1Hl0LqQHUp6tfwplSfJQ/TaESZvmKtoqDglrywtIQeJ0ksFsWA==",
+          "urls": [
+            "https://registry.npmjs.org/@wecom/cli-darwin-arm64/-/cli-darwin-arm64-1.3.4.tgz"
+          ]
+        },
+        "darwin-x64": {
+          "archive": "cli-darwin-x64-1.3.4.tgz",
+          "integrity": "sha512-w9TuS95c06uyqbylxNjBCtC3GvR/6Vf6WK1zvsIcif7ivUq6Gu5scssagbD6rBWwhQUJ6o2MQKufpa439mL8bg==",
+          "urls": [
+            "https://registry.npmjs.org/@wecom/cli-darwin-x64/-/cli-darwin-x64-1.3.4.tgz"
+          ]
+        },
+        "linux-arm64": {
+          "archive": "cli-linux-arm64-1.3.4.tgz",
+          "integrity": "sha512-BUvkJCMiM6aImK1MGjA6TuNslfay9eg/cOrmmvg3RLAlB9xTQUfqdq9YQxFog04wEpnlZSsgNXq6bWQaIvwX9w==",
+          "urls": [
+            "https://registry.npmjs.org/@wecom/cli-linux-arm64/-/cli-linux-arm64-1.3.4.tgz"
+          ]
+        },
+        "linux-x64": {
+          "archive": "cli-linux-x64-1.3.4.tgz",
+          "integrity": "sha512-Mguwa8AqwTM5hqKZXBs7lwMJ7AZLCJpu+usuHdQLQV9bzF3gM9e70khKHAQCS7focgMHvT/+mW++S7JvXKdL6Q==",
+          "urls": [
+            "https://registry.npmjs.org/@wecom/cli-linux-x64/-/cli-linux-x64-1.3.4.tgz"
+          ]
+        },
+        "win32-x64": {
+          "archive": "cli-win32-x64-1.3.4.tgz",
+          "integrity": "sha512-FomGDkkDVZpKB9GZjAdMvR7491z9DMiaEzYQyDkA+3Yx6I100gJFnIJ31VZr6oMIRrZCT19GzNP+7c4DzuoPbg==",
+          "urls": [
+            "https://registry.npmjs.org/@wecom/cli-win32-x64/-/cli-win32-x64-1.3.4.tgz"
+          ]
+        }
+      }
+    },
+    "dingtalk": {
+      "version": "1.0.66",
+      "layout": "release",
+      "binary": "dws",
+      "assets": {
+        "darwin-amd64": {
+          "archive": "dws-darwin-amd64.tar.gz",
+          "sha256": "313b64b136b3e9d41cbfaaa25677f1ba79d51223527e870a9ac6d34f0747d741",
+          "urls": [
+            "https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli/releases/download/v1.0.66/dws-darwin-amd64.tar.gz"
+          ],
+          "gitee": {
+            "repo": "DingTalk-Real-AI/dingtalk-workspace-cli",
+            "tag": "v1.0.66",
+            "name": "dws-darwin-amd64.tar.gz"
+          }
+        },
+        "darwin-arm64": {
+          "archive": "dws-darwin-arm64.tar.gz",
+          "sha256": "5dabdf00c849c512c65150853a9c8c2d677ab9d809242d4b6304b2433049e7cb",
+          "urls": [
+            "https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli/releases/download/v1.0.66/dws-darwin-arm64.tar.gz"
+          ],
+          "gitee": {
+            "repo": "DingTalk-Real-AI/dingtalk-workspace-cli",
+            "tag": "v1.0.66",
+            "name": "dws-darwin-arm64.tar.gz"
+          }
+        },
+        "linux-amd64": {
+          "archive": "dws-linux-amd64.tar.gz",
+          "sha256": "27cd2821e1f6523d1eeaf5688c23502bddbdd858cf82e32c197853065418bef8",
+          "urls": [
+            "https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli/releases/download/v1.0.66/dws-linux-amd64.tar.gz"
+          ],
+          "gitee": {
+            "repo": "DingTalk-Real-AI/dingtalk-workspace-cli",
+            "tag": "v1.0.66",
+            "name": "dws-linux-amd64.tar.gz"
+          }
+        },
+        "linux-arm64": {
+          "archive": "dws-linux-arm64.tar.gz",
+          "sha256": "4d6bd477d5b47d2595baa9adf718e3d38f6d2532614873e4f670cd84adf88096",
+          "urls": [
+            "https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli/releases/download/v1.0.66/dws-linux-arm64.tar.gz"
+          ],
+          "gitee": {
+            "repo": "DingTalk-Real-AI/dingtalk-workspace-cli",
+            "tag": "v1.0.66",
+            "name": "dws-linux-arm64.tar.gz"
+          }
+        },
+        "windows-amd64": {
+          "archive": "dws-windows-amd64.zip",
+          "sha256": "64dcf850b32db1e07861ba971a9a251d1ed95a86bbe5bb248866377a67520d53",
+          "urls": [
+            "https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli/releases/download/v1.0.66/dws-windows-amd64.zip"
+          ],
+          "gitee": {
+            "repo": "DingTalk-Real-AI/dingtalk-workspace-cli",
+            "tag": "v1.0.66",
+            "name": "dws-windows-amd64.zip"
+          }
+        },
+        "windows-arm64": {
+          "archive": "dws-windows-arm64.zip",
+          "sha256": "fbc64fc0b28e7ec27d13c8f9eba76f10f963fb3e20d833d9ca40270449555362",
+          "urls": [
+            "https://github.com/DingTalk-Real-AI/dingtalk-workspace-cli/releases/download/v1.0.66/dws-windows-arm64.zip"
+          ],
+          "gitee": {
+            "repo": "DingTalk-Real-AI/dingtalk-workspace-cli",
+            "tag": "v1.0.66",
+            "name": "dws-windows-arm64.zip"
+          }
+        }
+      }
+    }
+  }
+}

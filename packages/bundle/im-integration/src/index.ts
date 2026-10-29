@@ -9,6 +9,7 @@ import type {} from '@deepseek-ai/dsh-attachment'
 import type {} from '@deepseek-ai/dsh-session-persistence'
 import type {} from '@deepseek-ai/dsh-session-query'
 import type {} from '@deepseek-ai/dsh-workspace'
+import { applyImCli } from './channels/apply.ts'
 import { Config } from './config.ts'
 import { applyImRuntime } from './runtime.ts'
 import { ImSetupService } from './setup.ts'
@@ -71,6 +72,8 @@ export const inject = [
   'credentials',
   'sessionPersistence',
   'sessionQuery',
+  'subprocess',
+  'tools',
   'workspaceRegistry',
 ]
 
@@ -83,6 +86,7 @@ export function apply(ctx: Context, config: Config): void {
   const status = new ImStatusService(ctx)
   new ImSetupService(ctx, config)
   ctx.effect(() => applyImRuntime(ctx, config, status), 'im: platform status reconcile')
+  applyImCli(ctx, config)
 
   ctx.inject(['connection'], (connectionCtx) => {
     connectionCtx.effect(

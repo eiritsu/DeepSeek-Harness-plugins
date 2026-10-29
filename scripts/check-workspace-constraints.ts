@@ -192,6 +192,9 @@ const packageFileExtras: Readonly<Record<string, readonly string[]>> = {
   // The Lark rows spawn a vendored CLI runner resolved by URL from the emitted
   // Host entry, so the runner travels with the package rather than under lib/.
   '@deepseek-ai/dsh-lark-integration': ['vendor/larksuite-cli'],
+  // Official CLI binaries are downloaded on first use. The package ships the
+  // pin file, the verifier, and the per-channel runners, plus the license notice.
+  '@deepseek-ai/dsh-im-integration': ['scripts/vendor', 'THIRD_PARTY_NOTICES.md'],
   // The CPython side ships as source .py files, published as-is rather than built.
   '@deepseek-ai/dsh-experimental-ptc-runtime-python': ['py/**/*.py'],
   '@deepseek-ai/dsh-experimental-speech-to-text-sensevoice': ['runtime/assets.json'],

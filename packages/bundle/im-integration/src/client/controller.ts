@@ -4,7 +4,7 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { SnapshotStore } from '@deepseek-ai/dsh-client-store'
 import type { ImIntegrationStatusValue, ImPlatform, WeixinAuthorizationPayload } from '@deepseek-ai/dsh-im-integration/types'
 import {
-  SettingsFormModel, settingsTextField,
+  SettingsFormModel, settingsNumberField, settingsTextField,
   type SettingsFieldState, type SettingsFormActions, type SettingsFormScope, type SettingsFormShell,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 
@@ -33,6 +33,12 @@ export interface ImSettings {
   approvalPolicy?: 'high_risk' | 'all'
   sensitiveKeywords?: string
   cliEnabled?: boolean
+  larkCliEnabled?: boolean
+  wecomCliEnabled?: boolean
+  dingtalkCliEnabled?: boolean
+  cliTimeoutMs?: number
+  cliMaxOutputBytes?: number
+  cliGraceMs?: number
   larkAppId?: string
   larkAppSecretEnv?: string
   larkBrand?: 'feishu' | 'lark'
@@ -63,6 +69,12 @@ export interface ImSettingsState extends SettingsFormShell {
   approvalPolicy: SettingsFieldState
   sensitiveKeywords: SettingsFieldState
   cliEnabled: SettingsFieldState
+  larkCliEnabled: SettingsFieldState
+  wecomCliEnabled: SettingsFieldState
+  dingtalkCliEnabled: SettingsFieldState
+  cliTimeoutMs: SettingsFieldState
+  cliMaxOutputBytes: SettingsFieldState
+  cliGraceMs: SettingsFieldState
   larkAppId: SettingsFieldState
   larkAppSecretEnv: SettingsFieldState
   larkBrand: SettingsFieldState
@@ -134,6 +146,12 @@ export class ImSettingsController {
       settingsTextField('approvalPolicy'),
       settingsTextField('sensitiveKeywords'),
       booleanField('cliEnabled'),
+      booleanField('larkCliEnabled'),
+      booleanField('wecomCliEnabled'),
+      booleanField('dingtalkCliEnabled'),
+      settingsNumberField('cliTimeoutMs'),
+      settingsNumberField('cliMaxOutputBytes'),
+      settingsNumberField('cliGraceMs'),
       settingsTextField('larkAppId'),
       settingsTextField('larkAppSecretEnv'),
       settingsTextField('larkBrand'),
@@ -186,6 +204,12 @@ export class ImSettingsController {
       approvalPolicy: this.form.field('approvalPolicy'),
       sensitiveKeywords: this.form.field('sensitiveKeywords'),
       cliEnabled: this.form.field('cliEnabled'),
+      larkCliEnabled: this.form.field('larkCliEnabled'),
+      wecomCliEnabled: this.form.field('wecomCliEnabled'),
+      dingtalkCliEnabled: this.form.field('dingtalkCliEnabled'),
+      cliTimeoutMs: this.form.field('cliTimeoutMs'),
+      cliMaxOutputBytes: this.form.field('cliMaxOutputBytes'),
+      cliGraceMs: this.form.field('cliGraceMs'),
       larkAppId: this.form.field('larkAppId'),
       larkAppSecretEnv: this.form.field('larkAppSecretEnv'),
       larkBrand: this.form.field('larkBrand'),

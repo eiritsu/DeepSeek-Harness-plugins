@@ -29,6 +29,12 @@ function buildState(overrides: Partial<ImSettingsState> = {}): ImSettingsState {
     approvalPolicy: field('high_risk'),
     sensitiveKeywords: field(''),
     cliEnabled: field('false'),
+    larkCliEnabled: field('true'),
+    wecomCliEnabled: field('false'),
+    dingtalkCliEnabled: field('false'),
+    cliTimeoutMs: field('30000'),
+    cliMaxOutputBytes: field('262144'),
+    cliGraceMs: field('2000'),
     larkAppId: field(''),
     larkAppSecretEnv: field('LARK_APP_SECRET'),
     larkBrand: field('feishu'),
@@ -71,27 +77,28 @@ function buildState(overrides: Partial<ImSettingsState> = {}): ImSettingsState {
 
 function renderPage(state: ImSettingsState = buildState()) {
   const store = createSnapshotStore(state)
+  const edit = vi.fn((fieldName: string, text: string) => {
+    const current = store.getSnapshot()
+    if (fieldName === 'activePlatform') {
+      store.set({
+        ...current,
+        activePlatform: field(text),
+        connectionStatus: {
+          platform: text as ImSettingsState['connectionStatus']['platform'],
+          state: 'disabled',
+        },
+      })
+      return
+    }
+    if (fieldName in current) {
+      store.set({ ...current, [fieldName]: field(text) })
+    }
+  })
   const props = {
     t: (key: ImLocaleKey) => zh[key],
     view: 'page' as const,
     useImSettings: bindSnapshotSelector(store),
-    edit: vi.fn((fieldName: string, text: string) => {
-      const current = store.getSnapshot()
-      if (fieldName === 'activePlatform') {
-        store.set({
-          ...current,
-          activePlatform: field(text),
-          connectionStatus: {
-            platform: text as ImSettingsState['connectionStatus']['platform'],
-            state: 'disabled',
-          },
-        })
-        return
-      }
-      if (fieldName in current) {
-        store.set({ ...current, [fieldName]: field(text) })
-      }
-    }),
+    edit,
     resetField: vi.fn(),
     save: vi.fn(),
     discard: vi.fn(),
@@ -106,7 +113,7 @@ function renderPage(state: ImSettingsState = buildState()) {
     commitWeixinAuthorization: vi.fn(async () => true),
     clearWeixinAuthorization: vi.fn(async () => {}),
   } as unknown as ImSettingsPageProps
-  return render(<ImSettingsPage {...props} />)
+  return { ...render(<ImSettingsPage {...props} />), edit }
 }
 
 describe('IM QR Code Generation & Modal', () => {
@@ -159,6 +166,26 @@ describe('IM QR Code Generation & Modal', () => {
     fireEvent.change(select, { target: { value: 'web' } })
     expect(screen.getByText(zh.whatsappWebUnavailable)).toBeTruthy()
     expect(screen.queryByRole('button', { name: zh.whatsappScanButton })).toBeNull()
+  })
+
+  it('edits CLI channel switches and shared limits', () => {
+    const page = renderPage(buildState({ cliEnabled: field('true'), larkCliEnabled: field('true') }))
+    fireEvent.click(screen.getByRole('checkbox', { name: zh.larkCliEnabled }))
+    fireEvent.change(screen.getByLabelText(zh.cliTimeoutMs), { target: { value: '45000' } })
+    fireEvent.change(screen.getByLabelText(zh.cliMaxOutputBytes), { target: { value: '8192' } })
+    fireEvent.change(screen.getByLabelText(zh.cliGraceMs), { target: { value: '1500' } })
+    expect(page.edit).toHaveBeenCalledWith('larkCliEnabled', 'false')
+    expect(page.edit).toHaveBeenCalledWith('cliTimeoutMs', '45000')
+    expect(page.edit).toHaveBeenCalledWith('cliMaxOutputBytes', '8192')
+    expect(page.edit).toHaveBeenCalledWith('cliGraceMs', '1500')
+
+    cleanup()
+    renderPage(buildState({ activePlatform: field('dingtalk'), dingtalkCliEnabled: field('false') }))
+    fireEvent.click(screen.getByRole('checkbox', { name: zh.dingtalkCliEnabled }))
+
+    cleanup()
+    renderPage(buildState({ activePlatform: field('wecom'), wecomCliEnabled: field('false') }))
+    fireEvent.click(screen.getByRole('checkbox', { name: zh.wecomCliEnabled }))
   })
 
   it('renders expired overlay when QR status transitions to expired', async () => {

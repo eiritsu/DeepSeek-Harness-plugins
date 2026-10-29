@@ -261,6 +261,15 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
                 onChange={(event) => { props.edit('larkAppSecret', event.currentTarget.value) }}
               />
             </div>
+            <label className={css.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={state.larkCliEnabled.text === 'true'}
+                disabled={disabled}
+                onChange={(event) => { props.edit('larkCliEnabled', String(event.currentTarget.checked)) }}
+              />
+              <span>{t('larkCliEnabled')}</span>
+            </label>
           </section>
         )}
 
@@ -289,6 +298,15 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
                 onChange={(event) => { props.edit('dingtalkClientSecret', event.currentTarget.value) }}
               />
             </div>
+            <label className={css.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={state.dingtalkCliEnabled.text === 'true'}
+                disabled={disabled}
+                onChange={(event) => { props.edit('dingtalkCliEnabled', String(event.currentTarget.checked)) }}
+              />
+              <span>{t('dingtalkCliEnabled')}</span>
+            </label>
           </section>
         )}
 
@@ -317,6 +335,15 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
                 onChange={(event) => { props.edit('wecomBotSecret', event.currentTarget.value) }}
               />
             </div>
+            <label className={css.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={state.wecomCliEnabled.text === 'true'}
+                disabled={disabled}
+                onChange={(event) => { props.edit('wecomCliEnabled', String(event.currentTarget.checked)) }}
+              />
+              <span>{t('wecomCliEnabled')}</span>
+            </label>
           </section>
         )}
 
@@ -565,6 +592,40 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
             />
             <span>{t('enableCliTool')}</span>
           </label>
+          <p className={css.hint}>{t('cliLimitsHint')}</p>
+          <div className={css.field}>
+            <label className={css.label} htmlFor="im-cli-timeout-ms">{t('cliTimeoutMs')}</label>
+            <input
+              id="im-cli-timeout-ms"
+              className={css.input}
+              type="number"
+              disabled={disabled}
+              value={state.cliTimeoutMs.text}
+              onChange={(event) => { props.edit('cliTimeoutMs', event.currentTarget.value) }}
+            />
+          </div>
+          <div className={css.field}>
+            <label className={css.label} htmlFor="im-cli-max-output-bytes">{t('cliMaxOutputBytes')}</label>
+            <input
+              id="im-cli-max-output-bytes"
+              className={css.input}
+              type="number"
+              disabled={disabled}
+              value={state.cliMaxOutputBytes.text}
+              onChange={(event) => { props.edit('cliMaxOutputBytes', event.currentTarget.value) }}
+            />
+          </div>
+          <div className={css.field}>
+            <label className={css.label} htmlFor="im-cli-grace-ms">{t('cliGraceMs')}</label>
+            <input
+              id="im-cli-grace-ms"
+              className={css.input}
+              type="number"
+              disabled={disabled}
+              value={state.cliGraceMs.text}
+              onChange={(event) => { props.edit('cliGraceMs', event.currentTarget.value) }}
+            />
+          </div>
         </section>
 
         {setupResultMessage(state, t) !== undefined && (

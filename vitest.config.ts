@@ -164,7 +164,12 @@ const processBoundTests = [
   'packages/workflow/workflow-ptc/tests/workflow-ptc.spec.ts',
 ]
 
+const generatedRemoteAliases = {
+  '@deepseek-ai/dsh-im-integration/remote': fileURLToPath(new URL('./packages/bundle/im-integration/tests/remote-stub.ts', import.meta.url)),
+}
+
 export default defineConfig({
+  resolve: { alias: generatedRemoteAliases },
   plugins: [pathsPlugin(), standardDecoratorPlugin()],
   test: {
     setupFiles: ['./scripts/test-proxy-environment.ts', './scripts/test-invariants.ts', './scripts/test-dom-environment.ts'],
@@ -175,6 +180,7 @@ export default defineConfig({
     // Node stability; process-bound suites stay separate for inventory control.
     projects: [
       {
+        resolve: { alias: generatedRemoteAliases },
         plugins: [pathsPlugin(), standardDecoratorPlugin()],
         test: {
           name: 'thread-safe',
@@ -194,6 +200,7 @@ export default defineConfig({
         },
       },
       {
+        resolve: { alias: generatedRemoteAliases },
         plugins: [pathsPlugin(), standardDecoratorPlugin()],
         test: {
           name: 'process-bound',

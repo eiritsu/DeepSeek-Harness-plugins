@@ -6,8 +6,32 @@
   en: 8118651d9a8b49b9
   zh: 42721b933aaef758
 /deepseek-ai-dsh-im-integration/quick-start:
-  en: 12fa3561d7e42ff2
-  zh: c2c03947107d54f6
+  en: 47d5de67d1d15ae3
+  zh: da642181a3f71c78
+/deepseek-ai-dsh-im-integration/wechat-authorization:
+  en: 8cf246e918859cf9
+  zh: 9f048414103d785c
+/deepseek-ai-dsh-im-integration/official-cli-tools:
+  en: daac0d45d94c7b30
+  zh: b589af73f8d830c8
 /deepseek-ai-dsh-im-integration/conversation-workspaces:
   en: 95ecd089f9a98de0
   zh: b2c3981d8536962f
+/deepseek-ai-dsh-im-integration/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-im-integration/model-experience/official-cli-tools:
+  en: 4a329dd6fe82ce9d
+  zh: a1ab93c1718b4eba
+/deepseek-ai-dsh-im-integration/model-experience/official-cli-tools/what-the-model-sees:
+  en: 7d9c9278a54dfaa0
+  zh: d02f65e77721ebf9
+/deepseek-ai-dsh-im-integration/model-experience/official-cli-tools/token-effect:
+  en: 3d013594a8cf5bb9
+  zh: 42571a4d9c5994f8
+/deepseek-ai-dsh-im-integration/model-experience/official-cli-tools/kv-cache-effect:
+  en: a06bb44e122a0d8f
+  zh: 054ba33c4e570dca
+/deepseek-ai-dsh-im-integration/known-limitations-and-deferred-work:
+  en: 5bac8be9bfb42d6e
+  zh: 26ce67f4496dd518

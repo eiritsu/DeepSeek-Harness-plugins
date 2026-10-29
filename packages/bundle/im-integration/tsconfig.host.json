@@ -14,7 +14,9 @@
     "src/conversation.ts",
     "src/weixin-api.ts",
     "src/weixin-bridge.ts",
-    "src/lark-bridge.ts"
+    "src/lark-bridge.ts",
+    "src/cli-paths.ts",
+    "src/channels/**/*.ts"
   ],
   "references": [
     { "path": "../../../vendor/cordis" },
@@ -26,6 +28,8 @@
     { "path": "../../boot/config-editor" },
     { "path": "../../typert/protocol" },
     { "path": "../../util/home-paths" },
+    { "path": "../../core/tools" },
+    { "path": "../../subprocess/subprocess" },
     { "path": "../../llm/llm" },
     { "path": "../../core/session" },
     { "path": "../../session/session-persistence" },
