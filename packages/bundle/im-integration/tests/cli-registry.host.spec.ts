@@ -131,7 +131,7 @@ describe('IM CLI registry', () => {
       expect(h.tools.has('dingtalk_cli')).toBe(true)
 
       config.dingtalkClientId = createVolatile('  ')
-      h.ctx.emit('loader/config-update', undefined as never)
+      h.ctx.emit('loader/config-update')
       expect(h.tools.has('dingtalk_cli')).toBe(false)
 
       config.larkAppId = createVolatile('')
@@ -171,8 +171,12 @@ describe('IM CLI registry', () => {
   })
 
   it('reads loader entries only when they name an enabled lark integration', () => {
-    const asContext = (value: unknown) => ({ get: () => value }) as Context
-    expect(larkPluginLoaded(asContext(undefined))).toBe(false)
+    const asContext = (value: unknown) => {
+      const ctx = new Context()
+      ctx.provide('loader', value as never)
+      return ctx
+    }
+    expect(larkPluginLoaded(new Context())).toBe(false)
     expect(larkPluginLoaded(asContext(null))).toBe(false)
     expect(larkPluginLoaded(asContext(1))).toBe(false)
     expect(larkPluginLoaded(asContext({}))).toBe(false)

@@ -157,12 +157,15 @@ describe('pinned CLI install', () => {
         return bytes
       },
       extract: async (_archive: string, dest: string) => { writeFileSync(join(dest, 'lark-cli'), 'x') },
-      fetch: async url => ({
-        ok: url.includes('gitee.com/api'),
-        status: 200,
-        json: async () => ({ assets: [{ name: 'lark.tar.gz', browser_download_url: 'https://example.test/mirror' }] }),
-        arrayBuffer: async () => new ArrayBuffer(0),
-      }) as Response,
+      fetch: async (input) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        return {
+          ok: url.includes('gitee.com/api'),
+          status: 200,
+          json: async () => ({ assets: [{ name: 'lark.tar.gz', browser_download_url: 'https://example.test/mirror' }] }),
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } as Response
+      },
     })
     expect(mirrored).toContain('lark-cli')
     expect(seen).toEqual(['https://example.test/lark.tar.gz', 'https://example.test/mirror'])
