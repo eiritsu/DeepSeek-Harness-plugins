@@ -18,7 +18,6 @@ const SECRET_FIELDS = {
   qqAppSecret: 'qqAppSecretEnv',
   telegramBotToken: 'telegramBotTokenEnv',
   discordBotToken: 'discordBotTokenEnv',
-  whatsappAccessToken: 'whatsappAccessTokenEnv',
 } as const
 
 type SecretField = keyof typeof SECRET_FIELDS
@@ -53,10 +52,6 @@ export interface ImSettings {
   qqSandbox?: boolean
   telegramBotTokenEnv?: string
   discordBotTokenEnv?: string
-  whatsappEnabled?: boolean
-  whatsappPhoneNumberId?: string
-  whatsappWabaId?: string
-  whatsappAccessTokenEnv?: string
 }
 
 /** Settings page state. */
@@ -89,10 +84,6 @@ export interface ImSettingsState extends SettingsFormShell {
   qqSandbox: SettingsFieldState
   telegramBotTokenEnv: SettingsFieldState
   discordBotTokenEnv: SettingsFieldState
-  whatsappEnabled: SettingsFieldState
-  whatsappPhoneNumberId: SettingsFieldState
-  whatsappWabaId: SettingsFieldState
-  whatsappAccessTokenEnv: SettingsFieldState
   connectionStatus: ImIntegrationStatusValue
   statusDiagnostic?: string
   larkAppSecret: SettingsFieldState
@@ -101,7 +92,6 @@ export interface ImSettingsState extends SettingsFormShell {
   qqAppSecret: SettingsFieldState
   telegramBotToken: SettingsFieldState
   discordBotToken: SettingsFieldState
-  whatsappAccessToken: SettingsFieldState
   secretsConfigured: Readonly<Record<SecretField, boolean>>
   setupBusy: boolean
   setupResult?: 'complete' | 'cancelled' | 'not-configured' | 'not-ready' | 'operation-failed'
@@ -166,10 +156,6 @@ export class ImSettingsController {
       booleanField('qqSandbox'),
       settingsTextField('telegramBotTokenEnv'),
       settingsTextField('discordBotTokenEnv'),
-      booleanField('whatsappEnabled'),
-      settingsTextField('whatsappPhoneNumberId'),
-      settingsTextField('whatsappWabaId'),
-      settingsTextField('whatsappAccessTokenEnv'),
     ], Object.entries(SECRET_FIELDS).map(([field, envField]) => ({
       field,
       write: (value: string) => this.writeCredential(envField, value),
@@ -224,10 +210,6 @@ export class ImSettingsController {
       qqSandbox: this.form.field('qqSandbox'),
       telegramBotTokenEnv: this.form.field('telegramBotTokenEnv'),
       discordBotTokenEnv: this.form.field('discordBotTokenEnv'),
-      whatsappEnabled: this.form.field('whatsappEnabled'),
-      whatsappPhoneNumberId: this.form.field('whatsappPhoneNumberId'),
-      whatsappWabaId: this.form.field('whatsappWabaId'),
-      whatsappAccessTokenEnv: this.form.field('whatsappAccessTokenEnv'),
       connectionStatus: status,
       ...(this.statusDiagnostic === undefined ? {} : { statusDiagnostic: this.statusDiagnostic }),
       larkAppSecret: this.form.field('larkAppSecret'),
@@ -236,7 +218,6 @@ export class ImSettingsController {
       qqAppSecret: this.form.field('qqAppSecret'),
       telegramBotToken: this.form.field('telegramBotToken'),
       discordBotToken: this.form.field('discordBotToken'),
-      whatsappAccessToken: this.form.field('whatsappAccessToken'),
       secretsConfigured: {
         larkAppSecret: this.credentials.get(this.credentialRefFor('larkAppSecretEnv'))?.configured ?? false,
         dingtalkClientSecret: this.credentials.get(this.credentialRefFor('dingtalkClientSecretEnv'))?.configured ?? false,
@@ -244,7 +225,6 @@ export class ImSettingsController {
         qqAppSecret: this.credentials.get(this.credentialRefFor('qqAppSecretEnv'))?.configured ?? false,
         telegramBotToken: this.credentials.get(this.credentialRefFor('telegramBotTokenEnv'))?.configured ?? false,
         discordBotToken: this.credentials.get(this.credentialRefFor('discordBotTokenEnv'))?.configured ?? false,
-        whatsappAccessToken: this.credentials.get(this.credentialRefFor('whatsappAccessTokenEnv'))?.configured ?? false,
       },
       setupBusy: this.setupBusy,
       ...(this.setupResult === undefined ? {} : { setupResult: this.setupResult }),

@@ -11,7 +11,7 @@ import { parseWeixinBotCredential } from './weixin-api.ts'
 import { WeixinConversationBridge } from './weixin-bridge.ts'
 
 const PLATFORMS: readonly ImPlatform[] = [
-  'lark', 'dingtalk', 'wecom', 'weixin', 'qq', 'telegram', 'discord', 'whatsapp',
+  'lark', 'dingtalk', 'wecom', 'weixin', 'qq', 'telegram', 'discord',
 ]
 
 interface IdentityCheck {
@@ -326,13 +326,6 @@ function identityFor(config: Config, platform: ImPlatform): IdentityCheck {
         credentialRef: config.discordBotTokenEnv.get().trim() || 'DISCORD_BOT_TOKEN',
         channelEnabled: true,
         requiresIdentity: false,
-      }
-    case 'whatsapp':
-      return {
-        identityPresent: config.whatsappPhoneNumberId.get().trim().length > 0,
-        credentialRef: config.whatsappAccessTokenEnv.get().trim() || 'WHATSAPP_ACCESS_TOKEN',
-        channelEnabled: config.whatsappEnabled.get(),
-        requiresIdentity: true,
       }
     default: {
       const _exhaustive: never = platform

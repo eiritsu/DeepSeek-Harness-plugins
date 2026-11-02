@@ -4,7 +4,7 @@
 
 ## 快速上手
 
-1. **选择平台**：在上方标签页中切换你要配置的聊天平台（飞书/Lark、钉钉、企业微信、微信、QQ、Telegram、Discord、WhatsApp）。
+1. **选择平台**：在上方标签页中切换你要配置的聊天平台（飞书/Lark、钉钉、企业微信、微信、QQ、Telegram、Discord）。
 2. **填写凭证**：根据所选平台的提示填入 App ID / Token / Secret，或使用二维码扫码授权。密钥经 Host credentials 写入，设置页不会回读明文。
 3. **访问与安全控制**：
    - **授权白名单**：开启后仅允许指定 User ID / Open ID 调用 Agent；关闭则完全开放给所有对话者。
@@ -41,8 +41,7 @@
 
 ## 已知限制与未完成工作
 
-- 钉钉、企业微信、QQ、Telegram、Discord、WhatsApp 的实时收发桥尚未交付；状态表示凭证是否就绪（身份与密钥齐全时为 `connected`）。
-- WhatsApp Web / Baileys 扫码尚未接入真实握手，仅支持 Cloud API 身份字段。
+- 钉钉、企业微信、QQ、Telegram、Discord 的实时收发桥尚未交付；状态表示凭证是否就绪（身份与密钥齐全时为 `connected`）。
 - 飞书/Lark 私聊接入仍由 `@deepseek-ai/dsh-lark-integration` 负责。不要把它和本插件的 `lark_cli` 同时启用：检测到该插件已加载时，本插件会跳过 `lark_cli`。
 - 手机微信点「连接」出现「网络错误」仍可能来自腾讯 iLink（见 openclaw-weixin#242）。本包已对齐官方长轮询头与客户端版本；上游故障不在 Host 可控范围。
 - 企业微信二维码需要在真实账号上确认会绑定到已配置的机器人。钉钉设备登录的输出，以及 macOS 钥匙串隔离（`DWS_DISABLE_KEYCHAIN`），仍需要在能访问对应服务的机器上人工确认。

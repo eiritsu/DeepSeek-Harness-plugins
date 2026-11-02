@@ -8,8 +8,6 @@ import { generateQrPath } from '../src/client/QrCodeCard.tsx'
 import { ImSettingsPage, type ImSettingsPageProps } from '../src/client/ImSettingsPage.tsx'
 import type { ImSettingsState } from '../src/client/controller.ts'
 import { zh, type ImLocaleKey } from '../src/client/locales.ts'
-import { generateWhatsappPairingPayload } from '../src/client/whatsapp-baileys.ts'
-// Keep Baileys payload unit coverage even though Settings no longer offers a live Web QR.
 
 afterEach(cleanup)
 
@@ -49,10 +47,6 @@ function buildState(overrides: Partial<ImSettingsState> = {}): ImSettingsState {
     qqSandbox: field('false'),
     telegramBotTokenEnv: field('TELEGRAM_BOT_TOKEN'),
     discordBotTokenEnv: field('DISCORD_BOT_TOKEN'),
-    whatsappEnabled: field('false'),
-    whatsappPhoneNumberId: field(''),
-    whatsappWabaId: field(''),
-    whatsappAccessTokenEnv: field('WHATSAPP_ACCESS_TOKEN'),
     connectionStatus: { platform: 'lark', state: 'disabled' },
     larkAppSecret: field(''),
     dingtalkClientSecret: field(''),
@@ -60,7 +54,6 @@ function buildState(overrides: Partial<ImSettingsState> = {}): ImSettingsState {
     qqAppSecret: field(''),
     telegramBotToken: field(''),
     discordBotToken: field(''),
-    whatsappAccessToken: field(''),
     secretsConfigured: {
       larkAppSecret: false,
       dingtalkClientSecret: false,
@@ -68,7 +61,6 @@ function buildState(overrides: Partial<ImSettingsState> = {}): ImSettingsState {
       qqAppSecret: false,
       telegramBotToken: false,
       discordBotToken: false,
-      whatsappAccessToken: false,
     },
     setupBusy: false,
     ...overrides,
@@ -127,12 +119,6 @@ describe('IM QR Code Generation & Modal', () => {
     expect(path1).not.toBe(path2)
   })
 
-  it('generates valid WhatsApp Noise Multi-Device pairing payload', () => {
-    const payload = generateWhatsappPairingPayload()
-    const pattern = /^2@([A-Za-z0-9+/=]+),([A-Za-z0-9+/=]+),([A-Za-z0-9+/=]+),([A-Za-z0-9+/=]+)$/
-    expect(pattern.test(payload)).toBe(true)
-  })
-
   it('handles long input strings without throwing', () => {
     const longString = 'https://example.com/very/long/path/that/exceeds/the/fifty/three/bytes/capacity/limit/in/version/3/and/automatically/scales/with/uqr'
     const path = generateQrPath(longString)
@@ -151,21 +137,6 @@ describe('IM QR Code Generation & Modal', () => {
     const closeBtns = screen.getAllByRole('button', { name: zh.qrModalClose })
     fireEvent.click(closeBtns[0]!)
     expect(screen.queryByRole('dialog')).toBeNull()
-  })
-
-  it('defaults WhatsApp to Cloud API fields and marks Web pairing unavailable', () => {
-    renderPage()
-
-    fireEvent.click(screen.getByRole('button', { name: zh.tabWhatsapp }))
-    expect(screen.getByText(zh.whatsappCloudHint)).toBeTruthy()
-    expect(screen.getByText(zh.whatsappPhoneNumberId)).toBeTruthy()
-    expect(screen.getByText(zh.whatsappWabaId)).toBeTruthy()
-    expect(screen.getByText(zh.whatsappAccessToken)).toBeTruthy()
-
-    const select = screen.getByDisplayValue(zh.whatsappModeCloud)
-    fireEvent.change(select, { target: { value: 'web' } })
-    expect(screen.getByText(zh.whatsappWebUnavailable)).toBeTruthy()
-    expect(screen.queryByRole('button', { name: zh.whatsappScanButton })).toBeNull()
   })
 
   it('edits CLI channel switches and shared limits', () => {

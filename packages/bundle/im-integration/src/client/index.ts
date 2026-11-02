@@ -44,7 +44,7 @@ export async function apply(ctx: ClientContext): Promise<() => Promise<void>> {
       const reportStatusUnavailable = (error: unknown): void => {
         controller.setStatusDiagnostic(statusDiagnosticCode(error))
         for (const platform of [
-          'lark', 'dingtalk', 'wecom', 'weixin', 'qq', 'telegram', 'discord', 'whatsapp',
+          'lark', 'dingtalk', 'wecom', 'weixin', 'qq', 'telegram', 'discord',
         ] as const) {
           controller.setConnectionStatus({ platform, state: 'unavailable' })
         }
@@ -56,7 +56,7 @@ export async function apply(ctx: ClientContext): Promise<() => Promise<void>> {
         carrierFailed: () => {
           controller.setStatusDiagnostic('reconnecting')
           for (const platform of [
-            'lark', 'dingtalk', 'wecom', 'weixin', 'qq', 'telegram', 'discord', 'whatsapp',
+            'lark', 'dingtalk', 'wecom', 'weixin', 'qq', 'telegram', 'discord',
           ] as const) {
             controller.setConnectionStatus({ platform, state: 'unavailable' })
           }

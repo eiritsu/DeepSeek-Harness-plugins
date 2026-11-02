@@ -29,7 +29,6 @@ const PLATFORM_TABS: readonly PlatformTabDef[] = [
   { key: 'qq', labelKey: 'tabQq' },
   { key: 'telegram', labelKey: 'tabTelegram' },
   { key: 'discord', labelKey: 'tabDiscord' },
-  { key: 'whatsapp', labelKey: 'tabWhatsapp' },
 ]
 
 /** Render multi-platform IM configuration with tabbed navigation. */
@@ -57,7 +56,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
         : css.badgeDisabled
 
   interface QrModalData {
-    readonly platform: 'weixin' | 'whatsapp'
+    readonly platform: 'weixin'
     readonly value: string
     readonly ticket?: string
     readonly status: 'loading' | 'waiting' | 'scaned' | 'need_verifycode' | 'ok' | 'expired' | 'error'
@@ -68,7 +67,6 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
   const [pendingVerifyCode, setPendingVerifyCode] = useState<string | undefined>(undefined)
   const [weixinPollBaseUrl, setWeixinPollBaseUrl] = useState<string | undefined>(undefined)
   const [countdown, setCountdown] = useState<number>(300)
-  const [whatsappMode, setWhatsappMode] = useState<'web' | 'cloud'>('cloud')
 
   const openWeixinQrModal = async (): Promise<void> => {
     setQrModal({ platform: 'weixin', value: '', status: 'loading' })
@@ -110,7 +108,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
   // Sequential official long-polls (≤35s each). Do not interval-abort: cutting the
   // Host poll mid-flight prevents WeChat from completing "连接" on the phone.
   useEffect(() => {
-    if (!qrModal || qrModal.platform !== 'weixin' || !qrModal.ticket) return
+    if (!qrModal || !qrModal.ticket) return
     if (qrModal.status === 'ok' || qrModal.status === 'expired' || qrModal.status === 'error') return
 
     const ticket = qrModal.ticket
@@ -437,71 +435,6 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
           </section>
         )}
 
-        {activePlatform === 'whatsapp' && (
-          <section className={css.section}>
-            <h3>{t('tabWhatsapp')}</h3>
-            <div className={css.field}>
-              <label className={css.label}>{t('whatsappMode')}</label>
-              <select
-                className={css.select}
-                disabled={disabled}
-                value={whatsappMode}
-                onChange={(e) => { setWhatsappMode(e.currentTarget.value as 'web' | 'cloud') }}
-              >
-                <option value="cloud">{t('whatsappModeCloud')}</option>
-                <option value="web">{t('whatsappModeWeb')}</option>
-              </select>
-            </div>
-            {whatsappMode === 'web' ? (
-              <div className={css.noticeBox}>{t('whatsappWebUnavailable')}</div>
-            ) : (
-              <>
-                <div className={css.noticeBox}>{t('whatsappCloudHint')}</div>
-                <label className={css.checkboxRow}>
-                  <input
-                    type="checkbox"
-                    checked={state.whatsappEnabled.text === 'true'}
-                    disabled={disabled}
-                    onChange={(event) => { props.edit('whatsappEnabled', String(event.currentTarget.checked)) }}
-                  />
-                  <span>{t('enablePlatform')}</span>
-                </label>
-                <div className={css.field}>
-                  <label className={css.label}>{t('whatsappPhoneNumberId')}</label>
-                  <input
-                    className={css.input}
-                    disabled={disabled}
-                    value={state.whatsappPhoneNumberId.text}
-                    placeholder="1029384756..."
-                    onChange={(event) => { props.edit('whatsappPhoneNumberId', event.currentTarget.value) }}
-                  />
-                </div>
-                <div className={css.field}>
-                  <label className={css.label}>{t('whatsappWabaId')}</label>
-                  <input
-                    className={css.input}
-                    disabled={disabled}
-                    value={state.whatsappWabaId.text}
-                    placeholder="waba_..."
-                    onChange={(event) => { props.edit('whatsappWabaId', event.currentTarget.value) }}
-                  />
-                </div>
-                <div className={css.field}>
-                  <label className={css.label}>{t('whatsappAccessToken')}</label>
-                  <input
-                    className={css.input}
-                    type="password"
-                    disabled={disabled}
-                    value={state.whatsappAccessToken.text}
-                    placeholder={state.secretsConfigured.whatsappAccessToken ? t('secretConfigured') : t('secretHint')}
-                    onChange={(event) => { props.edit('whatsappAccessToken', event.currentTarget.value) }}
-                  />
-                </div>
-              </>
-            )}
-          </section>
-        )}
-
         <section className={css.section}>
           <h3>{t('whitelistTitle')}</h3>
           <label className={css.checkboxRow}>
@@ -638,8 +571,8 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
           <Modal
             open
             onClose={() => { setQrModal(null) }}
-            title={qrModal.platform === 'weixin' ? t('qrModalTitleWeixin') : t('qrModalTitleWhatsapp')}
-            description={qrModal.platform === 'weixin' ? t('qrModalDescWeixin') : t('qrModalDescWhatsapp')}
+            title={t('qrModalTitleWeixin')}
+            description={t('qrModalDescWeixin')}
             closeLabel={t('qrModalClose')}
             footer={(
               <>
@@ -718,7 +651,7 @@ export function ImSettingsPage(props: ImSettingsPageProps) {
               )}
 
               <p className={css.qrInstructions}>
-                {qrModal.platform === 'weixin' ? t('qrModalHintWeixin') : t('qrModalHintWhatsapp')}
+                {t('qrModalHintWeixin')}
               </p>
             </div>
           </Modal>

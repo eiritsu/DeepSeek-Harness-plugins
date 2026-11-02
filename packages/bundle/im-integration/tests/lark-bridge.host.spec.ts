@@ -307,9 +307,6 @@ describe('applyImRuntime Lark bridge', () => {
       qqAppSecretEnv: { get: () => '' },
       telegramBotTokenEnv: { get: () => '' },
       discordBotTokenEnv: { get: () => '' },
-      whatsappPhoneNumberId: { get: () => '' },
-      whatsappAccessTokenEnv: { get: () => '' },
-      whatsappEnabled: { get: () => false },
     } as unknown as Config
 
     const ctx = new Context()

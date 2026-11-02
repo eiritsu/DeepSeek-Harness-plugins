@@ -7,7 +7,6 @@ export type ImPlatform =
   | 'qq'
   | 'telegram'
   | 'discord'
-  | 'whatsapp'
 
 /** Connection state for an IM platform without credential values. */
 export interface ImConnectionStatus {

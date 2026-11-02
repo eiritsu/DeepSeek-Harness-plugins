@@ -117,7 +117,7 @@ describe('openImConversation', () => {
     const handle = { agent: { session: { header: {} } }, dispose: vi.fn(async () => {}) }
     const resume = vi.fn(async () => handle)
     const create = vi.fn()
-    const sessionId = imSessionId('whatsapp', 'wa-peer-1')
+    const sessionId = imSessionId('discord', 'discord-peer-1')
     const ctx = {
       workspaceRegistry: {
         resolveByPath: vi.fn(async () => workspace),
@@ -129,8 +129,8 @@ describe('openImConversation', () => {
 
     try {
       const opened = await openImConversation(ctx as never, {
-        platform: 'whatsapp',
-        conversationKey: 'wa-peer-1',
+        platform: 'discord',
+        conversationKey: 'discord-peer-1',
         selection: { provider: 'mock', model: 'mock' },
       })
       expect(resume).toHaveBeenCalledOnce()

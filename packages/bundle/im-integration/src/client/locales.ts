@@ -9,7 +9,6 @@ export const zh = {
   tabQq: 'QQ',
   tabTelegram: 'Telegram',
   tabDiscord: 'Discord',
-  tabWhatsapp: 'WhatsApp',
 
   // Common Status
   connectionStatus: '连接状态',
@@ -100,25 +99,10 @@ export const zh = {
   discordBotToken: 'Bot Token',
   discordHint: '通过 Discord Gateway WebSocket 接入，免公网 IP。请在 Discord Developer Portal 开启 Message Content Intent。',
 
-  // WhatsApp Specific
-  whatsappHint: '支持 WhatsApp Web 扫码配对免商户资质接入。',
-  whatsappScanButton: '扫码配对',
-  whatsappMode: '接入模式',
-  whatsappModeWeb: '开源扫码配对 (Baileys Web 协议)',
-  whatsappModeCloud: '官方 Cloud API 直连 (Meta 商业账号)',
-  whatsappPhoneNumberId: '电话号码 ID (Phone Number ID)',
-  whatsappAccessToken: '访问令牌 (System User Access Token)',
-  whatsappWabaId: '商业账号 ID (WABA ID)',
-  whatsappCloudHint: '通过 Meta for Developers 官方 Graph API 接入，免扫码、免设备常驻、永久稳定不掉线。',
-  whatsappWebUnavailable: 'WhatsApp Web / Baileys 扫码配对尚未接入真实协议握手，当前不可用。请改用 Cloud API 填写下方凭证。',
-
   // QR Code Modal
   qrModalTitleWeixin: '微信 ClawBot 扫码授权',
-  qrModalTitleWhatsapp: 'WhatsApp 扫码配对',
   qrModalDescWeixin: '使用手机微信（需启用微信 ClawBot 插件）“扫一扫”，点击“连接”即可将 Agent 绑定为 AI 联系人。',
-  qrModalDescWhatsapp: '在手机上打开 WhatsApp > 设置 > 关联设备，扫描下方二维码完成免商户配对。',
   qrModalHintWeixin: '已连接腾讯官方 iLink 通道。手机微信“扫一扫”扫描上方二维码，并在手机上确认连接。',
-  qrModalHintWhatsapp: '已就绪 Baileys 多设备 Noise 协议配对。手机打开 WhatsApp > 设置 > 关联设备 > 扫描此二维码。',
   qrModalStatusLoading: '正在获取官方授权二维码...',
   qrModalStatusWaiting: '等待扫码中...',
   qrModalStatusScaned: '已扫码，请在手机微信上点击“连接”确认...',
@@ -130,7 +114,6 @@ export const zh = {
   qrModalSubmitCode: '确认提交',
   qrModalVerifying: '正在验证...',
   qrModalVerifyCodePlaceholder: '输入 4-6 位验证码',
-  whatsappWebTip: '提示：WhatsApp Web 扫码由 Baileys 协议驱动；生产或长期使用推荐切换为【WhatsApp Cloud API】。',
   qrExpiresIn: '二维码有效期：',
   seconds: '秒',
   qrModalRefresh: '刷新二维码',
@@ -146,7 +129,6 @@ export const en = {
   tabQq: 'QQ',
   tabTelegram: 'Telegram',
   tabDiscord: 'Discord',
-  tabWhatsapp: 'WhatsApp',
 
   // Common Status
   connectionStatus: 'Connection Status',
@@ -237,25 +219,10 @@ export const en = {
   discordBotToken: 'Bot Token',
   discordHint: 'Connects via Discord Gateway WebSocket without public IP. Ensure Message Content Intent is enabled in Discord Portal.',
 
-  // WhatsApp Specific
-  whatsappHint: 'Supports WhatsApp Web QR code pairing without enterprise qualification.',
-  whatsappScanButton: 'Scan Pairing QR Code',
-  whatsappMode: 'Connection Mode',
-  whatsappModeWeb: 'QR Pairing (Baileys Web Protocol)',
-  whatsappModeCloud: 'Official Cloud API (Meta Business)',
-  whatsappPhoneNumberId: 'Phone Number ID',
-  whatsappAccessToken: 'System User Access Token',
-  whatsappWabaId: 'WhatsApp Business Account ID (WABA ID)',
-  whatsappCloudHint: 'Direct connection via Meta for Developers Graph API. No QR scanning or mobile companion required.',
-  whatsappWebUnavailable: 'WhatsApp Web / Baileys pairing is not wired to a real handshake yet. Use Cloud API credentials instead.',
-
   // QR Code Modal
   qrModalTitleWeixin: 'WeChat ClawBot Authorization',
-  qrModalTitleWhatsapp: 'WhatsApp Web QR Pairing',
   qrModalDescWeixin: 'Scan with WeChat (WeChat ClawBot plugin enabled) and tap "Connect" to pair Agent as an AI contact.',
-  qrModalDescWhatsapp: 'Open WhatsApp on your phone > Settings > Linked Devices, then scan the QR code below.',
   qrModalHintWeixin: 'Connected to official Tencent iLink channel. Open WeChat > Scan and tap Connect on your phone.',
-  qrModalHintWhatsapp: 'Ready with Baileys Multi-Device Noise protocol. Open WhatsApp > Settings > Linked Devices > Scan QR code.',
   qrModalStatusLoading: 'Fetching official authorization QR code...',
   qrModalStatusWaiting: 'Waiting for scan...',
   qrModalStatusScaned: 'Scanned! Tap "Connect" on your phone...',
@@ -267,7 +234,6 @@ export const en = {
   qrModalSubmitCode: 'Submit',
   qrModalVerifying: 'Verifying...',
   qrModalVerifyCodePlaceholder: 'Enter verification digits',
-  whatsappWebTip: 'Note: WhatsApp Web uses the Baileys protocol; for production use, switch to WhatsApp Cloud API.',
   qrExpiresIn: 'Valid for: ',
   seconds: 's',
   qrModalRefresh: 'Refresh',

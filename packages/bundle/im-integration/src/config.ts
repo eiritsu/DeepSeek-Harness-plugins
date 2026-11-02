@@ -73,21 +73,12 @@ export interface Config {
 
   /** Credential reference for the Discord bot token. */
   discordBotTokenEnv: Volatile<string>
-
-  /** Whether the WhatsApp channel is enabled. */
-  whatsappEnabled: Volatile<boolean>
-  /** WhatsApp Cloud API phone number id. */
-  whatsappPhoneNumberId: Volatile<string>
-  /** WhatsApp Business Account id. */
-  whatsappWabaId: Volatile<string>
-  /** Credential reference for WhatsApp Cloud API access token. */
-  whatsappAccessTokenEnv: Volatile<string>
 }
 
 /** Schemastery configuration for IM ingress. */
 export const Config = z.object({
   activePlatform: z.union([
-    'lark', 'dingtalk', 'wecom', 'weixin', 'qq', 'telegram', 'discord', 'whatsapp',
+    'lark', 'dingtalk', 'wecom', 'weixin', 'qq', 'telegram', 'discord',
   ] as const).default('lark').volatile(),
   enabled: z.boolean().default(true).volatile(),
 
@@ -126,9 +117,4 @@ export const Config = z.object({
   telegramBotTokenEnv: z.string().role('credential-ref').default(String(credentialRef('TELEGRAM_BOT_TOKEN'))).volatile(),
 
   discordBotTokenEnv: z.string().role('credential-ref').default(String(credentialRef('DISCORD_BOT_TOKEN'))).volatile(),
-
-  whatsappEnabled: z.boolean().default(false).volatile(),
-  whatsappPhoneNumberId: z.string().default('').volatile(),
-  whatsappWabaId: z.string().default('').volatile(),
-  whatsappAccessTokenEnv: z.string().role('credential-ref').default(String(credentialRef('WHATSAPP_ACCESS_TOKEN'))).volatile(),
 })

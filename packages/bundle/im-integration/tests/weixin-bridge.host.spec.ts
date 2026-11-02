@@ -255,9 +255,6 @@ describe('applyImRuntime WeChat bridge', () => {
       qqAppSecretEnv: { get: () => '' },
       telegramBotTokenEnv: { get: () => '' },
       discordBotTokenEnv: { get: () => '' },
-      whatsappPhoneNumberId: { get: () => '' },
-      whatsappAccessTokenEnv: { get: () => '' },
-      whatsappEnabled: { get: () => false },
     } as unknown as Config
 
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {

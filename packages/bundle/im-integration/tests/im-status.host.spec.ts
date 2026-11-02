@@ -172,9 +172,6 @@ describe('ImStatusService', () => {
       qqAppSecretEnv: { get: () => '' },
       telegramBotTokenEnv: { get: () => '' },
       discordBotTokenEnv: { get: () => '' },
-      whatsappPhoneNumberId: { get: () => '' },
-      whatsappAccessTokenEnv: { get: () => '' },
-      whatsappEnabled: { get: () => false },
     } as unknown as Config
 
     const dispose = applyImRuntime(ctx, config, service)

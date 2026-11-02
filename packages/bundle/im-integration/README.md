@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 ## Quick Start
 
-1. **Select Platform**: Switch between IM platforms (Feishu/Lark, DingTalk, WeCom, WeChat, QQ, Telegram, Discord, WhatsApp) using the tabs above.
+1. **Select Platform**: Switch between IM platforms (Feishu/Lark, DingTalk, WeCom, WeChat, QQ, Telegram, Discord) using the tabs above.
 2. **Enter Credentials**: Fill in your App ID, Bot Token, or App Secret for the chosen platform, or follow the QR code authorization prompt. Secrets write through Host credentials; the Settings page never reads them back.
 3. **Access & Moderation**:
    - **Whitelist**: Enable to restrict agent access to authorized User IDs or Open IDs; disable to allow all incoming users.
@@ -41,8 +41,7 @@ The tool list is part of the repeated request prefix, so enabling or disabling a
 
 ## Known Limitations and Deferred Work
 
-- Live inbound/outbound message bridges for DingTalk, WeCom, QQ, Telegram, Discord, and WhatsApp are not shipped yet. Status reports credential readiness (`connected` once identity and secrets are present).
-- WhatsApp Web / Baileys QR pairing is not implemented; only Cloud API identity fields are accepted.
+- Live inbound/outbound message bridges for DingTalk, WeCom, QQ, Telegram, and Discord are not shipped yet. Status reports credential readiness (`connected` once identity and secrets are present).
 - Dedicated Lark private-chat ingress remains `@deepseek-ai/dsh-lark-integration`. Do not load that plugin together with this plugin's `lark_cli`: this plugin skips `lark_cli` when the other plugin is loaded.
 - Phone-side WeChat “网络错误” during Connect can still come from Tencent iLink (see openclaw-weixin#242). This package matches the official QR long-poll headers and client version; upstream outages remain outside Host control.
 - WeCom QR login must be confirmed against the configured bot on a real account. DingTalk device login output and macOS keychain isolation (`DWS_DISABLE_KEYCHAIN`) still need a manual check on a machine that can reach those services.

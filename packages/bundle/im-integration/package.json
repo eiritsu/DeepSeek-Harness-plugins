@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-im-integration",
-  "description": "Multi-platform IM integration bundle supporting Feishu/Lark, DingTalk, WeCom, WeChat, QQ, Telegram, Discord, and WhatsApp",
+  "description": "Multi-platform IM integration bundle supporting Feishu/Lark, DingTalk, WeCom, WeChat, QQ, Telegram, and Discord",
   "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
