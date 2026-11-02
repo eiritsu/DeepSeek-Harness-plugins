@@ -48,7 +48,7 @@ pnpm dsh web
 
 ## Installable bundles
 
-Each row gives the source directory for reading the code and the exact install URL to copy. These six are the plugins this repository maintains and publishes on their own, compatible with `0.2.1-rc.3`, `0.2.1-rc.5`, and `0.2.2-alpha.2` as well as `0.2.1-alpha.1` and `0.2.1-alpha.2`; historical experimental packages are not listed as current standalone install items. All six have version `0.2.1-rc.3`.
+Each row gives the source directory for reading the code and the exact install URL to copy. These seven are the plugins this repository maintains and publishes on their own, compatible with `0.2.1-rc.3`, `0.2.1-rc.5`, and `0.2.2-alpha.2` as well as `0.2.1-alpha.1` and `0.2.1-alpha.2`; historical experimental packages are not listed as current standalone install items. All seven have version `0.2.1-rc.3`.
 
 | Add-on | Package | Feature and surface | Source (browsing only) | Install URL |
 |---|---|---|---|---|
@@ -58,6 +58,7 @@ Each row gives the source directory for reading the code and the exact install U
 | Community skill catalog | `@deepseek-ai/dsh-community-skill-catalog` | Search SkillsMP and install GitHub skills pinned to a commit; Web and Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/community-skill-catalog> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-rc.3.20261102.1/deepseek-ai-dsh-community-skill-catalog-0.2.1-rc.3.tgz> |
 | IM Integration | `@deepseek-ai/dsh-im-integration` | Multi-platform IM gateway (Lark/Feishu, DingTalk, WeCom, WeChat, QQ, Telegram, Discord) with per-platform config, whitelist access control, and full-autonomy / moderation toggle; Web and Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/im-integration> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-rc.3.20261102.1/deepseek-ai-dsh-im-integration-0.2.1-rc.3.tgz> |
 | Tools and connections | `@deepseek-ai/dsh-tools-connections` | Add Brave and Tavily search providers, Firecrawl extraction, and settings; Web and Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/tools-connections> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-rc.3.20261102.1/deepseek-ai-dsh-tools-connections-0.2.1-rc.3.tgz> |
+| macOS Computer Use | `@deepseek-ai/dsh-cua-bundle` | macOS Computer Use (self-contained bundle): includes prebuilt native helper and permission management panel, with automatic PTC runtime and system permission checks; Desktop (macOS) | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/cua-bundle> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.1-rc.3.20261102.1/deepseek-ai-dsh-cua-bundle-0.2.1-rc.3.tgz> |
 
 The `base`, `web-app`, `headless`, `sdk-app`, `sdk-minimal`, and `acp-app` bundles are application profile templates and are not listed as add-ons.
 

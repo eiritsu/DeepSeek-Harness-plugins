@@ -1,0 +1,6 @@
+- insert:
+    - id: cua-bundle
+      name: '@deepseek-ai/dsh-cua-bundle'
+      disabled: !!js process.platform !== 'darwin'
+      config:
+        agentPreset: ptc
