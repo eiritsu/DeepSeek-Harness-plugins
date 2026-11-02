@@ -11,4 +11,5 @@
     scriptPersistence: false
 - id: agent-preset-registry
   config:
+    default: standard
     selectedDefault: ptc
