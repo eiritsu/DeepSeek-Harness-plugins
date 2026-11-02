@@ -101,19 +101,25 @@ describe('CalendarController query lifecycle', () => {
   })
 
   it('steps the month anchor forward and restores today through the injected face', async () => {
-    const port = makePort({ snapshot: async () => emptySnapshot({ now: '2026-10-05T08:00:00.000Z' }) })
-    const controller = new CalendarController(port, { timeZone: 'UTC' })
-    const face = controller.inject()
-    controller.start()
-    await flush()
-    expect(controller.inject().hooks.calendar.getSnapshot()).toMatchObject({ year: 2026, month: 10 })
-    face.stepMonth(1)
-    await flush()
-    expect(controller.inject().hooks.calendar.getSnapshot()).toMatchObject({ year: 2026, month: 11 })
-    face.goToday()
-    await flush()
-    expect(controller.inject().hooks.calendar.getSnapshot()).toMatchObject({ year: 2026, month: 10, selectedDate: '2026-10-05' })
-    controller.dispose()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-05T08:00:00.000Z'))
+    try {
+      const port = makePort({ snapshot: async () => emptySnapshot({ now: '2026-10-05T08:00:00.000Z' }) })
+      const controller = new CalendarController(port, { timeZone: 'UTC' })
+      const face = controller.inject()
+      controller.start()
+      await flush()
+      expect(controller.inject().hooks.calendar.getSnapshot()).toMatchObject({ year: 2026, month: 10 })
+      face.stepMonth(1)
+      await flush()
+      expect(controller.inject().hooks.calendar.getSnapshot()).toMatchObject({ year: 2026, month: 11 })
+      face.goToday()
+      await flush()
+      expect(controller.inject().hooks.calendar.getSnapshot()).toMatchObject({ year: 2026, month: 10, selectedDate: '2026-10-05' })
+      controller.dispose()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

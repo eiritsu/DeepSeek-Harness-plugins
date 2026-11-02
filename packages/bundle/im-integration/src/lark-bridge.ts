@@ -263,8 +263,11 @@ export class LarkConversationBridge {
   }
 
   private async ensureAgent(sessionId: SessionId, chatId: string): Promise<Agent> {
+    // Reuse any live Host agent for this Session — including one opened in the
+    // Desktop UI. Requiring `handles.has` forced a second `agents.resume` that
+    // fails with SessionAlreadyOwnedError and surfaces as the Feishu error reply.
     const current = this.ctx.agents.get(sessionId)
-    if (current !== undefined && this.handles.has(sessionId)) return current
+    if (current !== undefined) return current
     let creation = this.creations.get(sessionId)
     if (creation === undefined) {
       creation = this.openAgent(sessionId, chatId).finally(() => this.creations.delete(sessionId))

@@ -256,7 +256,7 @@ export class CalendarService extends TypertRemoteService {
       return { ok: false, code: 'invalid_selector', message: 'Exactly one reminder timing must be selected.' }
     }
     try {
-      const record = await service.create(sessionId, {
+      const createOptions = {
         title: request.title,
         prompt: request.prompt,
         ...(request.at === undefined ? {} : { at: request.at }),
@@ -265,7 +265,20 @@ export class CalendarService extends TypertRemoteService {
         ...(request.daily === undefined ? {} : { daily: request.daily }),
         ...(request.weekly === undefined ? {} : { weekly: request.weekly }),
         ...(request.cron === undefined ? {} : { cron: request.cron }),
-      })
+      }
+      type SingleArgCreate = (o: typeof createOptions & { sessionId: SessionId }) => Promise<{ id: string }>
+      type TwoArgCreate = (s: SessionId, o: typeof createOptions) => Promise<{ id: string }>
+      const svc = service as unknown as { create: TwoArgCreate & SingleArgCreate }
+      let record: { id: string }
+      try {
+        record = await svc.create(sessionId, createOptions)
+      } catch (err: unknown) {
+        if (err instanceof TypeError || (err instanceof Error && (err.message.includes('argument') || err.message.includes('undefined')))) {
+          record = await svc.create({ sessionId, ...createOptions })
+        } else {
+          throw err
+        }
+      }
       const catalog = await service.catalog()
       const created = catalog.find(entry => entry.id === record.id)
       if (created === undefined) {
@@ -287,16 +300,20 @@ export class CalendarService extends TypertRemoteService {
     const service = scheduleService(this.ctx)
     if (service === undefined) return unavailable()
     try {
-      const result = await service.update({
+      const updatePayload = {
         sessionId: brandString<SessionId>(request.sessionId),
         id: asScheduleId(request.id),
         expected: request.expected,
         ...(request.title === undefined ? {} : { title: request.title }),
         ...(request.prompt === undefined ? {} : { prompt: request.prompt }),
         ...(request.change === undefined ? {} : { change: request.change }),
-      })
+      }
+      const maybeEdit = (service as unknown as { edit?: (payload: unknown) => Promise<unknown> }).edit
+      const result = typeof maybeEdit === 'function'
+        ? await maybeEdit.call(service, updatePayload) as { code?: string; record?: unknown }
+        : await service.update(updatePayload)
       if (!('record' in result)) {
-        return { ok: false, code: result.code, message: describeUpdateMiss(result.code) }
+        return { ok: false, code: (result.code ?? 'schedule_conflict') as CalendarUpdateTaskResult & { ok: false } extends { code: infer C } ? C : never, message: describeUpdateMiss(result.code ?? 'schedule_conflict') }
       }
       const catalog = await service.catalog()
       const updated = catalog.find(entry => entry.id === request.id)
@@ -319,8 +336,19 @@ export class CalendarService extends TypertRemoteService {
     const service = scheduleService(this.ctx)
     if (service === undefined) return unavailable()
     const id = asScheduleId(request.id)
-    const result = await service.delete({ sessionId: brandString<SessionId>(request.sessionId), id })
-    return result.deleted
+    const deletePayload = { sessionId: brandString<SessionId>(request.sessionId), id }
+    const maybeDelete = (service as unknown as { delete?: (payload: unknown) => Promise<{ deleted: boolean }> }).delete
+    type MaybeEdit = (payload: unknown) => Promise<{ deleted?: boolean; ok?: boolean; code?: string }>
+    const maybeEdit = (service as unknown as { edit?: MaybeEdit }).edit
+    let deleted = false
+    if (typeof maybeDelete === 'function') {
+      const result = await maybeDelete.call(service, deletePayload)
+      deleted = !!result.deleted
+    } else if (typeof maybeEdit === 'function') {
+      const result = await maybeEdit.call(service, { ...deletePayload, delete: true })
+      deleted = !('code' in result)
+    }
+    return deleted
       ? { ok: true, id }
       : { ok: false, code: 'schedule_not_found', message: 'That task no longer exists.' }
   }

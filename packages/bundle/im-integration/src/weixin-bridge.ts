@@ -166,7 +166,6 @@ export class WeixinConversationBridge {
           timeoutMs: nextTimeoutMs,
           abortSignal: this.abort.signal,
         })
-        // oxlint-disable-next-line typescript/no-unnecessary-condition -- abort can happen concurrently during await
         if (this.abort.signal.aborted) return
 
         if (resp.longpolling_timeout_ms != null && resp.longpolling_timeout_ms > 0) {
@@ -206,7 +205,6 @@ export class WeixinConversationBridge {
           this.accept(message)
         }
       } catch (error: unknown) {
-        // oxlint-disable-next-line typescript/no-unnecessary-condition -- abort can happen concurrently during await
         if (this.abort.signal.aborted) return
         consecutiveFailures += 1
         this.ctx.logger.warn(
@@ -307,8 +305,11 @@ export class WeixinConversationBridge {
    * Session from the Host store and the client Workspace list.
    */
   private async ensureAgent(sessionId: SessionId, senderId: string): Promise<Agent> {
+    // Reuse any live Host agent for this Session — including one opened in the
+    // Desktop UI. Requiring `handles.has` forced a second `agents.resume` that
+    // fails with SessionAlreadyOwnedError.
     const current = this.ctx.agents.get(sessionId)
-    if (current !== undefined && this.handles.has(sessionId)) return current
+    if (current !== undefined) return current
     let creation = this.creations.get(sessionId)
     if (creation === undefined) {
       creation = this.openAgent(sessionId, senderId).finally(() => this.creations.delete(sessionId))

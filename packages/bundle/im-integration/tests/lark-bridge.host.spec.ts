@@ -134,6 +134,102 @@ describe('LarkConversationBridge', () => {
     }
   })
 
+  it('reuses a live Host agent without calling agents.resume again', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'dsh-lark-bridge-reuse-'))
+    vi.stubEnv('DSH_HOME', home)
+
+    const listeners: Record<string, ((...args: unknown[]) => void)[]> = {}
+    const replied: Array<{ reply: unknown }> = []
+    const channel = {
+      on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+        listeners[event] = listeners[event] ?? []
+        listeners[event]?.push(handler)
+        return () => {}
+      }),
+      connect: vi.fn(async () => {}),
+      disconnect: vi.fn(async () => {}),
+      reply: vi.fn(async (_message: NormalizedMessage, reply: unknown) => {
+        replied.push({ reply })
+        return { messageId: 'om_reply_reuse' }
+      }),
+    }
+
+    const ctx = new Context()
+    const session = { header: { cwd: undefined as string | undefined } }
+    const followup = vi.fn((message: {
+      content: readonly { type: string; text?: string }[]
+      source: { kind: string; messageId: string }
+    }) => {
+      queueMicrotask(() => {
+        ctx.emit('session/event', session as never, {
+          type: 'user/message',
+          data: { source: message.source },
+        } as never)
+        ctx.emit('session/event', session as never, {
+          type: 'assistant/message',
+          data: { message: { content: [{ type: 'text', text: '复用会话' }] } },
+        } as never)
+        ctx.emit('session/event', session as never, {
+          type: 'turn/end',
+          data: { reason: { kind: 'completed' } },
+        } as never)
+      })
+    })
+    const agent = { id: 'im-lark-reuse', session, followup }
+    const resume = vi.fn(async () => {
+      throw new Error('session "im-lark-reuse" is already owned by an active write handle')
+    })
+    const create = vi.fn(async () => {
+      throw new Error('create should not run when a live agent exists')
+    })
+
+    ctx.provide('fiber', { assertActive: () => {} })
+    ctx.provide('logger', { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() })
+    ctx.provide('sessionQuery', {
+      observeSession: async () => ({ events: [], [Symbol.dispose]: () => {} }),
+    })
+    ctx.provide('agents', {
+      create,
+      resume,
+      get: () => agent,
+    })
+
+    const bridge = new LarkConversationBridge(ctx, channel as never as LarkChannel, {
+      appId: 'cli_test_app',
+      whitelistEnabled: false,
+      allowedSenderIds: [],
+      responseTimeoutMs: 5_000,
+      currentSelection: () => ({ provider: 'deepseek', model: 'deepseek-chat' }),
+    })
+
+    try {
+      await bridge.connect()
+      const inboundMsg: NormalizedMessage = {
+        messageId: 'om_reuse_1',
+        chatId: 'oc_reuse',
+        chatType: 'p2p',
+        senderId: 'ou_user_1',
+        content: '桌面已打开同一会话',
+        rawContentType: 'text',
+        mentions: [],
+        mentionAll: false,
+        mentionedBot: false,
+        resources: [],
+        createTime: Date.now(),
+      }
+      for (const fn of listeners.message ?? []) fn(inboundMsg)
+      await vi.waitFor(() => {
+        expect(followup).toHaveBeenCalledOnce()
+        expect(replied.some(r => (r.reply as { text: string }).text === '复用会话')).toBe(true)
+      }, { timeout: 5_000 })
+      expect(resume).not.toHaveBeenCalled()
+      expect(create).not.toHaveBeenCalled()
+    } finally {
+      await bridge.dispose()
+      await rm(home, { recursive: true, force: true })
+    }
+  })
+
   it('drops messages from senders not in whitelist when whitelist is enabled', async () => {
     const listeners: Record<string, ((...args: unknown[]) => void)[]> = {}
     const channel = {
