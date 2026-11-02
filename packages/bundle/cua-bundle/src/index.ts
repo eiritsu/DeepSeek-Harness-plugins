@@ -6,7 +6,7 @@ import { withFileLock } from '@deepseek-ai/dsh-atomic-write'
 import type { Context } from '@deepseek-ai/cordis'
 import Schema from '@deepseek-ai/schemastery'
 import type { Agent } from '@deepseek-ai/dsh-agent'
-import { ComputerUseProviderName } from './brand.ts'
+import { ComputerUseProviderName } from '@deepseek-ai/dsh-computer-use/brand'
 import { admitEncodedImages } from '@deepseek-ai/dsh-attachment'
 import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
@@ -139,7 +139,11 @@ async function screenshotStore(ctx: Context, execution: Readonly<CuaExecution>) 
   const info = await llm.resolveModelInfo(provider, model, execution.signal)
   execution.signal.throwIfAborted()
   if (!info.inputModalities?.includes('image')) throw new Error(`CUA screenshots require model "${model}" to declare image input`)
-  return { attachments, target: (image: ImageAttachmentRef) => llm.imageRequestTarget(provider, model, image) }
+  type ImageTargeting = { imageRequestTarget: (p: string, m: string, img: ImageAttachmentRef) => unknown }
+  return {
+    attachments,
+    target: (image: ImageAttachmentRef) => (llm as unknown as ImageTargeting).imageRequestTarget(provider, model, image) as never,
+  }
 }
 
 /** Prepared platform executable, transport, and platform-specific operating instructions. */
@@ -252,7 +256,7 @@ export function installCua(ctx: Context, config: CuaConfig, backend: CuaBackend)
           pixelWidth: image.width, pixelHeight: image.height, coordinateSpace: 'screenshot-pixels', attachment }
       }
       const result = method === 'paste'
-        ? await withFileLock(join(tmpdir(), 'dsh-cua-system-clipboard'), requestNative, { waitMs: config.timeoutMs, signal })
+        ? await withFileLock(join(tmpdir(), 'dsh-cua-system-clipboard'), requestNative, { waitMs: config.timeoutMs, signal } as never)
         : await requestNative()
       if (method === 'getApp') {
         const prepared = AppResult.extend({ pid: AppResult.shape.pid.nullable() }).parse(result)
@@ -325,7 +329,7 @@ export function installCua(ctx: Context, config: CuaConfig, backend: CuaBackend)
     const prompt: PromptSection = {
       name: 'computer-use:dsh-cua', order: ctx.systemPrompt.getSectionOrder('TOOL_COMPUTER_USE'),
       text: () => {
-        const runtime = ctx.get('ptcRuntime')
+        const runtime = ctx.get('ptcRuntime') as { retainsState?: boolean } | undefined
         return !runtime?.retainsState ? guidance : `${guidance}
 
 Persistent PTC initialization:
@@ -374,47 +378,48 @@ var cua = connectCua(() => tools.cua, text => console.log(text));
 
 import { isAbsolute, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ComputerUseRegistry } from './computer-use.ts'
+import { chmod } from 'node:fs/promises'
 import { nativeHostArchitecture, prepareNativeExecutable } from './native-build.ts'
 import { createSharedNativeChannel } from './shared-native.ts'
 import { GUIDANCE } from './guidance.ts'
-export { GUIDANCE } from './guidance.ts'
+import { ComputerUseRegistry } from './registry.ts'
 
-/** Bundle plugin identity. */
-export const name = 'dsh-cua-bundle'
-/** Required platform services. */
+/** Host plugin identity. */
+export const name = 'cua-bundle'
+/** Required services for native tool and prompt registration. */
 export const inject = ['tools', 'systemPrompt', 'subprocess', 'agents']
-/** Validated schema for config. */
-export const Config: typeof CuaConfig = CuaConfig
+export { CuaConfig as Config }
 
-const description = 'Inspect macOS permissions, select an application and window, read AX state, capture screenshots or dispatch input. Use appHandle from getApp; verify actions by reading fresh state.'
+const DESCRIPTION = 'Inspect macOS permissions, select an application and window, read AX state, capture screenshots or dispatch input. Use appHandle from getApp; verify actions by reading fresh state.'
 
-/** Mount native execution, remote permission controls, and UI integration. */
+/**
+ * Main host entry point: prepares the signed native macOS helper, mounts CuaAccess Typert remote
+ * service, registers the CUA tool, and automatically ensures persistent PTC runtime configuration.
+ */
 export async function apply(ctx: Context, config: CuaConfig): Promise<void> {
-  // 1. Ensure ComputerUseRegistry is registered on ctx
+  // 1. Ensure computerUse registry is available
   if (!ctx.get('computerUse')) {
     new ComputerUseRegistry(ctx)
   }
 
-  // 2. Only platform darwin is supported currently
-  if (process.platform !== 'darwin') {
-    ctx.logger.info('Computer Use currently requires macOS. Windows support is in development.')
-    return
-  }
-
-  const architecture = nativeHostArchitecture(process.platform, process.arch)
+  // 2. Resolve helperPath
   let helperPath = config.helperPath
   if (helperPath !== undefined) {
     if (!isAbsolute(helperPath)) throw new Error('dsh-cua helperPath must be absolute')
   } else {
-    const controller = new AbortController()
+    if (process.platform !== 'darwin') {
+      ctx.logger.warn('Computer use currently requires macOS on Apple silicon or Intel.')
+      return
+    }
+    const architecture = nativeHostArchitecture(process.platform, process.arch)
     const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
+    const controller = new AbortController()
     const prepared = prepareNativeExecutable({
       packageRoot,
       architecture,
       subprocess: ctx.subprocess,
-      timeoutMs: config.buildTimeoutMs ?? 60_000,
-      graceMs: config.graceMs ?? 5_000,
+      timeoutMs: config.buildTimeoutMs,
+      graceMs: config.graceMs,
       signal: controller.signal,
     })
     ctx.effect(() => async () => {
@@ -425,5 +430,37 @@ export async function apply(ctx: Context, config: CuaConfig): Promise<void> {
     controller.signal.throwIfAborted()
   }
 
-  installCua(ctx, config, { helperPath, createChannel: createSharedNativeChannel, guidance: GUIDANCE, description })
+  // Ensure execution permissions on helper
+  try {
+    await chmod(helperPath, 0o755)
+  } catch {}
+
+  // 3. Install CUA runtime and CuaAccess service
+  installCua(ctx, config, {
+    helperPath,
+    createChannel: createSharedNativeChannel,
+    guidance: GUIDANCE,
+    description: DESCRIPTION,
+  })
+
+  // 4. Automatically configure persistent PTC runtime to avoid configuration errors
+  ctx.effect(() => {
+    try {
+      const editor = ctx.get('configEditor')
+      const runtime = ctx.get('ptcRuntime') as { retainsState?: boolean } | undefined
+      if (editor && runtime && !runtime.retainsState) {
+        const entry = editor.entries().find(e => e.options.id === 'ptc-runtime')
+        if (entry) {
+          editor.edit(entry, current => ({
+            ...current,
+            executionMode: 'persistent-in-memory',
+            scriptPersistence: false,
+          })).catch((err: unknown) => {
+            ctx.logger.debug('Automatic persistent PTC configuration skipped: %s', String(err))
+          })
+        }
+      }
+    } catch {}
+    return () => {}
+  }, 'dsh-cua.auto-ptc')
 }

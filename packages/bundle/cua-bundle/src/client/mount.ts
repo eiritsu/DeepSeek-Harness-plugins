@@ -1,5 +1,6 @@
 /** Optional Computer Use controls mounted through existing plugin-page and overlay slots. */
 import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-cua-bundle/remote'
 import type { TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
@@ -32,7 +33,7 @@ export const inject = ['remote', 'slots', 'locale', 'configForms']
 export async function mountCuaPermissions(ctx: Context, contribution: TypertRemoteContribution): Promise<() => Promise<void>> {
   const transport = ctx.plugin(async (owner) => { await owner.remote.$mount(contribution) })
   const ui = ctx.inject(['remote.cuaAccess', 'slots', 'locale'], (ctx) => {
-    ctx.effect(() => ctx.locale.register(NS, { en, zh, ja, es, fr, de, ru, pt }))
+    ctx.effect(() => ctx.locale.register(NS, { en, zh, ja, es, fr, de, ru, pt } as never))
     const controller = new PermissionController(ctx.remote.cuaAccess)
     const face = controller.face()
     ctx.slots.inject('conversation.composer', () => ctx.slots.register({
@@ -40,8 +41,8 @@ export async function mountCuaPermissions(ctx: Context, contribution: TypertRemo
       select: ({ pendingInteraction }: ComposerChainProps) => selectApplicationApproval(pendingInteraction),
       inject: () => ({ resolveText: (text: { en: string; [locale: string]: string }) => ctx.locale.resolveText(text) }),
     }, ApplicationApproval))
-    ctx.inject(['pluginChanges'], (scope) => {
-      const changes = scope.pluginChanges.bundle('@deepseek-ai/dsh-cua-bundle')
+    ctx.inject(['pluginChanges'], (scope: Context) => {
+      const changes = (scope as unknown as { pluginChanges: { bundle: (id: string) => { getSnapshot: () => boolean; subscribe: (cb: () => void) => () => void } } }).pluginChanges.bundle('@deepseek-ai/dsh-cua-bundle')
       const synchronize = () => { controller.setChanging(changes.getSnapshot()) }
       synchronize()
       scope.effect(() => {

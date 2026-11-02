@@ -1,6 +1,14 @@
+# 开箱即用的 macOS Computer Use 及其原生权限装配与 PTC 持久化配置
 - insert:
-    - id: cua-bundle
+    - id: dsh-cua-bundle
       name: '@deepseek-ai/dsh-cua-bundle'
       disabled: !!js process.platform !== 'darwin'
       config:
         agentPreset: ptc
+- id: ptc-runtime
+  config:
+    executionMode: persistent-in-memory
+    scriptPersistence: false
+- id: agent-preset-registry
+  config:
+    selectedDefault: ptc

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "macOS Computer Use",
-    "description": "macOS Computer Use (self-contained bundle): includes prebuilt native helper and permission management panel, with automatic PTC runtime and system permission checks."
+    "title": "Computer Use service",
+    "description": "Manage application access, permissions, and logged tool execution for Computer Use."
   }
 }

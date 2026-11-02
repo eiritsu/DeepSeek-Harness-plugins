@@ -163,7 +163,7 @@ export class ApplicationAccess {
               ...(identity.persistable && this.options.store.persistent ? { always: 'Always allow' } : {}),
               subject: { name: identity.name, ...(icon === undefined ? {} : { icon }) },
               display: applicationAccessDisplay,
-            } }] })
+            } as never }] })
         } catch (error) {
           if (error instanceof UserQuestionError && error.code === 'ASK_CANCELLED') {
             this.invalidate(identity.id, agent)

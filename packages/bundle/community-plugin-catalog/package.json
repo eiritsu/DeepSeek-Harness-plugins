@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-community-plugin-catalog",
   "description": "Opt-in community plugin discovery for Web and Desktop UI profiles",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.2-alpha.2",
   "publishConfig": {
     "access": "public"
   },
@@ -53,7 +53,7 @@
   "license": "MIT",
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
-    "dsh": ">=0.2.0-rc.2 <0.3.0"
+    "dsh": ">=0.2.0-rc.2 <=0.2.2-alpha.2 || >=0.2.0"
   },
   "scripts": {
     "bundle": "tsdown"

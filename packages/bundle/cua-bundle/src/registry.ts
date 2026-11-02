@@ -1,16 +1,10 @@
 /**
  * Exclusive named registration for the computer-use capability.
- * @module @deepseek-ai/dsh-cua-bundle/computer-use
+ * @module @deepseek-ai/dsh-cua-bundle/registry
  */
-
 import { Context, Service } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-computer-use'
 import type { ComputerUseProviderName } from './brand.ts'
-
-declare module '@deepseek-ai/cordis' {
-  interface Context {
-    computerUse: ComputerUseRegistry
-  }
-}
 
 /** Owns one optional provider registration in the shared computer-use service. */
 export class ComputerUseRegistry extends Service {
@@ -27,11 +21,13 @@ export class ComputerUseRegistry extends Service {
 
   /**
    * Reserve the sole provider slot until the contribution is disposed.
+   * A second registration fails even when it repeats the current name. Providers
+   * must stop their tools and await owned work before releasing this registration.
    * @param name - provider-owned name used in registration diagnostics.
    * @returns the effect disposer for this exact registration.
    */
   register(name: ComputerUseProviderName): () => Promise<void> {
-    if (this.registration !== undefined && this.registration !== name) {
+    if (this.registration !== undefined) {
       throw new Error(`computer use provider "${this.registration}" is already registered`)
     }
     return this.ctx.effect(() => {
@@ -42,5 +38,3 @@ export class ComputerUseRegistry extends Service {
     }, 'computerUse.register()')
   }
 }
-
-export default ComputerUseRegistry

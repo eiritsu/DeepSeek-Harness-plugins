@@ -2,7 +2,7 @@
   "name": "@deepseek-ai/dsh-superagent",
   "author": "DeepSeek Harness Team <team@dsh.dev>",
   "license": "MIT",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.2-alpha.2",
   "publishConfig": {
     "access": "public"
   },
@@ -64,7 +64,7 @@
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
-    "dsh": ">=0.2.0-rc.2 <0.3.0"
+    "dsh": ">=0.2.0-rc.2 <=0.2.2-alpha.2 || >=0.2.0"
   },
   "dependencies": {
     "@deepseek-ai/dsh-agent-instructions": "workspace:*",

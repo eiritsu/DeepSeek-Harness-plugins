@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tools-connections",
   "description": "Opt-in Brave and Tavily search providers and Firecrawl extraction with a settings page",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.2-alpha.2",
   "publishConfig": {
     "access": "public"
   },
@@ -39,7 +39,7 @@
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
-    "dsh": ">=0.2.0-rc.2 <0.3.0"
+    "dsh": ">=0.2.0-rc.2 <=0.2.2-alpha.2 || >=0.2.0"
   },
   "license": "MIT",
   "dsh": {

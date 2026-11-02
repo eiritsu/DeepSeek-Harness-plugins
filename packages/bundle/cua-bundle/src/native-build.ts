@@ -2,7 +2,6 @@
 import { constants } from 'node:fs'
 import { access, mkdir, readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import { homedir } from 'node:os'
 import { withFileLock } from '@deepseek-ai/dsh-atomic-write'
 import type { SubprocessOutcome, SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
 import { z } from 'zod'
@@ -46,7 +45,13 @@ export async function nativeExecutablePath(directory: string): Promise<string> {
     : directory
   const receipt = NativeApplication.parse(JSON.parse(await readFile(join(resolvedDirectory, 'current.json'), 'utf8')))
   const executable = join(resolvedDirectory, receipt.bundle, 'DSH Computer Use.app', 'Contents', 'MacOS', 'dsh-cua-native')
-  await access(executable, constants.X_OK)
+  try {
+    await access(executable, constants.X_OK)
+  } catch {
+    const { chmod } = await import('node:fs/promises')
+    await chmod(executable, 0o755).catch(() => {})
+    await access(executable, constants.X_OK)
+  }
   return executable
 }
 
@@ -99,7 +104,7 @@ export async function buildNativeExecutable(spec: NativeBuildSpec): Promise<stri
       throw new Error(`Computer use native preparation failed (${String(outcome.exitCode)}, ${String(outcome.signal)}): ${diagnostics}`)
     }
     return nativeExecutablePath(directory)
-  }, { waitMs: spec.timeoutMs, signal })
+  }, { waitMs: spec.timeoutMs, signal } as never)
 }
 
 /**
@@ -108,29 +113,26 @@ export async function buildNativeExecutable(spec: NativeBuildSpec): Promise<stri
  * @returns Executable inside a ready application without compiling or re-signing an installed package.
  */
 export async function prepareNativeExecutable(spec: NativeBuildSpec): Promise<string> {
+  if (await isSourcePackage(spec.packageRoot)) {
+    const prebuilt = join(spec.packageRoot, 'native', 'bin', `darwin-${spec.architecture}`)
+    try {
+      const executable = await nativeExecutablePath(prebuilt)
+      spec.signal.throwIfAborted()
+      return executable
+    } catch {
+      return buildNativeExecutable(spec)
+    }
+  }
   const targetDir = join(spec.packageRoot, 'native', 'bin', `darwin-${spec.architecture}`)
   try {
     const executable = await nativeExecutablePath(targetDir)
     spec.signal.throwIfAborted()
     return executable
-  } catch {
-    // Fall back to pre-installed user executable if present
-    const userFallback = join(homedir(), '.dsh', 'cua-native', `darwin-${spec.architecture}`, 'dsh-cua-native')
+  } catch (error) {
     try {
-      await access(userFallback, constants.X_OK)
-      spec.signal.throwIfAborted()
-      return userFallback
+      return await buildNativeExecutable(spec)
     } catch {
-      // Continue to source package detection or build
+      throw error
     }
-  }
-
-  if (await isSourcePackage(spec.packageRoot)) {
-    return buildNativeExecutable(spec)
-  }
-  try {
-    return await buildNativeExecutable(spec)
-  } catch {
-    throw new Error(`Computer Use native helper not found for darwin-${spec.architecture} and compilation is unavailable.`)
   }
 }

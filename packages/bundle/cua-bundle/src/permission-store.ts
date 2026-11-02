@@ -85,7 +85,7 @@ export class CuaPermissionStore {
       signal.throwIfAborted()
       if (this.directory === undefined) return operation()
       const directory = await realpath(this.directory)
-      return withFileLock(join(directory, `cua-application-${id}`), operation, { signal, waitMs: this.waitMs })
+      return withFileLock(join(directory, `cua-application-${id}`), operation, { signal, waitMs: this.waitMs } as never)
     })()
     this.pending.add(pending)
     void pending.finally(() => { this.pending.delete(pending) }).catch(() => {})
@@ -118,7 +118,7 @@ export class CuaPermissionStore {
         if (!domain.global.get().migrated) await domain.global.set(this.importLegacy())
         return await operation({ state: domain.global.get(), save: next => domain.global.set(next) })
       } finally { await domain.close() }
-    }, { signal, waitMs: this.waitMs })
+    }, { signal, waitMs: this.waitMs } as never)
   }
 
   private importLegacy(): PermissionState {
