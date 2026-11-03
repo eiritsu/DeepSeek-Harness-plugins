@@ -46,12 +46,13 @@ function setup(install: string = `dsh plugin --profile web add ${spec}`,
   return { openInstall, close }
 }
 
-it('hands the parsed spec to the official install dialog and closes the catalog', async () => {
+it('hands the parsed spec to the install dialog without closing the catalog', async () => {
   const { openInstall, close } = setup(undefined, translate)
   fireEvent.click(await screen.findByRole('button', { name: en.install }))
   expect(openInstall).toHaveBeenCalledOnce()
-  expect(openInstall).toHaveBeenCalledWith(spec)
-  expect(close).toHaveBeenCalledOnce()
+  expect(openInstall).toHaveBeenCalledWith(spec, { autoRun: true })
+  expect(close).not.toHaveBeenCalled()
+  expect(await screen.findByRole('heading', { name: 'Add Plugin' })).toBeTruthy()
 })
 
 it('keeps the catalog open and reports an unusable install command', async () => {
@@ -69,4 +70,94 @@ it('uses a concise search action and labels each catalog statistic', async () =>
   expect(screen.getByText('Stars: 1')).toBeTruthy()
   expect(screen.getByText('1 installs')).toBeTruthy()
   expect(screen.getByLabelText('Added 2026-01-01')).toBeTruthy()
+})
+
+it('runs the official installation pipeline, displays logs, and completes successfully', async () => {
+  const installBundle = vi.fn(async () => ({ ok: true, value: { bundle: spec } }))
+  const setBundleEnabled = vi.fn(async () => {})
+  const catalog = {
+    catalog: vi.fn(async () => ({
+      ok: true as const,
+      value: {
+        plugins: [{
+          id: 'example', name: 'Example', owner: 'acme', url: 'https://github.com/acme/example', category: 'tools',
+          description: { en: 'Example plugin', zh: '示例插件' },
+          install: `dsh plugin --profile web add ${spec}`, added: '2026-01-01', stars: 1, installCount: 1,
+          npmDownloads7d: null, pushedAt: '', updatedAt: '',
+        }],
+        categories: [], total: 1, totalPages: 1, page: 1, limit: 20,
+      },
+    })),
+  }
+  let logSubscriber: ((chunk: { data: string }) => void) | undefined
+  const onInstallLog = (cb: (chunk: { data: string }) => void) => {
+    logSubscriber = cb
+    return () => {}
+  }
+  const useStore = (select: (state: { open: boolean }) => unknown): unknown => select({ open: true })
+  render(createElement(PluginCatalogPanel, {
+    api: catalog,
+    pluginManager: { installBundle, setBundleEnabled },
+    onInstallLog,
+    language: () => 'zh',
+    useStore,
+    actions: { close: vi.fn() },
+    t: translate,
+  } as never))
+
+  fireEvent.click(await screen.findByRole('button', { name: en.install }))
+  expect(await screen.findByRole('heading', { name: '添加插件' })).toBeTruthy()
+
+  logSubscriber?.({ data: 'Downloading packages...\n' })
+  expect(await screen.findByText('插件安装成功！已在 Profile 中启用。')).toBeTruthy()
+  expect(installBundle).toHaveBeenCalledWith(spec, expect.objectContaining({ enabled: true }))
+
+  // Clicking "完成" closes the install dialog
+  fireEvent.click(screen.getByRole('button', { name: '完成' }))
+  expect(screen.queryByRole('heading', { name: '添加插件' })).toBeNull()
+
+  // The catalog card button now reflects '已安装'
+  expect(screen.getByRole('button', { name: '已安装' })).toHaveProperty('disabled', true)
+})
+
+it('displays error details and allows retry when installation fails', async () => {
+  let callCount = 0
+  const installBundle = vi.fn(async () => {
+    callCount++
+    if (callCount === 1) {
+      return { ok: false, error: { message: 'Network connection failed' } }
+    }
+    return { ok: true, value: { bundle: spec } }
+  })
+  const catalog = {
+    catalog: vi.fn(async () => ({
+      ok: true as const,
+      value: {
+        plugins: [{
+          id: 'example', name: 'Example', owner: 'acme', url: 'https://github.com/acme/example', category: 'tools',
+          description: { en: 'Example plugin', zh: '示例插件' },
+          install: `dsh plugin --profile web add ${spec}`, added: '2026-01-01', stars: 1, installCount: 1,
+          npmDownloads7d: null, pushedAt: '', updatedAt: '',
+        }],
+        categories: [], total: 1, totalPages: 1, page: 1, limit: 20,
+      },
+    })),
+  }
+  const useStore = (select: (state: { open: boolean }) => unknown): unknown => select({ open: true })
+  render(createElement(PluginCatalogPanel, {
+    api: catalog,
+    pluginManager: { installBundle },
+    language: () => 'zh',
+    useStore,
+    actions: { close: vi.fn() },
+    t: translate,
+  } as never))
+
+  fireEvent.click(await screen.findByRole('button', { name: en.install }))
+  expect(await screen.findByText('Network connection failed')).toBeTruthy()
+
+  // Clicking "重试" triggers installBundle again
+  fireEvent.click(screen.getByRole('button', { name: '重试' }))
+  expect(await screen.findByText('插件安装成功！已在 Profile 中启用。')).toBeTruthy()
+  expect(installBundle).toHaveBeenCalledTimes(2)
 })

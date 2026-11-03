@@ -750,8 +750,9 @@ class FaceAnalyzer {
     for (const [subpath, target] of targets) {
       if (target.includes('*') || subpath === './package.json'
         || subpath === './typert' || subpath === './client/typert' || subpath === './remote'
-        // Data exports (bundle patch lists, JSON manifests) carry no TypeScript API.
-        || target.endsWith('.json') || target.endsWith('.yml') || target.endsWith('.yaml')) continue
+        // Data exports (bundle patch lists, JSON manifests) and asset exports carry no TypeScript API.
+        || target.endsWith('.json') || target.endsWith('.yml') || target.endsWith('.yaml')
+        || target.endsWith('.svg') || target.endsWith('.png') || target.endsWith('.ico')) continue
       const sourcePath = sourcePathForExport(registration.root, target)
       const sourceFile = this.sourceFiles.get(realPath(sourcePath))
       if (sourceFile === undefined) {
@@ -2873,13 +2874,21 @@ function exportTarget(value: unknown): string | undefined {
 
 function sourcePathForExport(packageRoot: string, target: string): string {
   const normalized = target.replace(/^\.\//, '')
+  let candidate = resolve(packageRoot, normalized)
   if (normalized.startsWith('lib/types/')) {
-    return resolve(packageRoot, 'src', normalized.slice('lib/types/'.length).replace(/\.d\.(?:mts|cts|ts)$/, '.ts'))
+    candidate = resolve(packageRoot, 'src', normalized.slice('lib/types/'.length).replace(/\.d\.(?:mts|cts|ts)$/, '.ts'))
+  } else if (normalized.startsWith('lib/')) {
+    candidate = resolve(packageRoot, 'src', normalized.slice('lib/'.length).replace(/\.(?:mjs|cjs|js|d\.ts)$/, '.ts'))
   }
-  if (normalized.startsWith('lib/')) {
-    return resolve(packageRoot, 'src', normalized.slice('lib/'.length).replace(/\.(?:mjs|cjs|js|d\.ts)$/, '.ts'))
-  }
-  return resolve(packageRoot, normalized)
+  if (existsSync(candidate)) return candidate
+  const tsxCandidate = candidate.replace(/\.ts$/, '.tsx')
+  if (existsSync(tsxCandidate)) return tsxCandidate
+  const baseName = candidate.replace(/\.ts$/, '')
+  const indexTs = resolve(baseName, 'index.ts')
+  if (existsSync(indexTs)) return indexTs
+  const indexTsx = resolve(baseName, 'index.tsx')
+  if (existsSync(indexTsx)) return indexTsx
+  return candidate
 }
 
 function preferredDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {

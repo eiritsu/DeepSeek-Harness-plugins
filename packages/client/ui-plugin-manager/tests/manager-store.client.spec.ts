@@ -604,6 +604,16 @@ describe('PluginManagerController', () => {
     expect(track).toHaveBeenCalledExactlyOnceWith('plugin_add_button_click', {})
   })
 
+  it('automatically triggers installation when openInstall is called with autoRun: true', async () => {
+    const gate = deferred<ReturnType<typeof ok<ChangeResult>>>()
+    const { plugins, face, state, controller } = bench({ installBundle: vi.fn().mockReturnValueOnce(gate.promise) })
+    await controller.load()
+    face.openInstall('dsh-autorun', { autoRun: true })
+    expect(state().install).toMatchObject({ open: true, spec: 'dsh-autorun', phase: 'checking' })
+    await vi.waitFor(() => { expect(plugins.installBundle).toHaveBeenCalledOnce() })
+    gate.resolve(ok({ ...APPLIED, bundle: 'dsh-autorun' }))
+  })
+
   it('keeps the spec and progress of an install a prefilled openInstall would disturb', async () => {
     const gate = deferred<ReturnType<typeof ok<ChangeResult>>>()
     const { plugins, face, state, controller, started } = bench({ installBundle: vi.fn().mockReturnValueOnce(gate.promise) })

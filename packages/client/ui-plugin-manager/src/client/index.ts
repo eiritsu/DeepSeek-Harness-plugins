@@ -41,11 +41,12 @@ declare module '@deepseek-ai/cordis' {
       openBundle(packageName: string): void
       /**
        * Open the official install dialog with a package spec prefilled.
-       * The dialog does not inspect or install until the user confirms.
+       * The dialog does not inspect or install until the user confirms, unless autoRun is requested.
        * An existing installation keeps its spec and progress.
        * @param spec - npm package, GitHub, or other spec accepted by the Host.
+       * @param options - optional navigation options, e.g. { autoRun: true }.
        */
-      openInstall(spec: string): void
+      openInstall(spec: string, options?: { autoRun?: boolean }): void
     }
   }
 }
@@ -140,10 +141,10 @@ export function apply(ctx: ClientContext): void {
         ctx.layout.selectPanel(PANEL_ID)
         instance.actions.setView({ kind: 'package', name: packageName })
       },
-      openInstall: (spec: string) => {
+      openInstall: (spec: string, options?: { autoRun?: boolean }) => {
         ctx.layout.selectPanel(PANEL_ID)
         instance.actions.setView({ kind: 'list' })
-        face.openInstall(spec)
+        face.openInstall(spec, options)
       },
     })
     yield () => { void disposeNavigation() }

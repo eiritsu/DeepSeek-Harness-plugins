@@ -309,7 +309,7 @@ export interface PluginManagerFace {
   ensure: () => void
   /** Read the Host again. */
   refresh: () => void
-  openInstall: (spec?: string) => void
+  openInstall: (spec?: string, options?: { autoRun?: boolean }) => void
   /** Hide immediately, abort a check, or request cancellation while retaining the Host-owned installation. */
   closeInstall: () => void
   editInstallSpec: (text: string) => void
@@ -559,7 +559,7 @@ export class PluginManagerController {
       configForm: id => this.ctx.configForms.get(id),
       ensure: () => { if (this.getSnapshot().status === 'idle') void this.load() },
       refresh: () => { void this.refresh() },
-      openInstall: (spec) => {
+      openInstall: (spec, options) => {
         if (spec === undefined) this.ctx.get('productAnalytics')?.track('plugin_add_button_click', {})
         const install = this.getSnapshot().install
         // A spec always opens its own dialog unless an install is actually in
@@ -578,6 +578,9 @@ export class PluginManagerController {
           const read: RegistryRead = { choice: this.getSnapshot().install.registry }
           this.registryRead = read
           read.done = this.readRegistries(read).finally(() => { delete read.done })
+          if (options?.autoRun === true && spec !== undefined && spec.trim() !== '') {
+            void this.runInstall()
+          }
         } else {
           this.patchInstall({ open: true })
         }

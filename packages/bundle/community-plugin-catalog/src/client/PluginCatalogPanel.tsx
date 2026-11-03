@@ -1,15 +1,26 @@
 /** Category-filtered community plugin discovery and navigation to official installation. */
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Button, IconClockOutlineRegular, IconCloseOutlineRegular, IconDownloadOutlineRegular, IconSearchOutlineRegular, Input, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PluginCatalogPage as CatalogPage, PluginCatalogSort } from '@deepseek-ai/dsh-community-plugin-catalog/types'
 import type { InjectFace, PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
+import { CatalogInstallDialog, type PluginManagerClientFace } from './CatalogInstallDialog.tsx'
 import type { createPluginCatalogStore } from './store.ts'
 import type { PluginCatalogKey } from './locales.ts'
 import css from './PluginCatalogPage.module.css'
 
 export interface PluginCatalogPanelInjected {
-  readonly api: { catalog(query?: string, category?: string, sort?: PluginCatalogSort, page?: number, limit?: number): Promise<RemotePage> }
-  readonly openInstall: (spec: string) => void
+  readonly api: {
+    catalog(query?: string, category?: string, sort?: PluginCatalogSort, page?: number, limit?: number): Promise<RemotePage>
+    install?(spec: string): Promise<{ ok: boolean; bundle?: string; error?: string }>
+    listInstalled?(): Promise<{ ok: boolean; installed: string[] }>
+  }
+  readonly pluginManager?: PluginManagerClientFace
+  readonly onInstallLog?: (listener: (chunk: { requestId?: string; data: string; stream?: string }) => void) => () => void
+  readonly onInstallState?: (
+    listener: (state: { requestId?: string; phase: string; attempt?: { registry: string; index: number; total: number } }) => void,
+  ) => () => void
+  readonly onChanged?: (listener: () => void) => () => void
+  readonly openInstall?: (spec: string, options?: { autoRun?: boolean }) => void
   readonly language: () => 'zh' | 'en'
 }
 
@@ -26,7 +37,18 @@ const SORTS: readonly PluginCatalogSort[] = ['stars', 'npm', 'installs', 'newest
  * @param props Remote source, localized controls, overlay visibility, and install navigation.
  * @returns the modal layer while the sidebar entry is open.
  */
-export function PluginCatalogPanel({ api, openInstall, useStore, actions, t, language }: Props): ReactNode {
+export function PluginCatalogPanel({
+  api,
+  pluginManager,
+  onInstallLog,
+  onInstallState,
+  onChanged,
+  openInstall,
+  useStore,
+  actions,
+  t,
+  language,
+}: Props): ReactNode {
   const { open } = useStore(state => state)
   const [draft, setDraft] = useState('')
   const [query, setQuery] = useState('')
@@ -40,9 +62,40 @@ export function PluginCatalogPanel({ api, openInstall, useStore, actions, t, lan
   const [error, setError] = useState<string>()
   const [failedKey, setFailedKey] = useState('')
 
+  const [installedBundles, setInstalledBundles] = useState<Set<string>>(new Set())
+  const [installTarget, setInstallTarget] = useState<{ name: string; spec: string; description?: string } | null>(null)
+
   const requestKey = JSON.stringify([query, category, sort, pageNumber])
   const currentPage = resolvedKey === requestKey
   const categories = currentPage ? page?.categories : undefined
+
+  const loadInstalled = useCallback(async () => {
+    try {
+      if (pluginManager?.listBundles) {
+        const res = await pluginManager.listBundles()
+        type BundleItem = { name: string; installed?: boolean }
+        const wrapped = res as { ok?: boolean; value?: BundleItem[] }
+        const bundles: BundleItem[] = Array.isArray(res) ? res : (wrapped?.value ?? [])
+        setInstalledBundles(new Set(bundles.filter(b => b.installed).map(b => b.name)))
+        return
+      }
+      if (api.listInstalled) {
+        const res = await api.listInstalled()
+        if (res.ok && res.installed) {
+          setInstalledBundles(new Set(res.installed))
+        }
+      }
+    } catch {
+      // Ignore inventory read failures
+    }
+  }, [api, pluginManager])
+
+  useEffect(() => {
+    if (!open) return
+    void loadInstalled()
+    const dispose = onChanged?.(() => { void loadInstalled() })
+    return () => { dispose?.() }
+  }, [loadInstalled, onChanged, open])
 
   useEffect(() => {
     if (!open) return
@@ -64,21 +117,31 @@ export function PluginCatalogPanel({ api, openInstall, useStore, actions, t, lan
     return () => { current = false }
   }, [api, category, open, pageNumber, query, requestKey, retry, sort])
 
+  const handleInstalled = useCallback((targetSpec: string, bundle?: string) => {
+    setInstalledBundles((prev) => {
+      const next = new Set(prev)
+      next.add(targetSpec)
+      if (bundle) next.add(bundle)
+      return next
+    })
+  }, [])
+
   const close = (): void => { actions.close() }
   const search = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
     setPageNumber(1)
     setQuery(draft.trim())
   }
-  const install = (command: string): void => {
+  const install = (command: string, name: string, description?: string): void => {
     const spec = parseCatalogInstall(command)
     if (spec === undefined) {
       setError(t('installHint'))
       setFailedKey(requestKey)
       return
     }
-    actions.close()
-    openInstall(spec)
+    // Do NOT close the catalog! Open the official installation dialog overlay.
+    setInstallTarget({ name, spec, description })
+    openInstall?.(spec, { autoRun: true })
   }
 
   const activeLanguage = language()
@@ -115,22 +178,49 @@ export function PluginCatalogPanel({ api, openInstall, useStore, actions, t, lan
       {errorText !== undefined ? <div className={css.error} role="alert"><span>{errorText}</span><Button variant="outline" size="sm" onClick={() => { setRetry(value => value + 1) }}>{t('retry')}</Button></div> : null}
       <div className={css.list} aria-busy={loading}>
         {loading ? <p className={css.status} role="status">{t('loading')}</p> : null}
-        {currentPage ? page?.plugins.map((plugin, index) => <article key={plugin.id} className={css.row}>
-          <span className={css.rank}>{String((pageNumber - 1) * PAGE_SIZE + index + 1).padStart(2, '0')}</span>
-          <div className={css.main}>
-            <div className={css.nameLine}><a className={css.name} href={plugin.url} target="_blank" rel="noopener noreferrer">{plugin.name}</a><span className={css.repo}>{plugin.owner} / {plugin.url.split('/').at(-1)}</span></div>
-            <p className={css.summary}>{activeLanguage === 'zh' ? plugin.description.zh : plugin.description.en}</p>
-          </div>
-          <span className={css.tag}>{page.categories.find(row => row.id === plugin.category)?.[activeLanguage] ?? plugin.category}</span>
-          <span className={css.metric} title={t('starsCount', { count: plugin.stars.toLocaleString() })}>{t('stars')}: {plugin.stars.toLocaleString()}</span>
-          <span className={`${css.metric} ${css.metricWithIcon}`} title={t('installsCount', { count: plugin.installCount.toLocaleString() })}>
-            <IconDownloadOutlineRegular size={14} />{t('installsCount', { count: plugin.installCount.toLocaleString() })}
-          </span>
-          <time className={css.date} dateTime={plugin.added} aria-label={t('addedDate', { date: plugin.added })} title={t('addedDate', { date: plugin.added })}>
-            <IconClockOutlineRegular size={14} />{plugin.added}
-          </time>
-          <Button variant="outline" size="sm" onClick={() => { install(plugin.install) }}>{t('install')}</Button>
-        </article>) : null}
+        {currentPage ? page?.plugins.map((plugin, index) => {
+          const spec = parseCatalogInstall(plugin.install)
+          const isInstalled = (spec !== undefined && installedBundles.has(spec)) || installedBundles.has(plugin.name)
+          const isCurrentInstalling = installTarget !== null && installTarget.spec === spec
+
+          return (
+            <article key={plugin.id} className={css.row}>
+              <span className={css.rank}>{String((pageNumber - 1) * PAGE_SIZE + index + 1).padStart(2, '0')}</span>
+              <div className={css.main}>
+                <div className={css.nameLine}><a className={css.name} href={plugin.url} target="_blank" rel="noopener noreferrer">{plugin.name}</a><span className={css.repo}>{plugin.owner} / {plugin.url.split('/').at(-1)}</span></div>
+                <p className={css.summary}>{activeLanguage === 'zh' ? plugin.description.zh : plugin.description.en}</p>
+              </div>
+              <span className={css.tag}>
+                {page.categories.find(row => row.id === plugin.category)?.[activeLanguage] ?? plugin.category}
+              </span>
+              <span className={css.metric} title={t('starsCount', { count: plugin.stars.toLocaleString() })}>{t('stars')}: {plugin.stars.toLocaleString()}</span>
+              <span className={`${css.metric} ${css.metricWithIcon}`} title={t('installsCount', { count: plugin.installCount.toLocaleString() })}>
+                <IconDownloadOutlineRegular size={14} />{t('installsCount', { count: plugin.installCount.toLocaleString() })}
+              </span>
+              <time className={css.date} dateTime={plugin.added} aria-label={t('addedDate', { date: plugin.added })} title={t('addedDate', { date: plugin.added })}>
+                <IconClockOutlineRegular size={14} />{plugin.added}
+              </time>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isInstalled || isCurrentInstalling}
+                onClick={() => {
+                  install(
+                    plugin.install,
+                    plugin.name,
+                    activeLanguage === 'zh' ? plugin.description.zh : plugin.description.en,
+                  )
+                }}
+              >
+                {isInstalled
+                  ? (activeLanguage === 'zh' ? '已安装' : 'Installed')
+                  : isCurrentInstalling
+                    ? (activeLanguage === 'zh' ? '安装中…' : 'Installing…')
+                    : t('install')}
+              </Button>
+            </article>
+          )
+        }) : null}
         {currentPage && page !== undefined && page.plugins.length === 0 && !busy ? <p className={css.status}>{t('empty')}</p> : null}
       </div>
       <footer className={css.pagination}>
@@ -140,6 +230,26 @@ export function PluginCatalogPanel({ api, openInstall, useStore, actions, t, lan
       </footer>
       <p className={css.hint}>{t('installHint')}</p>
     </div>
+
+    {installTarget !== null ? (
+      <CatalogInstallDialog
+        target={installTarget}
+        pluginManager={pluginManager ?? (typeof api.install === 'function' ? {
+          installBundle: async (targetSpec) => {
+            const apiInstall = api.install
+            if (!apiInstall) return { ok: false, error: { message: 'Installation unsupported' } }
+            const res = await apiInstall(targetSpec)
+            return res.ok ? { ok: true, value: { bundle: res.bundle } } : { ok: false, error: { message: res.error } }
+          },
+        } : undefined)}
+        onInstallLog={onInstallLog}
+        onInstallState={onInstallState}
+        language={activeLanguage}
+        onClose={() => { setInstallTarget(null) }}
+        onInstalled={handleInstalled}
+        t={t}
+      />
+    ) : null}
   </Modal>
 }
 
