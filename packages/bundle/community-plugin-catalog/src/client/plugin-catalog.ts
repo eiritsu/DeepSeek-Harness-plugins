@@ -17,8 +17,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap { pluginCatalog: keyof typeof zh }
 }
 
-/** Services required by the catalog overlay and its official install navigation. */
-export const inject = ['slots', 'locale', 'remote', 'pluginNavigation']
+/** Services required by the catalog overlay. */
+export const inject = ['slots', 'locale', 'remote']
 
 /** Mount the catalog Remote and register its sidebar action and overlay.
  * @param ctx Browser services supplied by the dynamic Client plugin runner.

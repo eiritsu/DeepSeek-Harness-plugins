@@ -51,3 +51,30 @@ it('mounts its Remote, registers the overlay and invokes pluginNavigation.openIn
   expect(openInstall).toHaveBeenCalledOnce()
   expect(openInstall).toHaveBeenCalledWith('@acme/dsh-test-plugin')
 })
+
+it('loads successfully without pluginNavigation at startup and registers sidebar action and overlay', async () => {
+  const ctx = new Context()
+  onTestFinished(async () => { await ctx.fiber.dispose() })
+  await ctx.plugin(SlotRegistry).await()
+  ctx.provide('locale', new LocaleRuntime(ctx))
+
+  const mount = vi.fn(async () => {
+    ctx.provide('remote.pluginCatalog', { catalog: vi.fn() })
+    return async () => {}
+  })
+  ctx.provide('remote', { $mount: mount } as never)
+
+  const slots = ctx.get('slots') as SlotRegistry
+  slots.register({ name: 'root', children: {
+    'sidebar.footer.action': { kind: 'list', scope: 'root' },
+    'shell.overlay': { kind: 'list', scope: 'root' },
+  } } as never, () => null)
+
+  expect(inject).toEqual(['slots', 'locale', 'remote'])
+  const fiber = ctx.plugin({ inject: [...inject], apply })
+  await fiber.await()
+
+  expect(mount).toHaveBeenCalledOnce()
+  expect(slots.entries('sidebar.footer.action').map(entry => entry.options.id)).toContain('plugin-catalog')
+  expect(slots.entries('shell.overlay').map(entry => entry.options.id)).toContain('plugin-catalog')
+})
