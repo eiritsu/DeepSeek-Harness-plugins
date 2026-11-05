@@ -64,9 +64,11 @@
     },
     "client": {
       "inject": [
+        "@deepseek-ai/dsh-client-connection",
         "@deepseek-ai/dsh-api-remotes",
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-store",
+        "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-ui-plugin-manager",
         "@deepseek-ai/dsh-client-ui-primitives",
         "@deepseek-ai/dsh-client-ui-renderer",
@@ -84,8 +86,10 @@
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
     "@deepseek-ai/dsh-api-remotes": "workspace:*",
+    "@deepseek-ai/dsh-client-connection": "workspace:*",
     "@deepseek-ai/dsh-client-locale": "workspace:*",
     "@deepseek-ai/dsh-client-store": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-layout": "workspace:*",
     "@deepseek-ai/dsh-client-ui-plugin-manager": "workspace:*",
     "@deepseek-ai/dsh-client-ui-primitives": "workspace:*",
     "@deepseek-ai/dsh-client-ui-renderer": "workspace:*",
