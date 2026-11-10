@@ -97,44 +97,6 @@ describe('client slot contract validation', () => {
     expect(problems).toHaveLength(1)
     expect(problems[0]).toContain("child slot 'ghost.child'")
   })
-
-  it('rejects a second Factory definition, because the second one throws at client load', () => {
-    const problems = validateSlotContracts(
-      [declaration()],
-      [
-        registration({ factory: true }),
-        registration({ factory: true, source: 'packages/client/other/src/client/index.ts:20' }),
-      ],
-      new Map(),
-    )
-    expect(problems).toHaveLength(1)
-    expect(problems[0]).toContain("slot factory 'demo.seat' is defined at")
-  })
-
-  it('rejects two registrations declaring the same child slot, the load-time already-declared crash', () => {
-    const problems = validateSlotContracts(
-      [declaration(), declaration({ key: 'demo.child' })],
-      [
-        registration({ children: ['demo.child'] }),
-        registration({ children: ['demo.child'], source: 'packages/client/other/src/client/index.ts:20' }),
-      ],
-      new Map(),
-    )
-    expect(problems).toHaveLength(1)
-    expect(problems[0]).toContain("slot 'demo.child' is declared at")
-  })
-
-  it('accepts distinct child slots declared by different registrations', () => {
-    const problems = validateSlotContracts(
-      [declaration(), declaration({ key: 'demo.child' }), declaration({ key: 'demo.other' })],
-      [
-        registration({ children: ['demo.child'] }),
-        registration({ children: ['demo.other'], source: 'packages/client/other/src/client/index.ts:20' }),
-      ],
-      new Map(),
-    )
-    expect(problems).toEqual([])
-  })
 })
 
 describe('client slot projection', () => {

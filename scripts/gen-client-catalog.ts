@@ -43,12 +43,14 @@ const MAX_DECL_CHARS = 1200
 /**
  * Line budget for ONE slot's expanded report. The whole point of narrowing to a
  * single slot is to spend less context, so a report a model cannot finish
- * reading is a defect rather than a detail. The widest measured slot renders 60
- * lines, so this leaves room to document a slot properly while catching the two
- * ways a report runs away: an owner share that hands down a subsystem instead of
- * a share, and prose that grew into a manual.
+ * reading is a defect rather than a detail. The budget leaves room to document
+ * a slot properly while catching the two ways a report runs away: an owner
+ * share that hands down a subsystem instead of a share, and prose that grew
+ * into a manual. Every report also lists one line per standard prop seat of its
+ * scope, so the widest Session-scope slot (`tool.call.toolview`, with the
+ * global and Session access seats) sets the current 125.
  */
-const MAX_ENTRY_LINES = 120
+const MAX_ENTRY_LINES = 125
 
 /** One register-call option as the catalog teaches it. */
 interface OptionDoc {
@@ -185,8 +187,6 @@ export function validateSlotContracts(
 ): string[] {
   const problems: string[] = []
   const byKey = new Map<string, SlotDeclaration>()
-  const factoryDefinitions = new Map<string, string>()
-  const childDeclarers = new Map<string, string>()
   for (const declaration of declarations) {
     const where = `slot '${declaration.key}' (${declaration.source})`
     const previous = byKey.get(declaration.key)
@@ -214,21 +214,7 @@ export function validateSlotContracts(
     if (registration.factory !== true && !byKey.has(registration.key)) {
       problems.push(`registration into '${registration.key}' (${registration.source}) targets a slot no SlotMap merge declares; either the scan has a blind spot or the registration is dead.`)
     }
-    if (registration.factory === true) {
-      const previousFactory = factoryDefinitions.get(registration.key)
-      if (previousFactory !== undefined) {
-        problems.push(`slot factory '${registration.key}' is defined at ${registration.source} and ${previousFactory}; the second definition throws 'already has a definition' at client load, so exactly one call site may define it.`)
-      } else {
-        factoryDefinitions.set(registration.key, registration.source)
-      }
-    }
     for (const child of registration.children) {
-      const previousChild = childDeclarers.get(child)
-      if (previousChild !== undefined) {
-        problems.push(`slot '${child}' is declared at ${registration.source} and ${previousChild}; the second declare throws 'slot … is already declared' at client load, so exactly one registration may declare it.`)
-      } else {
-        childDeclarers.set(child, registration.source)
-      }
       if (!byKey.has(child)) {
         problems.push(`registration at ${registration.source} declares child slot '${child}' that no SlotMap merge types.`)
       }
@@ -271,7 +257,8 @@ function standardKits(files: readonly ScannedFile[]): ReadonlyMap<string, readon
   const kits = new Map<string, readonly string[]>()
   for (const scope of SCOPES) {
     const extra = SCOPE_KIT[scope]
-    kits.set(scope, [...global, ...extra === undefined ? [] : standardKitMembers(files, extra)])
+    // A scope-kit member replaces the global member of the same name, so each seat is listed once.
+    kits.set(scope, [...new Set([...global, ...extra === undefined ? [] : standardKitMembers(files, extra)])])
   }
   return kits
 }

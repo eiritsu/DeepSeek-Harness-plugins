@@ -8,6 +8,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-community-plugin-catalog/remote'
 import TYPERT_REMOTE from '@deepseek-ai/dsh-community-plugin-catalog/remote'
 import { PluginCatalogAction } from './PluginCatalogAction.tsx'
+import { PluginCatalogAddAction } from './PluginCatalogAddAction.tsx'
 import { PluginCatalogPanel, type PluginCatalogPanelInjected } from './PluginCatalogPanel.tsx'
 import type { PluginManagerClientFace } from './CatalogInstallDialog.tsx'
 import { createPluginCatalogStore } from './store.ts'
@@ -62,6 +63,9 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
     clientCtx.slots.inject('sidebar.footer.action', () => clientCtx.slots.register({
       name: 'sidebar.footer.action', id: 'plugin-catalog', order: 20, locale: NS, store, inject: injection,
     }, PluginCatalogAction))
+    clientCtx.slots.inject('plugins.add.actions', () => clientCtx.slots.register({
+      name: 'plugins.add.actions', id: 'community-plugin-catalog', order: 10, locale: NS, store, inject: injection,
+    }, PluginCatalogAddAction))
     clientCtx.slots.inject('shell.overlay', () => clientCtx.slots.register({
       name: 'shell.overlay', id: 'plugin-catalog', locale: NS, store, inject: injection,
     }, PluginCatalogPanel))

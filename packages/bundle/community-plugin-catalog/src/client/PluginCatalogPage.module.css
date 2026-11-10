@@ -215,6 +215,17 @@
   margin-top: auto;
   padding-top: 6px;
 }
+.addMenuItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+.addMenuDescription {
+  font-size: 11px;
+  opacity: 0.65;
+  line-height: 1.3;
+}
 @media (max-width: 1000px) {
   .panel { padding: 16px; }
   .row { grid-template-columns: 24px minmax(0, 1fr) auto auto; gap: 10px; }

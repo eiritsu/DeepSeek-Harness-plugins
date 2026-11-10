@@ -31,6 +31,7 @@ it('mounts its Remote, registers the overlay and invokes pluginNavigation.openIn
   const slots = ctx.get('slots') as SlotRegistry
   slots.register({ name: 'root', children: {
     'sidebar.footer.action': { kind: 'list', scope: 'root' },
+    'plugins.add.actions': { kind: 'list', scope: 'root' },
     'shell.overlay': { kind: 'list', scope: 'root' },
   } } as never, () => null)
 
@@ -39,6 +40,7 @@ it('mounts its Remote, registers the overlay and invokes pluginNavigation.openIn
 
   expect(mount).toHaveBeenCalledOnce()
   expect(slots.entries('sidebar.footer.action').map(entry => entry.options.id)).toContain('plugin-catalog')
+  expect(slots.entries('plugins.add.actions').map(entry => entry.options.id)).toContain('community-plugin-catalog')
   expect(slots.entries('shell.overlay').map(entry => entry.options.id)).toContain('plugin-catalog')
 
   const overlayEntry = slots.entries('shell.overlay').find(entry => entry.options.id === 'plugin-catalog')
@@ -67,6 +69,7 @@ it('loads successfully without pluginNavigation at startup and registers sidebar
   const slots = ctx.get('slots') as SlotRegistry
   slots.register({ name: 'root', children: {
     'sidebar.footer.action': { kind: 'list', scope: 'root' },
+    'plugins.add.actions': { kind: 'list', scope: 'root' },
     'shell.overlay': { kind: 'list', scope: 'root' },
   } } as never, () => null)
 
@@ -76,5 +79,6 @@ it('loads successfully without pluginNavigation at startup and registers sidebar
 
   expect(mount).toHaveBeenCalledOnce()
   expect(slots.entries('sidebar.footer.action').map(entry => entry.options.id)).toContain('plugin-catalog')
+  expect(slots.entries('plugins.add.actions').map(entry => entry.options.id)).toContain('community-plugin-catalog')
   expect(slots.entries('shell.overlay').map(entry => entry.options.id)).toContain('plugin-catalog')
 })

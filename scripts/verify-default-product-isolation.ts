@@ -2,12 +2,6 @@
  * Keep experimental packages outside default installations, runtime imports, and shipped compositions.
  * The one declared exception is a bundle the launcher names in `OPTIONAL_BUNDLES`: shipped for the person to
  * switch on, selected by no shipped template, its own dependency graph outside the default product's.
- *
- * The Electron application (`apps/desktop`, `apps/desktop-host`) and the Desktop profile template are a
- * separate deployment product, not the npm default: the Desktop bundle is a public experimental package that
- * may depend on other experimental packages, and the private Desktop Host is its dependency root. This gate
- * therefore checks the default product roots only; the workspace-constraints gate still keeps every release
- * member outside the experimental dependency rule.
  */
 
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs'
@@ -26,17 +20,10 @@ import {
   collectRuntimeSourceSpecifiers,
 } from './verify-client-packages.ts'
 
-const EXPERIMENTAL_PREFIX = '@deepseek-ai/dsh-experimental-'
+import { isExperimentalPackageName } from './experimental-package-policy.ts'
 // The independently published entry package owns platform-engine dependencies.
 const EXTERNAL_KIT_PACKAGES = new Set(['@deepseek-ai/libreoffice-kit'])
-// The Electron Desktop product is a separate deployment product: the Desktop
-// template and the private Desktop Host dependency root name this public
-// experimental bundle. Those two references are not npm-default-product
-// requirements; the workspace-constraints gate still keeps every release member
-// outside the experimental dependency rule.
-const DESKTOP_PRODUCT_BUNDLE = '@deepseek-ai/dsh-experimental-desktop-app'
-const ELECTRON_DEPLOYMENT_ROOTS = new Set(['apps/desktop', 'apps/desktop-host'])
-const PROFILE_SOURCE = 'packages/boot/app-boot/src/profile.ts'
+const PROFILE_SOURCE = 'packages/util/official-bundles/src/bundles.ts'
 const PRESET_PATTERN = 'packages/bundle/web-app/presets/*.patch.yml'
 const RUNTIME_SECTIONS = ['dependencies', 'optionalDependencies', 'peerDependencies'] as const
 
@@ -107,19 +94,12 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
     if (manifest?.dsh?.bundle?.patch === undefined) {
       failures.push(`${PROFILE_SOURCE}: optional bundle ${name} must declare dsh.bundle.patch`)
     }
-    if (typeof manifest?.icon !== 'string') {
-      failures.push(`${PROFILE_SOURCE}: optional bundle ${name} must declare an icon`)
+    if (typeof manifest?.icon !== 'string' && manifest?.exports?.['./icon'] == null) {
+      failures.push(`${PROFILE_SOURCE}: optional bundle ${name} must declare icon or export ./icon`)
     }
     if (manifest?.exports?.['./locale/*.json'] === undefined) {
       failures.push(`${PROFILE_SOURCE}: optional bundle ${name} must export ./locale/*.json display metadata`)
     }
-  }
-
-  // The Desktop template belongs to the Electron product, but it must still name
-  // the Desktop bundle so the separate-product exception cannot silently widen.
-  if (selection !== undefined && selection.desktopBundles.length > 0
-    && !selection.desktopBundles.includes(DESKTOP_PRODUCT_BUNDLE)) {
-    failures.push(`${PROFILE_SOURCE}: Desktop template must name ${DESKTOP_PRODUCT_BUNDLE}`)
   }
 
   const queue: Package[] = []
@@ -127,7 +107,7 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
   const sources = new Set<string>()
   const configs = new Set<string>()
   let webPluginCount = 0
-  const isExperimental = (pkg: Package): boolean => pkg.manifest.name.startsWith(EXPERIMENTAL_PREFIX)
+  const isExperimental = (pkg: Package): boolean => isExperimentalPackageName(pkg.manifest.name)
     || display(pkg.directory).startsWith('packages/experimental/')
   const add = (pkg: Package, origin: string): void => {
     if (isExperimental(pkg)) {
@@ -156,7 +136,7 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
       return
     }
     const packageName = barePackageName(name)
-    if (packageName.startsWith(EXPERIMENTAL_PREFIX)) {
+    if (isExperimentalPackageName(packageName)) {
       failures.push(`${origin} -> ${name}: default product must not include experimental packages`)
       return
     }
@@ -166,9 +146,6 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
     else if (packageName.startsWith('@deepseek-ai/')) failures.push(`${origin}: unknown workspace package ${name}`)
   }
   const dependency = (name: string, range: string, owner: Package, origin: string): void => {
-    // The Desktop Host is the private dependency root of the Electron product;
-    // its edge to the Desktop bundle is not a default-product requirement.
-    if (ELECTRON_DEPLOYMENT_ROOTS.has(display(owner.directory)) && name === DESKTOP_PRODUCT_BUNDLE) return
     reference(name, origin, owner)
     if (/^(?:file:|link:|workspace:\.)/.test(range)) {
       reference(range.replace(/^workspace:/, ''), origin, owner)
@@ -316,7 +293,8 @@ export function verifyDefaultProductIsolation(root: string): ProductIsolationRes
     const { manifest } = pkg
     for (const section of RUNTIME_SECTIONS) {
       for (const [name, range] of Object.entries(manifest[section] ?? {})) {
-        if (pkg === cli && section === 'dependencies' && optionalBundles.has(name)) continue
+        const target = packages.get(name)
+        if (pkg === cli && section === 'dependencies' && optionalBundles.has(name) && target !== undefined && isExperimental(target)) continue
         dependency(name, range, pkg, `${manifest.name} ${section}`)
       }
     }
@@ -378,27 +356,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** Read the literal package lists that define installation-owned profile defaults and the optional bundles it ships. */
-function profilePackages(source: string): {
-  packages: string[]
-  webBundles: string[]
-  optionalBundles: string[]
-  desktopBundles: string[]
-} {
+function profilePackages(source: string): { packages: string[]; webBundles: string[]; optionalBundles: string[] } {
   const file = ts.createSourceFile(PROFILE_SOURCE, source, ts.ScriptTarget.Latest, true)
   const required = new Set(['PROFILE_TEMPLATES', 'DEFAULT_PROFILE_BUNDLES'])
   const found = new Set<string>()
   const packages: string[] = []
   const webBundles: string[] = []
   const optionalBundles: string[] = []
-  const desktopBundles: string[] = []
   const literals = (node: ts.Node, path: string[]): void => {
     if (ts.isStringLiteralLike(node)) {
-      // The Electron Desktop template and its retired tuple are a separate
-      // deployment product, so their bundle names are not npm default bundles.
-      const desktopProduct = path[0] === 'PROFILE_TEMPLATES' && path[1] === 'desktop'
-        || path[0] === 'INSTALLATION_OWNED_PROFILE_TUPLES' && path[1] === 'desktop'
       if (path[0] === 'OPTIONAL_BUNDLES') optionalBundles.push(node.text)
-      else if (desktopProduct) desktopBundles.push(node.text)
       else if (node.text.startsWith('@')) packages.push(node.text)
       if (path.join('.') === 'PROFILE_TEMPLATES.web.bundles') webBundles.push(node.text)
     } else if (ts.isArrayLiteralExpression(node)) node.elements.forEach((child) => { literals(child, path) })
@@ -430,7 +397,7 @@ function profilePackages(source: string): {
   }
   if (found.size !== required.size) throw new Error(`${PROFILE_SOURCE}: missing default profile declarations`)
   if (webBundles.length === 0) throw new Error(`${PROFILE_SOURCE}: missing default Web bundle list`)
-  return { packages, webBundles, optionalBundles, desktopBundles }
+  return { packages, webBundles, optionalBundles }
 }
 
 if (import.meta.main) {

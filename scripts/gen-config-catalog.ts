@@ -293,7 +293,7 @@ function schemaAlias(world: World, ctx: FileCtx, name: string): { ctx: FileCtx; 
   if (imported === undefined || imported.typeOnly || imported.imported === '*' || imported.imported === 'default') {
     throw new Error(`schema alias '${name}' must name a const or named value import`)
   }
-  const target = imported.specifier.startsWith('.')
+  const target = imported.specifier.startsWith('.') && imported.specifier.endsWith('.ts')
     ? loadRelative(world, ctx, imported.specifier)
     : loadWorkspaceSource(world, ctx, imported.specifier)
   const expr = schemaConst(target, imported.imported, true)
@@ -654,24 +654,12 @@ function findInject(ctx: FileCtx, pluginClass: ts.ClassDeclaration | null, viola
 
 /** Resolve the entry file's default export to its class/function declaration
  * (mirroring the Loader's `unwrapExports`), or null when there is none. */
-function defaultExport(ctx: FileCtx, world: World): ts.ClassDeclaration | ts.FunctionDeclaration | null {
-  const declaration = (file: FileCtx, name: string): ts.ClassDeclaration | ts.FunctionDeclaration | null => {
-    for (const stmt of file.sf.statements) {
-      if ((ts.isClassDeclaration(stmt) || ts.isFunctionDeclaration(stmt)) && stmt.name?.text === name) return stmt
-    }
-    return null
-  }
+function defaultExport(ctx: FileCtx): ts.ClassDeclaration | ts.FunctionDeclaration | null {
   for (const stmt of ctx.sf.statements) {
     if (ts.isExportAssignment(stmt) && !stmt.isExportEquals && ts.isIdentifier(stmt.expression)) {
       const name = stmt.expression.text
-      const local = declaration(ctx, name)
-      if (local) return local
-      const imported = ctx.imports.get(name)
-      if (imported?.specifier.startsWith('.')) {
-        if (imported.imported === 'default') return null
-        const target = loadRelative(world, ctx, imported.specifier)
-        const exported = declaration(target, imported.imported)
-        if (exported?.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword)) return exported
+      for (const s of ctx.sf.statements) {
+        if ((ts.isClassDeclaration(s) || ts.isFunctionDeclaration(s)) && s.name?.text === name) return s
       }
       return null
     }
@@ -739,7 +727,7 @@ export function collectConfigCatalog(scanRoot: string = root): CatalogEntry[] {
     // Classify, mirroring the Loader's unwrapExports: the default export IS
     // the plugin when present; else an exported `apply` makes the module
     // namespace the plugin; else the package is a plain library.
-    const dflt = defaultExport(ctx, world)
+    const dflt = defaultExport(ctx)
     const apply = applyExport(ctx)
     let pluginClass: ts.ClassDeclaration | null = null
     let configParam: ts.ParameterDeclaration | undefined

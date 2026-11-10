@@ -62,54 +62,28 @@ afterEach(() => {
 })
 
 describe('shared config schema catalog', () => {
-  it('classifies a default plugin class imported from a package-relative source file', () => {
-    const { root, write } = fixture()
-    write('packages/test/provider/src/service.ts', 'export class ProviderService {}\n')
-    write('packages/test/provider/src/index.ts', `
-import { ProviderService } from './service.ts'
-export { ProviderService }
-export default ProviderService
-`)
-    const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
-    expect(provider).toMatchObject({ kind: 'no-config', className: 'ProviderService' })
-  })
-
-  it('resolves the default plugin config imported from a package-relative source file', () => {
-    const { root, write } = fixture()
-    write('packages/test/provider/src/config.ts', `
-import Schema from '@deepseek-ai/schemastery'
-export interface Config {
-  /** Display mode. */
-  mode: string
-}
-export const Config = Schema.object({ mode: Schema.string() })
-`)
-    write('packages/test/provider/src/service.ts', `
-import { Config } from './config.ts'
-export class ProviderService {
-  static inject = ['sessions']
-  static Config = Config
-  constructor(ctx: unknown, config: Config) {}
-}
-`)
-    write('packages/test/provider/src/index.ts', `
-import { Config } from './config.ts'
-import { ProviderService } from './service.ts'
-export { Config, ProviderService }
-export default ProviderService
-`)
-    const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
-    expect(provider).toMatchObject({
-      kind: 'config', className: 'ProviderService', configTypeName: 'Config', schemaKeys: ['mode'], inject: ['sessions'],
-    })
-  })
-
   it('collects every branch through a renamed named import from a public source subpath', () => {
     const { root } = fixture()
     const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
     expect(new Set(provider?.schemaKeys)).toEqual(new Set(['mode', 'headless', 'endpoint']))
     expect(provider?.configTypeName).toBe('Config')
     expect(provider?.pastes?.[0]?.text).toBe('export type Config = BrowserConfig')
+  })
+
+  it.each([false, true])('checks package-local schema imports and undeclared fields (invalid=%s)', (invalid) => {
+    const { root, write } = fixture()
+    write('packages/test/provider/src/config.ts', invalid
+      ? sharedSchema.replace('headless: Schema.boolean()', 'headless: Schema.boolean(), hidden: Schema.string()')
+      : sharedSchema)
+    write('packages/test/provider/src/index.ts', `
+import { Shared, type BrowserConfig } from './config.ts'
+export type Config = BrowserConfig
+export const Config = Shared
+export function apply(ctx: unknown, config: Config): void {}
+`)
+    if (invalid) expect(() => collectConfigCatalog(root)).toThrow("schema validates key 'hidden'")
+    else expect(new Set(collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')?.schemaKeys))
+      .toEqual(new Set(['mode', 'headless', 'endpoint']))
   })
 
   it('rejects a schema field absent from the shared config type', () => {
@@ -121,6 +95,31 @@ export default ProviderService
     const { root } = fixture(sharedSchema.replace('export const Shared = Schema.union', 'export const Shared = Base\nconst Base = Schema.union'))
     const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
     expect(new Set(provider?.schemaKeys)).toEqual(new Set(['mode', 'headless', 'endpoint']))
+  })
+
+  it.each([false, true])('checks a class Config imported from a sibling module (invalid field: %s)', (invalid) => {
+    const { root, write } = fixture()
+    write('packages/test/provider/src/config.ts', `
+import Schema from '@deepseek-ai/schemastery'
+export interface Config {
+  /** Maximum result count. */
+  limit: number
+}
+export const Config = Schema.object({ ${invalid ? 'hidden' : 'limit'}: Schema.number() })
+`)
+    write('packages/test/provider/src/index.ts', `
+import { Config } from './config.ts'
+export default class Provider {
+  static Config = Config
+  constructor(ctx: unknown, config: Config) {}
+}
+`)
+    if (invalid) {
+      expect(() => collectConfigCatalog(root)).toThrow("schema validates key 'hidden' but config type 'Config' declares no such member")
+    } else {
+      const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
+      expect(provider?.schemaKeys).toEqual(['limit'])
+    }
   })
 
   it('rejects type-only imports used as runtime schemas', () => {
