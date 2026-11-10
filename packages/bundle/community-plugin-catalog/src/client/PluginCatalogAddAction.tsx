@@ -1,15 +1,23 @@
-/** Menu action for "+ 添加插件" dropdown in the official Plugins page. */
+/** Menu action for "+ 添加插件" dropdown in the official Plugins page (<= 0.2.2-alpha.2). */
 import type { ReactNode } from 'react'
 import { IconPluginPinwheelOutlineRegular, MenuItemButton } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
-import type { PluginAddActionsProps } from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import type { createPluginCatalogStore } from './store.ts'
 import css from './PluginCatalogPage.module.css'
 
 type Store = PropsStore<ReturnType<typeof createPluginCatalogStore>>
 
-/** Contributed MenuItemButton row in the "+ 添加插件" dropdown menu. */
-export function PluginCatalogAddAction(props: PluginAddActionsProps & Store & PropsLocale<'pluginCatalog'>): ReactNode {
+/** Owner props passed by the legacy `plugins.add.actions` slot. */
+export interface PluginAddActionsOwnerProps {
+  readonly onDismiss: () => void
+}
+
+/**
+ * Contributed MenuItemButton row in the "+ 添加插件" dropdown menu.
+ * @param props Menu dismissal callback, overlay store actions, and localized labels.
+ * @returns The menu item element.
+ */
+export function PluginCatalogAddAction(props: PluginAddActionsOwnerProps & Store & PropsLocale<'pluginCatalog'>): ReactNode {
   const { onDismiss, actions, t } = props
   return (
     <MenuItemButton

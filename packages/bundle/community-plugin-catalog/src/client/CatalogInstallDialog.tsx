@@ -17,13 +17,22 @@ import {
 import type { PluginCatalogKey } from './locales.ts'
 import css from './PluginCatalogPage.module.css'
 
+/** Branded identifier correlating live install logs and state notifications. */
 export type PluginInstallRequestId = string & { readonly __brand?: 'PluginInstallRequestId' }
 
+/** Settled ChangeResult subset read from `pluginManager.installBundle`. */
+export interface PluginInstallChangeResult {
+  application?: string | undefined
+  bundle?: string | undefined
+  error?: { code?: string | undefined; diagnostic?: string | undefined; message?: string | undefined } | undefined
+}
+
+/** Minimal Host plugin-manager Remote subset used for in-dialog installation. */
 export interface PluginManagerClientFace {
   installBundle?: (spec: string, options?: { enabled?: boolean; requestId?: PluginInstallRequestId }) => Promise<{
     ok: boolean
-    value?: { bundle?: string }
-    error?: { message?: string }
+    value?: PluginInstallChangeResult | undefined
+    error?: { message?: string | undefined } | undefined
   }>
   setBundleEnabled?: (name: string, enabled: boolean) => Promise<unknown>
   listBundles?: () => Promise<
@@ -31,16 +40,16 @@ export interface PluginManagerClientFace {
   >
 }
 
+/** Props for the in-dialog official-pipeline plugin installer modal. */
 export interface CatalogInstallDialogProps {
-  readonly target: { readonly name: string; readonly spec: string; readonly description?: string }
-  readonly pluginManager?: PluginManagerClientFace
-  readonly onInstallLog?: (listener: (chunk: { requestId?: string; data: string; stream?: string }) => void) => () => void
-  readonly onInstallState?: (
+  readonly target: { readonly name: string; readonly spec: string; readonly description?: string | undefined }
+  readonly pluginManager?: PluginManagerClientFace | undefined
+  readonly onInstallLog?: ((listener: (chunk: { requestId?: string; data: string; stream?: string }) => void) => () => void) | undefined
+  readonly onInstallState?: ((
     listener: (state: { requestId?: string; phase: string; attempt?: { registry: string; index: number; total: number } }) => void,
-  ) => () => void
+  ) => () => void) | undefined
   readonly onClose: () => void
   readonly onInstalled: (spec: string, bundle?: string) => void
-  readonly language: 'zh' | 'en'
   readonly t: (key: PluginCatalogKey, values?: Record<string, string | number>) => string
 }
 
@@ -57,7 +66,6 @@ export function CatalogInstallDialog({
   onInstallState,
   onClose,
   onInstalled,
-  language,
   t,
 }: CatalogInstallDialogProps): ReactNode {
   const [phase, setPhase] = useState<'checking' | 'installing' | 'done' | 'failed'>('checking')
@@ -66,12 +74,10 @@ export function CatalogInstallDialog({
   const [attemptLine, setAttemptLine] = useState<string | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
 
-  const isZh = language === 'zh'
-
   const run = useCallback(async () => {
     if (!pluginManager?.installBundle) {
       setPhase('failed')
-      setErrorMessage(isZh ? '官方插件安装服务暂时不可用' : 'Official plugin installer is currently unavailable')
+      setErrorMessage(t('installerUnavailable'))
       return
     }
     setPhase('checking')
@@ -79,7 +85,8 @@ export function CatalogInstallDialog({
     setLogs('')
     setAttemptLine(null)
 
-    const requestId = (globalThis.crypto?.randomUUID?.() ?? String(Date.now())) as PluginInstallRequestId
+    const cryptoApi = globalThis.crypto as { randomUUID?: () => string } | undefined
+    const requestId = (typeof cryptoApi?.randomUUID === 'function' ? cryptoApi.randomUUID() : String(Date.now())) as PluginInstallRequestId
 
     const disposeLog = onInstallLog?.((chunk) => {
       if (chunk.requestId === undefined || chunk.requestId === requestId) {
@@ -91,9 +98,11 @@ export function CatalogInstallDialog({
         if (state.phase === 'installing') {
           setPhase('installing')
           if (state.attempt) {
-            setAttemptLine(isZh
-              ? `尝试安装源 (${state.attempt.index}/${state.attempt.total})：${state.attempt.registry}`
-              : `Trying registry (${state.attempt.index}/${state.attempt.total}): ${state.attempt.registry}`)
+            setAttemptLine(t('tryingRegistry', {
+              index: state.attempt.index,
+              total: state.attempt.total,
+              registry: state.attempt.registry,
+            }))
           }
         }
       }
@@ -102,14 +111,24 @@ export function CatalogInstallDialog({
     try {
       setPhase('installing')
       const result = await pluginManager.installBundle(target.spec, { enabled: true, requestId })
-      if (!result || (result.ok === false && result.error)) {
+      const change = result.value
+      if (
+        !result.ok
+        || change?.application === 'failed'
+        || change?.application === 'cancelled'
+      ) {
         setPhase('failed')
-        setErrorMessage(result?.error?.message ?? (isZh ? '安装失败' : 'Installation failed'))
+        setErrorMessage(
+          change?.error?.diagnostic
+          ?? change?.error?.message
+          ?? (!result.ok ? result.error?.message : undefined)
+          ?? t('installFailed'),
+        )
         setDetailsOpen(true)
         return
       }
       setPhase('done')
-      const bundleName = (result.value as { bundle?: string } | undefined)?.bundle ?? target.spec
+      const bundleName = change?.bundle ?? target.spec
       try {
         await pluginManager.setBundleEnabled?.(bundleName, true)
       } catch {
@@ -124,24 +143,29 @@ export function CatalogInstallDialog({
       disposeLog?.()
       disposeState?.()
     }
-  }, [isZh, onInstallLog, onInstallState, onInstalled, pluginManager, target.spec])
+  }, [onInstallLog, onInstallState, onInstalled, pluginManager, t, target.spec])
 
   useEffect(() => {
     void run()
   }, [])
 
   const terminalLabels = {
-    signal: (sig: string) => `Signal ${sig}`,
-    exitCode: (code: number) => (isZh ? `退出码 ${code}` : `Exit code ${code}`),
-    noExitCode: isZh ? '未提供退出状态' : 'No exit status',
-    running: isZh ? '正在运行' : 'Running',
-    failed: isZh ? '失败' : 'Failed',
-    done: isZh ? '完成' : 'Done',
-    copy: isZh ? '复制' : 'Copy',
-    copied: isZh ? '已复制' : 'Copied',
+    signal: (sig: string) => t('terminalSignal', { sig }),
+    exitCode: (code: number) => t('terminalExitCode', { code }),
+    noExitCode: t('terminalNoExitCode'),
+    running: t('terminalRunning'),
+    failed: t('terminalFailed'),
+    done: t('terminalDone'),
+    copy: t('terminalCopy'),
+    copied: t('terminalCopied'),
+    noOutput: t('terminalNoOutput'),
+    collapseAria: t('terminalCollapseAria'),
+    collapse: t('terminalCollapse'),
+    expandAria: (hidden: number) => t('terminalExpandAria', { count: hidden }),
+    expand: (hidden: number) => t('terminalExpand', { count: hidden }),
   }
 
-  const heading = isZh ? '添加插件' : 'Add Plugin'
+  const heading = t('addPluginHeading')
 
   return (
     <Modal
@@ -178,23 +202,21 @@ export function CatalogInstallDialog({
             <>
               <StateDot state="ongoing" size={18} />
               <span className={css.installStatusText}>
-                {phase === 'checking'
-                  ? (isZh ? '正在检查插件源并准备安装…' : 'Checking plugin registry and preparing…')
-                  : (isZh ? '正在自动安装插件并配置环境，请稍候…' : 'Installing plugin and configuring environment…')}
+                {phase === 'checking' ? t('checkingRegistry') : t('installingProgress')}
               </span>
             </>
           ) : phase === 'done' ? (
             <div className={css.installStatusSuccess}>
               <IconCheckCircleFillRegular size={18} />
               <span className={css.installStatusText}>
-                {isZh ? '插件安装成功！已在 Profile 中启用。' : 'Plugin successfully installed and enabled in Profile.'}
+                {t('installSuccess')}
               </span>
             </div>
           ) : (
             <div className={css.installStatusError}>
               <IconWarningOutlineRegular size={18} />
               <span className={css.installStatusText}>
-                {errorMessage ?? (isZh ? '插件安装失败。' : 'Plugin installation failed.')}
+                {errorMessage ?? t('installFailedSentence')}
               </span>
             </div>
           )}
@@ -210,7 +232,7 @@ export function CatalogInstallDialog({
             className={css.installLogsToggle}
             onClick={() => { setDetailsOpen(prev => !prev) }}
           >
-            <span>{detailsOpen ? (isZh ? '收起安装详情' : 'Hide install details') : (isZh ? '查看安装详情' : 'View install details')}</span>
+            <span>{detailsOpen ? t('hideInstallDetails') : t('viewInstallDetails')}</span>
             <IconChevronDownOutlineRegular
               className={detailsOpen ? css.chevronOpen : css.chevronClosed}
               aria-hidden="true"
@@ -221,7 +243,7 @@ export function CatalogInstallDialog({
             <div className={css.installTerminalWrap}>
               <TerminalBlock
                 command={`pnpm add ${target.spec}`}
-                output={logs || (isZh ? '正在执行官方 pnpm 安装流程…' : 'Running official pnpm install…')}
+                output={logs || t('runningPnpmInstall')}
                 running={phase === 'checking' || phase === 'installing'}
                 exitCode={phase === 'done' ? 0 : phase === 'failed' ? 1 : undefined}
                 maxLines={10}
@@ -235,19 +257,19 @@ export function CatalogInstallDialog({
           {phase === 'failed' ? (
             <>
               <Button variant="outline" onClick={onClose}>
-                {isZh ? '取消' : 'Cancel'}
+                {t('cancel')}
               </Button>
               <Button variant="primary" onClick={() => { void run() }}>
-                {isZh ? '重试' : 'Retry'}
+                {t('retry')}
               </Button>
             </>
           ) : phase === 'done' ? (
             <Button variant="primary" autoFocus onClick={onClose}>
-              {isZh ? '完成' : 'Done'}
+              {t('done')}
             </Button>
           ) : (
             <Button variant="outline" disabled onClick={onClose}>
-              {isZh ? '安装中…' : 'Installing…'}
+              {t('installingEllipsis')}
             </Button>
           )}
         </div>

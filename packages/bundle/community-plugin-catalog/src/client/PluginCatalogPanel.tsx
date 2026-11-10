@@ -11,10 +11,10 @@ import css from './PluginCatalogPage.module.css'
 export interface PluginCatalogPanelInjected {
   readonly api: {
     catalog(query?: string, category?: string, sort?: PluginCatalogSort, page?: number, limit?: number): Promise<RemotePage>
-    install?(spec: string): Promise<{ ok: boolean; bundle?: string; error?: string }>
-    listInstalled?(): Promise<{ ok: boolean; installed: string[] }>
+    install?(spec: string): Promise<{ ok: boolean; bundle?: string | undefined; error?: string | undefined }>
+    listInstalled?(): Promise<{ ok: boolean; installed?: string[] | undefined }>
   }
-  readonly pluginManager?: PluginManagerClientFace
+  readonly pluginManager?: PluginManagerClientFace | undefined
   readonly onInstallLog?: (listener: (chunk: { requestId?: string; data: string; stream?: string }) => void) => () => void
   readonly onInstallState?: (
     listener: (state: { requestId?: string; phase: string; attempt?: { registry: string; index: number; total: number } }) => void,
@@ -63,7 +63,7 @@ export function PluginCatalogPanel({
   const [failedKey, setFailedKey] = useState('')
 
   const [installedBundles, setInstalledBundles] = useState<Set<string>>(new Set())
-  const [installTarget, setInstallTarget] = useState<{ name: string; spec: string; description?: string } | null>(null)
+  const [installTarget, setInstallTarget] = useState<{ name: string; spec: string; description?: string | undefined } | null>(null)
 
   const requestKey = JSON.stringify([query, category, sort, pageNumber])
   const currentPage = resolvedKey === requestKey
@@ -75,7 +75,7 @@ export function PluginCatalogPanel({
         const res = await pluginManager.listBundles()
         type BundleItem = { name: string; installed?: boolean }
         const wrapped = res as { ok?: boolean; value?: BundleItem[] }
-        const bundles: BundleItem[] = Array.isArray(res) ? res : (wrapped?.value ?? [])
+        const bundles: BundleItem[] = Array.isArray(res) ? res : (wrapped.value ?? [])
         setInstalledBundles(new Set(bundles.filter(b => b.installed).map(b => b.name)))
         return
       }
@@ -139,9 +139,12 @@ export function PluginCatalogPanel({
       setFailedKey(requestKey)
       return
     }
-    // Do NOT close the catalog! Open the official installation dialog overlay.
-    setInstallTarget({ name, spec, description })
-    openInstall?.(spec, { autoRun: true })
+    // Do NOT close the catalog! Run in-dialog install when available, or fall back to official install navigation.
+    if (pluginManager?.installBundle || typeof api.install === 'function' || openInstall === undefined) {
+      setInstallTarget({ name, spec, description })
+    } else {
+      openInstall(spec, { autoRun: true })
+    }
   }
 
   const activeLanguage = language()
@@ -213,9 +216,9 @@ export function PluginCatalogPanel({
                 }}
               >
                 {isInstalled
-                  ? (activeLanguage === 'zh' ? '已安装' : 'Installed')
+                  ? t('installed')
                   : isCurrentInstalling
-                    ? (activeLanguage === 'zh' ? '安装中…' : 'Installing…')
+                    ? t('installingEllipsis')
                     : t('install')}
               </Button>
             </article>
@@ -236,15 +239,13 @@ export function PluginCatalogPanel({
         target={installTarget}
         pluginManager={pluginManager ?? (typeof api.install === 'function' ? {
           installBundle: async (targetSpec) => {
-            const apiInstall = api.install
-            if (!apiInstall) return { ok: false, error: { message: 'Installation unsupported' } }
-            const res = await apiInstall(targetSpec)
+            if (typeof api.install !== 'function') return { ok: false, error: { message: t('installUnsupported') } }
+            const res = await api.install(targetSpec)
             return res.ok ? { ok: true, value: { bundle: res.bundle } } : { ok: false, error: { message: res.error } }
           },
         } : undefined)}
         onInstallLog={onInstallLog}
         onInstallState={onInstallState}
-        language={activeLanguage}
         onClose={() => { setInstallTarget(null) }}
         onInstalled={handleInstalled}
         t={t}

@@ -3,18 +3,22 @@
 import { createElement } from 'react'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import { en } from '../src/client/locales.ts'
+import { en, zh } from '../src/client/locales.ts'
 import { PluginCatalogPanel } from '../src/client/PluginCatalogPanel.tsx'
 
 afterEach(cleanup)
 
 const spec = '@acme/dsh-example'
 
-/** Translate a locale key with `{name}` substitution against the English dictionary. */
-const translate = (key: string, values?: Record<string, string | number>): string => Object.entries(values ?? {}).reduce(
-  (text, [name, value]) => text.replace(`{${name}}`, String(value)),
-  en[key as keyof typeof en] ?? key,
-)
+/** Translate a locale key with `{name}` substitution against the chosen dictionary. */
+const makeTranslate = (dict: Record<string, string>) => (key: string, values?: Record<string, string | number>): string =>
+  Object.entries(values ?? {}).reduce(
+    (text, [name, value]) => text.replace(`{${name}}`, String(value)),
+    dict[key] ?? key,
+  )
+
+const translate = makeTranslate(en)
+const translateZh = makeTranslate(zh)
 
 function setup(install: string = `dsh plugin --profile web add ${spec}`,
   translate: (key: string, values?: Record<string, string | number>) => string = key => key) {
@@ -46,13 +50,12 @@ function setup(install: string = `dsh plugin --profile web add ${spec}`,
   return { openInstall, close }
 }
 
-it('hands the parsed spec to the install dialog without closing the catalog', async () => {
+it('hands the parsed spec to the install navigation fallback without closing the catalog when pluginManager is absent', async () => {
   const { openInstall, close } = setup(undefined, translate)
   fireEvent.click(await screen.findByRole('button', { name: en.install }))
   expect(openInstall).toHaveBeenCalledOnce()
   expect(openInstall).toHaveBeenCalledWith(spec, { autoRun: true })
   expect(close).not.toHaveBeenCalled()
-  expect(await screen.findByRole('heading', { name: 'Add Plugin' })).toBeTruthy()
 })
 
 it('keeps the catalog open and reports an unusable install command', async () => {
@@ -94,18 +97,21 @@ it('runs the official installation pipeline, displays logs, and completes succes
     logSubscriber = cb
     return () => {}
   }
+  const openInstall = vi.fn()
   const useStore = (select: (state: { open: boolean }) => unknown): unknown => select({ open: true })
   render(createElement(PluginCatalogPanel, {
     api: catalog,
     pluginManager: { installBundle, setBundleEnabled },
+    openInstall,
     onInstallLog,
     language: () => 'zh',
     useStore,
     actions: { close: vi.fn() },
-    t: translate,
+    t: translateZh,
   } as never))
 
-  fireEvent.click(await screen.findByRole('button', { name: en.install }))
+  fireEvent.click(await screen.findByRole('button', { name: zh.install }))
+  expect(openInstall).not.toHaveBeenCalled()
   expect(await screen.findByRole('heading', { name: '添加插件' })).toBeTruthy()
 
   logSubscriber?.({ data: 'Downloading packages...\n' })
@@ -150,14 +156,47 @@ it('displays error details and allows retry when installation fails', async () =
     language: () => 'zh',
     useStore,
     actions: { close: vi.fn() },
-    t: translate,
+    t: translateZh,
   } as never))
 
-  fireEvent.click(await screen.findByRole('button', { name: en.install }))
+  fireEvent.click(await screen.findByRole('button', { name: zh.install }))
   expect(await screen.findByText('Network connection failed')).toBeTruthy()
 
   // Clicking "重试" triggers installBundle again
   fireEvent.click(screen.getByRole('button', { name: '重试' }))
   expect(await screen.findByText('插件安装成功！已在 Profile 中启用。')).toBeTruthy()
   expect(installBundle).toHaveBeenCalledTimes(2)
+})
+
+it('treats ChangeResult application: failed as installation failure', async () => {
+  const installBundle = vi.fn(async () => ({
+    ok: true,
+    value: { application: 'failed', changed: false, stage: 'install', target: spec, error: { code: 'operation-error', diagnostic: 'pnpm add exited with 1' } },
+  }))
+  const catalog = {
+    catalog: vi.fn(async () => ({
+      ok: true as const,
+      value: {
+        plugins: [{
+          id: 'example', name: 'Example', owner: 'acme', url: 'https://github.com/acme/example', category: 'tools',
+          description: { en: 'Example plugin', zh: '示例插件' },
+          install: `dsh plugin --profile web add ${spec}`, added: '2026-01-01', stars: 1, installCount: 1,
+          npmDownloads7d: null, pushedAt: '', updatedAt: '',
+        }],
+        categories: [], total: 1, totalPages: 1, page: 1, limit: 20,
+      },
+    })),
+  }
+  const useStore = (select: (state: { open: boolean }) => unknown): unknown => select({ open: true })
+  render(createElement(PluginCatalogPanel, {
+    api: catalog,
+    pluginManager: { installBundle },
+    language: () => 'zh',
+    useStore,
+    actions: { close: vi.fn() },
+    t: translateZh,
+  } as never))
+
+  fireEvent.click(await screen.findByRole('button', { name: zh.install }))
+  expect(await screen.findByText('pnpm add exited with 1')).toBeTruthy()
 })

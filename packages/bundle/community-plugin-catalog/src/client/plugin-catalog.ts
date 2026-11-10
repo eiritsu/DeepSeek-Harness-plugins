@@ -30,26 +30,20 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
   const scope = ctx.inject(['slots', 'locale', 'remote', 'remote.pluginCatalog'], (clientCtx) => {
     clientCtx.effect(() => clientCtx.locale.register(NS, { en, zh }), 'community-plugin-catalog: dictionaries')
     const store = createPluginCatalogStore()
+    const bus = clientCtx.remote as { $on?(event: string, cb: unknown): () => void }
     const injection = (): PluginCatalogPanelInjected => ({
       api: clientCtx.remote.pluginCatalog,
-      pluginManager: (clientCtx.remote as Record<string, unknown>).pluginManager as PluginManagerClientFace | undefined,
-      onInstallLog: (listener: (chunk: { requestId?: string; data: string; stream?: string }) => void) => {
-        const bus = clientCtx.remote as { $on?(event: string, cb: unknown): () => void }
-        return bus.$on?.('plugin-manager/install-log', listener) ?? (() => {})
-      },
+      pluginManager: clientCtx.get('remote.pluginManager') as PluginManagerClientFace | undefined,
+      onInstallLog: (listener: (chunk: { requestId?: string; data: string; stream?: string }) => void) => (
+        bus.$on?.('plugin-manager/install-log', listener) ?? (() => {})
+      ),
       onInstallState: (
         listener: (state: { requestId?: string; phase: string; attempt?: { registry: string; index: number; total: number } }) => void,
-      ) => {
-        const bus = clientCtx.remote as { $on?(event: string, cb: unknown): () => void }
-        return bus.$on?.('plugin-manager/install-state', listener) ?? (() => {})
-      },
-      onChanged: (listener: () => void) => {
-        const bus = clientCtx.remote as { $on?(event: string, cb: unknown): () => void }
-        return bus.$on?.('plugin-manager/changed', listener) ?? (() => {})
-      },
+      ) => bus.$on?.('plugin-manager/install-state', listener) ?? (() => {}),
+      onChanged: (listener: () => void) => bus.$on?.('plugin-manager/changed', listener) ?? (() => {}),
       openInstall: (spec: string, options?: { autoRun?: boolean }) => {
         type NavFace = { openInstall?: (s: string, opt?: { autoRun?: boolean }) => void }
-        const nav = (clientCtx as unknown as { pluginNavigation?: NavFace }).pluginNavigation
+        const nav = clientCtx.get('pluginNavigation') as NavFace | undefined
         if (typeof nav?.openInstall === 'function') {
           if (options !== undefined) {
             nav.openInstall(spec, options)
@@ -61,11 +55,12 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
       language: () => clientCtx.locale.getSnapshot().active === 'zh' ? 'zh' : 'en',
     })
     clientCtx.slots.inject('sidebar.footer.action', () => clientCtx.slots.register({
-      name: 'sidebar.footer.action', id: 'plugin-catalog', order: 20, locale: NS, store, inject: injection,
+      name: 'sidebar.footer.action', id: 'plugin-catalog', order: 20, locale: NS, store,
     }, PluginCatalogAction))
-    clientCtx.slots.inject('plugins.add.actions', () => clientCtx.slots.register({
-      name: 'plugins.add.actions', id: 'community-plugin-catalog', order: 10, locale: NS, store, inject: injection,
-    }, PluginCatalogAddAction))
+    // Backward compatibility for <= 0.2.2-alpha.2 hosts that expose `plugins.add.actions`.
+    clientCtx.slots.inject('plugins.add.actions' as never, () => clientCtx.slots.register({
+      name: 'plugins.add.actions', id: 'community-plugin-catalog', order: 10, locale: NS, store,
+    } as never, PluginCatalogAddAction))
     clientCtx.slots.inject('shell.overlay', () => clientCtx.slots.register({
       name: 'shell.overlay', id: 'plugin-catalog', locale: NS, store, inject: injection,
     }, PluginCatalogPanel))
