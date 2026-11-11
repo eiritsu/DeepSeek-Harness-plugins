@@ -6,6 +6,7 @@ import { resolve } from 'node:path'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { ClientRoster, createClientTest, webApp } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/index.ts'
+import { fireEvent, screen } from '@testing-library/react'
 import { afterEach, expect, it, onTestFinished, vi } from 'vitest'
 import type { ClientPluginModule } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/index.ts'
 vi.mock('@deepseek-ai/dsh-community-skill-catalog/remote', async importOriginal => await importOriginal())
@@ -25,9 +26,16 @@ const assembled = createClientTest({ roster: ClientRoster.of([...webApp.rows, {
   name: manifest.name, inject: manifest.dsh.client.inject, immediately: false,
 }]), provide: { [manifest.name]: composedModule } }, { mount: true })
 
-assembled('registers the Skills page in the production Plugins composition', async ({ start }) => {
+assembled('registers the Skills page and sidebar catalog in the production composition', async ({ start, mock }) => {
   const client = await start()
+  mock.unary('skillsMpCatalog/taxonomy', { ok: false, error: { code: 'skillsmp/challenge', message: 'challenge', details: { status: 403 } } })
   expect(client.ctx.slots.entries('plugins.item').map(entry => entry.options.id)).toContain('installed-skills')
+  expect(client.ctx.slots.entries('sidebar.footer.action').map(entry => entry.options.id)).toContain('skill-catalog')
+  const actionButton = document.querySelector('button[aria-label="SkillsMP Skills"]') ?? document.querySelector('button[aria-label="SkillsMP 技能目录"]')
+  expect(actionButton).toBeTruthy()
+  fireEvent.click(actionButton!)
+  fireEvent.click(await screen.findByRole('button', { name: /^(?:Advanced filters|高级筛选)$/ }))
+  expect(await screen.findByText(/Cloudflare|验证/)).toBeTruthy()
 }, 60_000)
 
 it('mounts its Remote before waiting for the namespace and registering the sidebar action', async () => {

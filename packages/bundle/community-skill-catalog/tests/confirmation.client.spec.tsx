@@ -491,4 +491,44 @@ describe('SkillsMP catalog', () => {
     expect(catalog).toHaveBeenCalledWith('', undefined, 'software-developers', undefined, 'stars', 1, 24, expect.any(AbortSignal))
     expect(screen.queryByText(en.searchPrompt)).toBeNull()
   })
+
+  it('keeps language and sort filters usable when taxonomy hits a Cloudflare challenge', async () => {
+    const catalog = vi.fn().mockResolvedValue({ ok: true, value: page })
+    const taxonomy = vi.fn().mockResolvedValue({
+      ok: false,
+      error: new RemoteError('skillsmp/challenge', 'Cloudflare challenge', { status: 403 }),
+    })
+    renderPanel({ catalog, detail: vi.fn(), installSkill: vi.fn(), taxonomy }, translateZh)
+    fireEvent.change(screen.getByRole('searchbox', { name: zh.searchPlaceholder }), { target: { value: '算法' } })
+    fireEvent.click(screen.getByRole('button', { name: zh.search }))
+    await screen.findByRole('button', { name: skill.name })
+
+    fireEvent.click(screen.getByRole('button', { name: zh.advancedFilters }))
+    expect((await screen.findByRole('alert')).textContent).toContain(zh.skillsMpTaxonomyChallenge)
+    expect(screen.getAllByRole('button', { name: zh.unavailable })).toHaveLength(2)
+
+    fireEvent.change(screen.getByLabelText(zh.language), { target: { value: 'zh' } })
+    const applyButton = screen.getByRole('button', { name: zh.applyFilters })
+    expect(applyButton).not.toHaveProperty('disabled', true)
+    fireEvent.click(applyButton)
+    await waitFor(() => {
+      expect(catalog).toHaveBeenLastCalledWith('算法', undefined, undefined, 'zh', 'stars', 1, 24, expect.any(AbortSignal))
+    })
+  })
+
+  it('does not re-fetch catalog when returning from detail view of a loaded search', async () => {
+    const catalog = vi.fn().mockResolvedValue({ ok: true, value: page })
+    renderPanel({
+      catalog,
+      detail: vi.fn().mockResolvedValue({ ok: true, value: detail }),
+      installSkill: vi.fn(),
+    })
+    fireEvent.change(screen.getByRole('searchbox', { name: en.searchPlaceholder }), { target: { value: 'algorithm' } })
+    fireEvent.click(screen.getByRole('button', { name: en.search }))
+    fireEvent.click(await screen.findByRole('button', { name: skill.name }))
+    await screen.findByText('SKILL.md')
+    fireEvent.click(screen.getByRole('button', { name: en.back }))
+    await screen.findByRole('button', { name: skill.name })
+    expect(catalog).toHaveBeenCalledOnce()
+  })
 })

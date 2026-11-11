@@ -29,8 +29,10 @@ export interface SkillsMpTaxonomy {
 
 /** Stable SkillsMP catalog failures returned by the Remote. */
 export interface SkillsMpRemoteErrorDetailsMap {
-  /** SkillsMP rejected the search request. */
-  'skillsmp/forbidden': { readonly status: 403 }
+  /** SkillsMP rejected the search request or API credential. */
+  'skillsmp/forbidden': { readonly status: 401 | 403 }
+  /** SkillsMP triggered a browser verification challenge instead of returning catalog data. */
+  'skillsmp/challenge': { readonly status: number }
   /** SkillsMP search quota is exhausted. */
   'skillsmp/rate-limited': { readonly status: 429 }
   /** SkillsMP could not provide a source manifest. */

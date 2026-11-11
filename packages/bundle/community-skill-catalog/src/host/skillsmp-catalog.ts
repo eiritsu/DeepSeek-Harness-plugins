@@ -245,7 +245,7 @@ export class SkillsMpCatalog extends TypertRemoteService {
         this.maxTotalBytes,
       )
     } catch (error: unknown) {
-      if (error instanceof RemoteError && error.code === 'skillsmp/forbidden') {
+      if (error instanceof RemoteError && (error.code === 'skillsmp/forbidden' || error.code === 'skillsmp/challenge')) {
         target = targetFromParsed(parsed)
         manifest = await this.fetchGitHubManifest(target, signal)
       } else {
@@ -273,7 +273,7 @@ export class SkillsMpCatalog extends TypertRemoteService {
     const reviewedFiles: ReviewedFile[] = []
     for (const file of files) {
       totalBytes += file.size
-      const sha = file.path === 'SKILL.md' ? skillSha : undefined
+      const sha = file.sha ?? (file.path === 'SKILL.md' ? skillSha : undefined)
       reviewedFiles.push({ path: file.path, size: file.size, ...(sha !== undefined ? { sha } : {}), rawUrl: file.rawUrl })
     }
     if (totalBytes > Math.min(this.maxTotalBytes, 5 * 1024 * 1024)) {
@@ -482,6 +482,7 @@ export class SkillsMpCatalog extends TypertRemoteService {
       'cache-control': 'no-store',
     }, { method: 'POST', body: JSON.stringify({ skillId: skill.id }) })
     try {
+      throwChallengeIfMitigated(response, true)
       throwSourceStatus(response.status)
       if (response.status !== 200) throw new Error(`SkillsMP download authorization returned HTTP ${response.status}.`)
       const payload = record(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(await readBounded(response, 4096))))
@@ -507,6 +508,7 @@ export class SkillsMpCatalog extends TypertRemoteService {
       'cache-control': 'no-store',
     })
     try {
+      throwChallengeIfMitigated(response, true)
       throwSourceStatus(response.status)
       if (response.status !== 200) throw new Error(`SkillsMP source manifest returned HTTP ${response.status}.`)
       const bytes = await readBounded(response, Math.min(this.maxResponseBytes, MAX_MANIFEST_RESPONSE_BYTES))
@@ -529,10 +531,11 @@ export class SkillsMpCatalog extends TypertRemoteService {
       `/repos/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}/commits/${encodeURIComponent(branchToTry)}`,
       GITHUB_API_ORIGIN,
     )
-    let commitResponse = await requestPublic(commitUrl, this.timeoutMs, signal, {
+    const commitHeaders = {
       'user-agent': 'DeepSeek-Harness',
-      accept: 'application/json',
-    })
+      accept: 'application/vnd.github.sha, application/json;q=0.9',
+    }
+    let commitResponse = await requestPublic(commitUrl, this.timeoutMs, signal, commitHeaders)
     try {
       if (commitResponse.status === 404 && branchToTry !== 'HEAD') {
         await commitResponse.close()
@@ -540,18 +543,20 @@ export class SkillsMpCatalog extends TypertRemoteService {
           `/repos/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}/commits/HEAD`,
           GITHUB_API_ORIGIN,
         )
-        commitResponse = await requestPublic(headUrl, this.timeoutMs, signal, {
-          'user-agent': 'DeepSeek-Harness',
-          accept: 'application/json',
-        })
+        commitResponse = await requestPublic(headUrl, this.timeoutMs, signal, commitHeaders)
       }
       if (commitResponse.status !== 200) {
         throw new Error(`GitHub commit lookup returned HTTP ${commitResponse.status}.`)
       }
-      const bytes = await readBounded(commitResponse, 65536)
-      const body = record(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)))
-      if (body !== undefined && typeof body.sha === 'string' && SHA.test(body.sha)) {
-        commitSha = body.sha.toLowerCase()
+      const bytes = await readBounded(commitResponse, this.maxResponseBytes)
+      const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes).trim()
+      if (SHA.test(decoded)) {
+        commitSha = decoded.toLowerCase()
+      } else {
+        const body = record(JSON.parse(decoded))
+        if (body !== undefined && typeof body.sha === 'string' && SHA.test(body.sha)) {
+          commitSha = body.sha.toLowerCase()
+        }
       }
     } finally {
       await commitResponse.close()
@@ -601,7 +606,7 @@ export class SkillsMpCatalog extends TypertRemoteService {
         if (type === 'dir') {
           queue.push(itemPath)
         } else if (type === 'file') {
-          const relPath = target.path === '' ? itemPath : itemPath.slice(target.path.length + 1)
+          const relPath = target.path === '' ? itemPath : itemPath.startsWith(`${target.path}/`) ? itemPath.slice(target.path.length + 1) : itemPath
           const segments = safeRelativePath(relPath)
           const size = integerValue(item.size, `size for ${relPath}`)
           if (size > Math.min(512_000, this.maxFileBytes)) {
@@ -612,7 +617,8 @@ export class SkillsMpCatalog extends TypertRemoteService {
             throw new RemoteError('skillsmp/manifest-incomplete', 'SkillsMP manifest exceeds the supported total size.', { skippedFiles: 0, limitReason: 'total_size' })
           }
           const rawUrl = canonicalRawUrl(target.owner, target.repo, commitSha, [...rootSegments, ...segments])
-          files.push({ path: relPath, size, rawUrl })
+          const sha = typeof item.sha === 'string' && SHA.test(item.sha) ? item.sha.toLowerCase() : undefined
+          files.push({ path: relPath, size, rawUrl, ...(sha === undefined ? {} : { sha }) })
           if (files.length > Math.min(100, this.maxFiles)) {
             throw new RemoteError('skillsmp/manifest-incomplete', 'SkillsMP manifest exceeds the supported file count.', { skippedFiles: 0, limitReason: 'file_count' })
           }
@@ -654,6 +660,7 @@ export class SkillsMpCatalog extends TypertRemoteService {
     if (url.origin !== SEARCH_ORIGIN) throw new Error('SkillsMP URL is outside the allowed origin.')
     const response = await requestPublic(url, this.timeoutMs, signal, { accept: 'text/html' })
     try {
+      throwChallengeIfMitigated(response, false)
       throwSourceStatus(response.status)
       if (response.status !== 200) throw new Error(`SkillsMP taxonomy returned HTTP ${response.status}.`)
       try { return new TextDecoder('utf-8', { fatal: true }).decode(await readBounded(response, this.maxResponseBytes)) }
@@ -672,7 +679,8 @@ export class SkillsMpCatalog extends TypertRemoteService {
     const token = includeCredential ? await this.skillsMpToken() : undefined
     const response = await requestPublic(url, timeoutMs, signal, token === undefined ? undefined : { authorization: `Bearer ${token}` })
     try {
-      if (response.status === 403 || response.status === 429) throw skillsMpStatusError(response.status)
+      throwChallengeIfMitigated(response, true)
+      if (response.status === 401 || response.status === 403 || response.status === 429) throw skillsMpStatusError(response.status)
       throwSourceStatus(response.status)
       if (response.status !== 200) throw new Error(`SkillsMP returned HTTP ${response.status}.`)
       try { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(await readBounded(response, maxBytes))) }
@@ -1110,6 +1118,7 @@ interface ManifestFile {
   readonly path: string
   readonly size: number
   readonly rawUrl: string
+  readonly sha?: string
 }
 interface ReviewedFile {
   readonly path: string
@@ -1351,7 +1360,18 @@ function incompatibleSkill(cause?: unknown): RemoteError<'skillsmp/skill-incompa
     cause === undefined ? undefined : { cause },
   )
 }
-function skillsMpStatusError(status: 403 | 429): Error {
+function throwChallengeIfMitigated(response: ResponseHandle, expectJson: boolean): void {
+  if (response.headers.get('cf-mitigated')?.toLowerCase() === 'challenge') {
+    throw new RemoteError('skillsmp/challenge', 'SkillsMP triggered a Cloudflare verification challenge.', { status: response.status })
+  }
+  if (!expectJson) return
+  const contentType = response.headers.get('content-type')?.toLowerCase() ?? ''
+  if ((response.status === 403 || response.status === 503) && contentType.includes('text/html')) {
+    throw new RemoteError('skillsmp/challenge', 'SkillsMP triggered a Cloudflare verification challenge.', { status: response.status })
+  }
+}
+function skillsMpStatusError(status: 401 | 403 | 429): Error {
+  if (status === 401) return new RemoteError('skillsmp/forbidden', 'SkillsMP rejected the API credential.', { status: 401 })
   if (status === 403) return new RemoteError('skillsmp/forbidden', 'SkillsMP rejected the search request.', { status: 403 })
   return new RemoteError('skillsmp/rate-limited', 'SkillsMP search quota is exhausted.', { status: 429 })
 }

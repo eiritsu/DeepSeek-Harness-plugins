@@ -141,6 +141,7 @@ describe('SkillsMP outbound requests', () => {
   })
 
   it.each([
+    [401, 'skillsmp/forbidden'],
     [403, 'skillsmp/forbidden'],
     [429, 'skillsmp/rate-limited'],
   ])('returns a typed SkillsMP HTTP %s failure', async (status, code) => {
@@ -149,6 +150,17 @@ describe('SkillsMP outbound requests', () => {
     const catalog = new SkillsMpCatalog(new Context(), {})
 
     await expect(catalog.catalog('query')).rejects.toMatchObject({ code, details: { status } })
+  })
+
+  it('distinguishes Cloudflare verification challenges from credential errors', async () => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    fetchMock.mockResolvedValue(new Response('<!DOCTYPE html><title>Just a moment...</title>', {
+      status: 403,
+      headers: { 'cf-mitigated': 'challenge', 'content-type': 'text/html; charset=UTF-8' },
+    }))
+    const catalog = new SkillsMpCatalog(new Context(), {})
+
+    await expect(catalog.taxonomy('zh')).rejects.toMatchObject({ code: 'skillsmp/challenge', details: { status: 403 } })
   })
 
   it.each([

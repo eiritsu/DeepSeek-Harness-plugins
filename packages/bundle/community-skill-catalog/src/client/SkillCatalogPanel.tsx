@@ -45,9 +45,12 @@ const USE_CASES = [
 ] as const
 const LANGUAGES = ['en', 'zh', 'ja', 'mul', 'und'] as const
 
-function errorMessage(reason: unknown, translate: Props['t']): string {
+function errorMessage(reason: unknown, translate: Props['t'], scope: 'search' | 'taxonomy' = 'search'): string {
   const message = reason instanceof Error ? reason.message : ''
   if (typeof reason === 'object' && reason !== null && 'code' in reason && typeof reason.code === 'string') {
+    if (reason.code === 'skillsmp/challenge') {
+      return translate(scope === 'taxonomy' ? 'skillsMpTaxonomyChallenge' : 'skillsMpChallenge')
+    }
     if (reason.code === 'skillsmp/forbidden') return translate('skillsMpForbidden')
     if (reason.code === 'skillsmp/rate-limited') return translate('skillsMpRateLimited')
     if (reason.code === 'skillsmp/search-required') return translate('skillsMpSearchRequired')
@@ -150,7 +153,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
       if (!result.ok) throw result.error
       setTaxonomyByLocale(current => ({ ...current, [locale]: result.value }))
     }).catch((reason: unknown) => {
-      if (!controller.signal.aborted) setTaxonomyError(errorMessage(reason, t))
+      if (!controller.signal.aborted) setTaxonomyError(errorMessage(reason, t, 'taxonomy'))
     }).finally(() => { if (!controller.signal.aborted) setTaxonomyBusy(false) })
     return () => { controller.abort() }
   }, [api, locale, open, taxonomyForceRefresh, t])
@@ -159,11 +162,22 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
   const canSubmit = draft.trim() !== '' || categoryDraft.trim() !== '' || occupationDraft.trim() !== ''
   const requestKey = JSON.stringify([query, category, occupation, language, sort, pageNumber])
   const currentPage = resolvedKey === requestKey
+  const fetchedCatalog = useRef<{ readonly api: CatalogRemote; readonly key: string; readonly retry: number } | undefined>(undefined)
   useEffect(() => {
     if (!open || !hasFilter || selected !== undefined) {
       setBusy(false)
       return
     }
+    if (
+      resolvedKey === requestKey
+      && fetchedCatalog.current?.api === api
+      && fetchedCatalog.current.key === requestKey
+      && fetchedCatalog.current.retry === retry
+    ) {
+      setBusy(false)
+      return
+    }
+    fetchedCatalog.current = { api, key: requestKey, retry }
     const controller = new AbortController()
     setBusy(true)
     setError('')
@@ -180,7 +194,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
       if (!controller.signal.aborted) { setError(errorMessage(reason, t)); setErrorDetails(diagnosticMessage(reason)) }
     }).finally(() => { if (!controller.signal.aborted) setBusy(false) })
     return () => { controller.abort() }
-  }, [api, category, hasFilter, language, occupation, open, pageNumber, query, requestKey, retry, selected, sort, t])
+  }, [api, category, hasFilter, language, occupation, open, pageNumber, query, requestKey, resolvedKey, retry, selected, sort, t])
 
   useEffect(() => {
     if (!open || selected === undefined) return
@@ -212,8 +226,14 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
     setPageNumber(1)
     setQuery(trimmed)
     if (trimmed === '' && nextCategory === '' && nextOccupation === '') {
+      fetchedCatalog.current = undefined
       setPage(undefined)
       setResolvedKey('')
+    } else if (
+      JSON.stringify([trimmed, nextCategory, nextOccupation, nextLanguage, sortDraft, 1]) === requestKey
+      && (resolvedKey !== requestKey || error !== '')
+    ) {
+      setRetry(value => value + 1)
     }
   }
   const search = (event: FormEvent<HTMLFormElement>): void => { event.preventDefault(); submit(draft) }
@@ -228,6 +248,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
   const editDraft = (value: string): void => {
     setDraft(value)
     if (value.trim() !== '') return
+    fetchedCatalog.current = undefined
     setQuery('')
     setCategory('')
     setOccupation('')
@@ -283,7 +304,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
                 <div className={css.filterField} role="group" aria-label={t('category')}>
                   <span className={css.filterLabel}>{t('category')}</span>
                   {taxonomy === undefined
-                    ? <button type="button" className={css.occupationTrigger} disabled={taxonomyBusy} onClick={() => { setTaxonomyForceRefresh(value => value + 1) }}>{taxonomyBusy ? t('taxonomyLoading') : t('retry')}</button>
+                    ? <button type="button" className={css.occupationTrigger} disabled={taxonomyBusy} onClick={() => { setTaxonomyForceRefresh(value => value + 1) }}>{taxonomyBusy ? t('taxonomyLoading') : taxonomyError !== '' ? t('unavailable') : t('retry')}</button>
                     : <CategoryCascader
                       label={t('category')}
                       value={categoryDraft}
@@ -301,7 +322,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
                 <div className={css.filterField} role="group" aria-label={t('occupation')}>
                   <span className={css.filterLabel}>{t('occupation')}</span>
                   {taxonomy === undefined
-                    ? <button type="button" className={css.occupationTrigger} disabled={taxonomyBusy} onClick={() => { setTaxonomyForceRefresh(value => value + 1) }}>{taxonomyBusy ? t('taxonomyLoading') : t('retry')}</button>
+                    ? <button type="button" className={css.occupationTrigger} disabled={taxonomyBusy} onClick={() => { setTaxonomyForceRefresh(value => value + 1) }}>{taxonomyBusy ? t('taxonomyLoading') : taxonomyError !== '' ? t('unavailable') : t('retry')}</button>
                     : <OccupationCascader
                       label={t('occupation')}
                       value={occupationDraft}
@@ -330,7 +351,7 @@ export function SkillCatalogPanel({ api, useStore, actions, t }: Props): ReactNo
                 }}>
                   {SORTS.map(value => <option key={value} value={value}>{t(value satisfies SkillCatalogKey)}</option>)}
                 </select></label>
-                <Button variant="primary" size="sm" disabled={taxonomy === undefined || taxonomyBusy || (!canSubmit && !hasFilter)} onClick={() => { submit(draft) }}>{t('applyFilters')}</Button>
+                <Button variant="primary" size="sm" disabled={!canSubmit && !hasFilter} onClick={() => { submit(draft) }}>{t('applyFilters')}</Button>
               </div>
               {taxonomyBusy ? <p className={css.status} role="status">{t('taxonomyLoading')}</p> : null}
               <div className={css.taxonomyActions}>

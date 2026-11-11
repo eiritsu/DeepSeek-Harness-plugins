@@ -36,7 +36,7 @@ export async function apply(ctx: Context): Promise<() => Promise<void>> {
       label: () => clientCtx.locale.bind(NS)('managerTitle'), locale: NS, inject: injection,
     }, InstalledSkillsPage))
     clientCtx.slots.inject('sidebar.footer.action', () => clientCtx.slots.register({
-      name: 'sidebar.footer.action', id: 'skill-catalog', order: 21, locale: NS, store, inject: injection,
+      name: 'sidebar.footer.action', id: 'skill-catalog', order: 21, locale: NS, store,
     }, SkillCatalogAction))
     clientCtx.slots.inject('shell.overlay', () => clientCtx.slots.register({
       name: 'shell.overlay', id: 'skill-catalog', locale: NS, store, inject: injection,

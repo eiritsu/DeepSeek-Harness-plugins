@@ -416,6 +416,65 @@ describe('SkillsMP search and pinned GitHub installation', () => {
     })
   })
 
+  it('handles large GitHub commit payloads, sha text responses, and cf-mitigated challenge fallback', async () => {
+    const helperBytes = Buffer.from('#!/usr/bin/env bash\necho ok\n')
+    const helperSha = createHash('sha1').update(Buffer.from(`blob ${helperBytes.byteLength}\0`)).update(helperBytes).digest('hex')
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    fetchMock.mockImplementation(async (input: URL | RequestInfo) => {
+      const url = requestUrl(input)
+      if (url.pathname === '/api/v1/skills/search') return response(SEARCH_RESPONSE)
+      if (url.pathname === '/api/github-contents/token') {
+        return new Response('<!DOCTYPE html><title>Just a moment...</title>', {
+          status: 403,
+          headers: { 'cf-mitigated': 'challenge', 'content-type': 'text/html; charset=UTF-8' },
+        })
+      }
+      if (url.origin === 'https://api.github.com' && url.pathname.includes('/commits/')) {
+        return response({ sha: COMMIT, patchPadding: 'x'.repeat(100_000) })
+      }
+      if (url.origin === 'https://api.github.com' && url.pathname.includes('/contents')) {
+        return response([
+          { name: 'SKILL.md', path: 'skills/seo/SKILL.md', type: 'file', size: SKILL_BYTES.byteLength, sha: BLOB_SHA },
+          { name: 'run.sh', path: 'skills/seo/run.sh', type: 'file', size: helperBytes.byteLength, sha: helperSha },
+        ])
+      }
+      if (url.origin === 'https://raw.githubusercontent.com') {
+        return response(url.pathname.endsWith('/run.sh') ? helperBytes : SKILL_BYTES)
+      }
+      return response({}, 404)
+    })
+    await withCatalog(await temporaryRoot(), async (catalog) => {
+      await catalog.catalog('SEO')
+      const detail = await catalog.detail(SKILL_URL)
+      expect(detail.commitSha).toBe(COMMIT)
+      expect(detail.files).toEqual([
+        { path: 'SKILL.md', size: SKILL_BYTES.byteLength, sha: BLOB_SHA },
+        { path: 'run.sh', size: helperBytes.byteLength, sha: helperSha },
+      ])
+      const result = await catalog.installSkill(SKILL_URL, detail.commitSha, true)
+      expect(result.files).toBe(2)
+    })
+
+    fetchMock.mockImplementation(async (input: URL | RequestInfo) => {
+      const url = requestUrl(input)
+      if (url.pathname === '/api/v1/skills/search') return response(SEARCH_RESPONSE)
+      if (url.pathname === '/api/github-contents/token') return response({ message: 'Forbidden' }, 403)
+      if (url.origin === 'https://api.github.com' && url.pathname.includes('/commits/')) {
+        return new Response(`${COMMIT}\n`, { status: 200, headers: { 'content-type': 'application/vnd.github.sha' } })
+      }
+      if (url.origin === 'https://api.github.com' && url.pathname.includes('/contents')) {
+        return response([{ name: 'SKILL.md', path: 'skills/seo/SKILL.md', type: 'file', size: SKILL_BYTES.byteLength, sha: BLOB_SHA }])
+      }
+      if (url.origin === 'https://raw.githubusercontent.com') return response(SKILL_BYTES)
+      return response({}, 404)
+    })
+    await withCatalog(await temporaryRoot(), async (catalog) => {
+      await catalog.catalog('SEO')
+      const detail = await catalog.detail(SKILL_URL)
+      expect(detail.commitSha).toBe(COMMIT)
+    })
+  })
+
   it('compares slash refs and path tails with the SkillsMP target without guessing a split', async () => {
     const fixture = installHttpFixture()
     const listed = SEARCH_RESPONSE.data.skills[0]
