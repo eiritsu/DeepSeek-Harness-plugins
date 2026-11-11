@@ -1,4 +1,4 @@
-/** Sidebar footer action for the SkillsMP skills directory. */
+/** Sidebar footer action for the community skill directory. */
 import type { ReactNode } from 'react'
 import { IconSkillOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
@@ -7,9 +7,9 @@ import css from './SkillCatalogPage.module.css'
 
 type Store = PropsStore<ReturnType<typeof createSkillCatalogStore>>
 
-/** Open the SkillsMP directory from the official sidebar footer.
- * @param props Sidebar width, visibility state, and localized label.
- * @returns the footer action.
+/** Open the community skill directory from the official sidebar footer.
+ * @param props Sidebar width, overlay state, and localized label.
+ * @returns the footer action control.
  */
 export function SkillCatalogAction(props: PropsRuntime<'sidebar.footer.action'> & Store & PropsLocale<'skillCatalog'>): ReactNode {
   const { wide, useStore, actions, t } = props

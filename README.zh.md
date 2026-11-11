@@ -48,13 +48,14 @@ pnpm dsh web
 
 ## 可安装组合包
 
-每行列出用于阅读源码的源码目录和可直接复制的安装 URL。以下六个是本仓库自行维护并单独发布的插件，同时兼容 `0.2.2-rc.1`、`0.2.2-alpha.2`、`0.2.1-rc.5`、`0.2.1-rc.3` 以及 `0.2.1-alpha.1` 与 `0.2.1-alpha.2`；因 SkillsMP 站点访问限制，已撤回 `@deepseek-ai/dsh-community-skill-catalog` 的发行包；历史实验包不再列为当前的独立安装项。六个插件的版本均为 `0.2.2-rc.1`。
+每行列出用于阅读源码的源码目录和可直接复制的安装 URL。以下七个是本仓库自行维护并单独发布的插件，同时兼容 `0.2.2-rc.1`、`0.2.2-alpha.2`、`0.2.1-rc.5`、`0.2.1-rc.3` 以及 `0.2.1-alpha.1` 与 `0.2.1-alpha.2`；历史实验包不再列为当前的独立安装项。七个插件的版本均为 `0.2.2-rc.1`。
 
 | 插件 | npm 包 | 功能和界面 | 源码（仅浏览） | 安装 URL |
 |---|---|---|---|---|
 | Superagent 超级智能体 | `@deepseek-ai/dsh-superagent` | DeepSeek 官方主动式编码智能体原型，支持 GitHub/飞书自主监听、策略评估、子任务多会话调度与内置 UI 管理面板；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/superagent> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-superagent-0.2.2-rc.1.tgz> |
 | Calendar 日历 | `@deepseek-ai/dsh-calendar` | 汇总 Schedule 自动化、本地条目与用户自行提供的 iCalendar 订阅的日历视图；Web 与桌面 | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/calendar> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-calendar-0.2.2-rc.1.tgz> |
 | 社区插件目录 | `@deepseek-ai/dsh-community-plugin-catalog` | 浏览和安装社区插件；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/community-plugin-catalog> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-community-plugin-catalog-0.2.2-rc.1.tgz> |
+| 社区 Skill 目录 | `@deepseek-ai/dsh-community-skill-catalog` | 集成 GitHub 精选索引（`sickn33/agentic-awesome-skills`）与 `skills.sh` 的双源技能目录，支持预览 `SKILL.md` 与固定 Commit 安全安装；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/community-skill-catalog> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-community-skill-catalog-0.2.2-rc.1.tgz> |
 | IM 集成 | `@deepseek-ai/dsh-im-integration` | 多平台 IM 网关（飞书/Lark、钉钉、企业微信、微信、QQ、Telegram、Discord），支持各平台独立配置、白名单访问控制和完全放行/内容审核开关；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/im-integration> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-im-integration-0.2.2-rc.1.tgz> |
 | 工具与连接 | `@deepseek-ai/dsh-tools-connections` | 添加 Brave、Tavily 搜索提供者、Firecrawl 提取工具和设置页；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/tools-connections> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-tools-connections-0.2.2-rc.1.tgz> |
 | macOS Computer Use | `@deepseek-ai/dsh-cua-bundle` | macOS Computer Use（自包含版）：内置预编译原生系统助手与权限面板，自动配置 PTC 运行环境与系统权限检测，开箱即用；Desktop (macOS) | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/cua-bundle> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-cua-bundle-0.2.2-rc.1.tgz> |

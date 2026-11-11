@@ -1,9 +1,10 @@
 /** Global DSH skill directory management page in the official Plugins panel. */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Button, RiskConfirmation } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InstalledSkill } from '@deepseek-ai/dsh-community-skill-catalog/types'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
-import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type { InjectFace, PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
+import type { createSkillCatalogStore } from './store.ts'
 import css from './SkillCatalogPage.module.css'
 
 type SkillManagerRemote = {
@@ -11,11 +12,16 @@ type SkillManagerRemote = {
   removeInstalledSkill(id: string, confirmed: boolean): Promise<RemoteResult<string>>
 }
 
-interface Injected { readonly api: SkillManagerRemote }
-type Props = PropsRuntime<'plugins.item'> & PropsLocale<'skillCatalog'> & InjectFace<Injected>
+export interface InstalledSkillsInjected { readonly api: SkillManagerRemote }
+type Store = PropsStore<ReturnType<typeof createSkillCatalogStore>>
+type Props = PropsRuntime<'plugins.item'> & Store & PropsLocale<'skillCatalog'> & InjectFace<InstalledSkillsInjected>
 
-/** Render installed global skills inside the official Plugins page. */
-export function InstalledSkillsPage({ view, api, t }: Props) {
+/** Render installed global skills and link into the community skill catalog modal.
+ * @param props View mode, shared catalog visibility store, localization, and Remote handle.
+ * @returns Summary line or interactive installed skills manager page.
+ */
+export function InstalledSkillsPage({ view, api, useStore, actions, t }: Props): ReactNode {
+  const installRevision = useStore(state => state.installRevision)
   const [skills, setSkills] = useState<readonly InstalledSkill[]>([])
   const [loading, setLoading] = useState(true)
   const [failure, setFailure] = useState(false)
@@ -39,7 +45,7 @@ export function InstalledSkillsPage({ view, api, t }: Props) {
       if (active) setLoading(false)
     })
     return () => { active = false }
-  }, [api, revision, view])
+  }, [api, installRevision, revision, view])
 
   if (view === 'summary') return <>{t('managerDescription')}</>
 
@@ -63,7 +69,10 @@ export function InstalledSkillsPage({ view, api, t }: Props) {
   return <section className={css.manager} aria-label={t('managerTitle')}>
     <div className={css.managerHeader}>
       <div><h3 className={css.managerTitle}>{t('managerTitle')}</h3><p className={css.description}>{t('managerIntro')}</p></div>
-      <Button variant="outline" disabled={loading} onClick={() => { setRevision(value => value + 1) }}>{t('refreshSkills')}</Button>
+      <div className={css.managerActions}>
+        <Button variant="primary" onClick={() => { actions.open() }}>{t('browseCatalog')}</Button>
+        <Button variant="outline" disabled={loading} onClick={() => { setRevision(value => value + 1) }}>{t('refreshSkills')}</Button>
+      </div>
     </div>
     {failure && <p className={css.error} role="alert">{t('skillLoadFailed')}</p>}
     {notice !== '' && <p className={css.notice} role="status">{notice}</p>}

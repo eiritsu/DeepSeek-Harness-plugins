@@ -29,7 +29,7 @@ This group maps the installable patch layers used by `dsh --profile`. Each packa
 | [`sdk-app`](sdk-app/README.md) | SDK JSON-RPC stdio application over base | mounts the SDK server |
 | [`sdk-minimal`](sdk-minimal/README.md) | Standalone minimal SDK application without base or Web | — (complete patch tree) |
 | [`community-plugin-catalog`](community-plugin-catalog/README.md) | Optional community plugin directory for a profile | Adds its own Host Remote and Client entry |
-| [`community-skill-catalog`](community-skill-catalog/README.md) | Optional SkillHub discovery and reviewed skill installation | Adds its own Host Remote and Client entry |
+| [`community-skill-catalog`](community-skill-catalog/README.md) | Optional dual-source GitHub & `skills.sh` skill discovery and pinned-commit installation | Adds its own Host Remote and Client entry |
 | [`lark-integration`](lark-integration/README.md) | Optional Lark/Feishu private-chat integration and Settings page | Adds a disabled Host row and its Client page |
 | [`copy-session-id`](copy-session-id/README.md) | Optional conversation-header Session ID action | Adds a Client plugin row |
 | [`turn-process-shimmer`](turn-process-shimmer/README.md) | Optional Web running-process text treatment | Replaces the keyed Client renderer |

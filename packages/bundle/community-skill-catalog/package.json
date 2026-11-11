@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-community-skill-catalog",
-  "description": "Opt-in SkillsMP GitHub skill discovery and confirmed commit installation for Web and Desktop UI profiles",
+  "description": "Opt-in dual-source (GitHub index and skills.sh) community skill discovery and pinned commit installation for Web and Desktop UI profiles",
   "version": "0.2.2-rc.1",
   "publishConfig": {
     "access": "public"
@@ -80,7 +80,6 @@
   },
   "dependencies": {
     "ipaddr.js": "^2.5.0",
-    "parse5": "^8.0.1",
     "undici": "^8.10.0",
     "zod": "^4.4.3"
   },

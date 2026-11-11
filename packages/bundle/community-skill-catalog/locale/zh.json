@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "SkillsMP 技能目录",
-    "description": "查找 SkillsMP 技能，预览后安装到 DSH。"
+    "title": "社区技能目录",
+    "description": "聚合 GitHub 精选库与 skills.sh 开放目录，支持预览指令与固定 Commit 安全安装到 DSH。"
   }
 }

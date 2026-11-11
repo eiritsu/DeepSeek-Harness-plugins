@@ -9,9 +9,11 @@ type PinnedLookup = (
   options: LookupOptions,
   callback: (error: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => void,
 ) => void
-const { fetchMock, lookupMock, agentLookups, proxyState } = vi.hoisted(() => ({
+const { fetchMock, lookupMock, resolve4Mock, resolve6Mock, agentLookups, proxyState } = vi.hoisted(() => ({
   fetchMock: vi.fn<FetchMock>(),
   lookupMock: vi.fn(),
+  resolve4Mock: vi.fn<() => Promise<string[]>>(),
+  resolve6Mock: vi.fn<() => Promise<string[]>>(),
   agentLookups: [] as (PinnedLookup | undefined)[],
   proxyState: { dispatcher: { close: async () => {} } },
 }))
@@ -28,27 +30,29 @@ vi.mock('undici', () => ({
   setGlobalDispatcher: (dispatcher: { close: () => Promise<void> }) => { proxyState.dispatcher = dispatcher },
   fetch: fetchMock,
 }))
-vi.mock('node:dns/promises', () => ({ lookup: lookupMock }))
+vi.mock('node:dns/promises', () => ({ lookup: lookupMock, resolve4: resolve4Mock, resolve6: resolve6Mock }))
 
-import { SkillsMpCatalog } from '../src/host/skillsmp-catalog.ts'
+import { SkillCatalog } from '../src/host/skill-catalog.ts'
 
-const SEARCH_RESPONSE = {
-  success: true,
-  data: { skills: [{ id: 'owner-skill', name: 'skill', author: 'owner', description: '', contentLanguage: 'en', githubUrl: 'https://github.com/owner/repo/tree/main/skill', skillUrl: 'https://skillsmp.com/creators/owner/repo/skill', stars: 1, updatedAt: 1 }], pagination: { page: 1, limit: 24, total: 1, totalPages: 1, hasNext: false, hasPrev: false, totalIsExact: true }, filters: { search: 'query', sortBy: 'stars' } },
-  meta: {},
+const INDEX_RESPONSE = [
+  {
+    id: 'seo',
+    path: 'skills/seo',
+    category: 'marketing',
+    name: 'seo',
+    description: 'SEO skill',
+    risk: 'safe',
+    source: 'https://github.com/owner/repo/tree/main/skills/seo',
+    date_added: '2026-03-01',
+    plugin: { targets: { claude: 'supported' } },
+  },
+]
+const SKILLS_SH_RESPONSE = {
+  skills: [{ id: 'owner/repo/seo', source: 'owner/repo', skillId: 'seo', name: 'seo', installs: 1200 }],
 }
 const COMMIT = 'a'.repeat(40)
-const SKILL_TEXT = '---\nname: skill\ndescription: TUN routed skill.\n---\n\n# TUN routed skill\n'
+const SKILL_TEXT = '---\nname: seo\ndescription: TUN routed skill.\n---\n\n# TUN routed skill\n'
 const SKILL_BYTES = Buffer.from(SKILL_TEXT)
-const DOWNLOAD_TARGET = { owner: 'owner', repo: 'repo', branch: 'main', path: 'skill' }
-const DOWNLOAD_TOKEN = 'short-lived-token'
-const DOWNLOAD_MANIFEST = {
-  commitSha: COMMIT,
-  files: [{ path: 'SKILL.md', size: SKILL_BYTES.byteLength, rawUrl: `https://raw.githubusercontent.com/owner/repo/${COMMIT}/skill/SKILL.md` }],
-  limitReason: null,
-  skippedFiles: 0,
-  truncated: false,
-}
 
 function requestUrl(input: URL | RequestInfo): URL {
   if (input instanceof URL) return input
@@ -60,9 +64,29 @@ function response(body: unknown, status = 200, headers?: HeadersInit): Response 
   return new Response(responseBody, { status, ...(headers === undefined ? {} : { headers }) })
 }
 
-afterEach(() => { fetchMock.mockReset(); lookupMock.mockReset(); agentLookups.length = 0 })
+afterEach(() => {
+  fetchMock.mockReset()
+  lookupMock.mockReset()
+  resolve4Mock.mockReset()
+  resolve6Mock.mockReset()
+  agentLookups.length = 0
+})
 
-describe('SkillsMP outbound requests', () => {
+describe('Skill catalog outbound requests', () => {
+  it('falls back to direct resolve4/resolve6 on ENOTFOUND while still rejecting private fallback IPs', async () => {
+    lookupMock.mockRejectedValue(Object.assign(new Error('getaddrinfo ENOTFOUND skills.sh'), { code: 'ENOTFOUND' }))
+    resolve4Mock.mockResolvedValueOnce(['127.0.0.1'])
+    resolve6Mock.mockResolvedValueOnce([])
+    const catalog = new SkillCatalog(new Context(), {})
+    await expect(catalog.catalog('query', 'skills-sh')).rejects.toThrow('did not resolve exclusively to public addresses')
+    expect(fetchMock).not.toHaveBeenCalled()
+
+    resolve4Mock.mockResolvedValueOnce(['64.239.109.65'])
+    resolve6Mock.mockResolvedValueOnce([])
+    fetchMock.mockResolvedValueOnce(response(SKILLS_SH_RESPONSE))
+    const page = await catalog.catalog('seo', 'skills-sh')
+    expect(page.items).toHaveLength(1)
+  })
   it.each([
     ['loopback', '127.0.0.1', 4],
     ['10/8', '10.1.2.3', 4],
@@ -72,39 +96,42 @@ describe('SkillsMP outbound requests', () => {
     ['IPv6 unique-local', 'fc00::1', 6],
   ])('rejects %s DNS answers before issuing HTTP', async (_range, address, family) => {
     lookupMock.mockResolvedValue([{ address, family }])
-    const catalog = new SkillsMpCatalog(new Context(), {})
+    const catalog = new SkillCatalog(new Context(), {})
 
-    await expect(catalog.catalog('query')).rejects.toThrow('did not resolve exclusively to public addresses')
+    await expect(catalog.catalog('query', 'skills-sh')).rejects.toThrow('did not resolve exclusively to public addresses')
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('allows the TUN answer for each trusted HTTPS origin and pins it without changing the host', async () => {
+  it('allows TUN benchmark addresses across trusted origins and pins them per request', async () => {
     lookupMock.mockResolvedValue([{ address: '198.18.1.24', family: 4 }])
     fetchMock.mockImplementation(async (input: URL | RequestInfo) => {
       const url = requestUrl(input)
-      if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/v1/skills/search') return response(SEARCH_RESPONSE)
-      if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/github-contents/token') return response({ token: DOWNLOAD_TOKEN, target: DOWNLOAD_TARGET })
-      if (url.origin === 'https://skillsmp.com' && url.pathname === '/api/github-contents') return response(DOWNLOAD_MANIFEST)
+      if (url.origin === 'https://raw.githubusercontent.com' && url.pathname.endsWith('/skills_index.json')) return response(INDEX_RESPONSE)
+      if (url.origin === 'https://skills.sh' && url.pathname === '/api/search') return response(SKILLS_SH_RESPONSE)
+      if (url.origin === 'https://api.github.com' && url.pathname.includes('/commits/')) return response({ sha: COMMIT })
+      if (url.origin === 'https://api.github.com' && url.pathname.includes('/contents/')) {
+        return response([{ name: 'SKILL.md', path: 'skills/seo/SKILL.md', type: 'file', size: SKILL_BYTES.byteLength }])
+      }
       if (url.origin === 'https://raw.githubusercontent.com') return response(SKILL_BYTES)
       return response({}, 404)
     })
-    const catalog = new SkillsMpCatalog(new Context(), {})
+    const catalog = new SkillCatalog(new Context(), {})
 
-    await catalog.catalog('query')
-    await catalog.detail('https://github.com/owner/repo/tree/main/skill')
+    await catalog.catalog('seo', 'all')
+    await catalog.detail('github:sickn33/agentic-awesome-skills/skills/seo')
 
     const requests = fetchMock.mock.calls.map(([input]) => requestUrl(input))
     expect(new Set(requests.map(url => url.origin))).toEqual(new Set([
-      'https://skillsmp.com', 'https://raw.githubusercontent.com',
+      'https://raw.githubusercontent.com', 'https://skills.sh', 'https://api.github.com',
     ]))
     expect(lookupMock).toHaveBeenCalledTimes(requests.length)
     expect(agentLookups).toHaveLength(requests.length)
     for (const [index, url] of requests.entries()) {
       expect(lookupMock).toHaveBeenNthCalledWith(index + 1, url.hostname, { all: true, order: 'verbatim' })
-      const pinnedLookup = agentLookups[index]
-      if (pinnedLookup === undefined) throw new Error(`Direct HTTPS request ${index} did not receive a pinned lookup.`)
+      const pinned = agentLookups[index]
+      if (pinned === undefined) throw new Error(`Direct HTTPS request ${index} did not receive a pinned lookup.`)
       let resolved: string | LookupAddress[] | undefined
-      pinnedLookup(url.hostname, { all: true }, (error, address) => {
+      pinned(url.hostname, { all: true }, (error, address) => {
         if (error !== null) throw error
         resolved = address
       })
@@ -112,128 +139,83 @@ describe('SkillsMP outbound requests', () => {
     }
   })
 
-  it('does not resolve locally when the explicit HTTPS proxy handles the request', async () => {
-    fetchMock.mockResolvedValue(response(SEARCH_RESPONSE))
+  it('does not resolve DNS locally when explicit HTTPS_PROXY handles the request', async () => {
+    fetchMock.mockResolvedValue(response(SKILLS_SH_RESPONSE))
     const dispose = await installProxyFromEnvironment({
       get(name) { return name === 'HTTPS_PROXY' ? { value: 'http://proxy.test:8080' } : undefined },
     }, () => undefined)
     try {
-      const catalog = new SkillsMpCatalog(new Context(), {})
-      await catalog.catalog('query')
+      const catalog = new SkillCatalog(new Context(), {})
+      await catalog.catalog('seo', 'skills-sh')
       expect(lookupMock).not.toHaveBeenCalled()
       expect(fetchMock).toHaveBeenCalledOnce()
     } finally { await dispose() }
   })
 
-  it.each([
-    'https://github.com.evil.test/owner/repo/tree/main/skill',
-    'https://198.18.1.24/owner/repo/tree/main/skill',
-  ])('does not issue requests for a malicious GitHub source URL: %s', async (githubUrl) => {
-    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
-    const skill = SEARCH_RESPONSE.data.skills[0]
-    if (skill === undefined) throw new Error('Search fixture has no skill.')
-    const malicious = { ...SEARCH_RESPONSE, data: { ...SEARCH_RESPONSE.data, skills: [{ ...skill, githubUrl }] } }
-    fetchMock.mockResolvedValue(response(malicious))
-    const catalog = new SkillsMpCatalog(new Context(), {})
-
-    await expect(catalog.catalog('query')).rejects.toMatchObject({ code: 'skillsmp/github-source-invalid' })
-    expect(fetchMock.mock.calls.map(([input]) => requestUrl(input).origin)).toEqual(['https://skillsmp.com'])
-  })
-
-  it.each([
-    [401, 'skillsmp/forbidden'],
-    [403, 'skillsmp/forbidden'],
-    [429, 'skillsmp/rate-limited'],
-  ])('returns a typed SkillsMP HTTP %s failure', async (status, code) => {
-    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
-    fetchMock.mockResolvedValue(response({ success: false }, status))
-    const catalog = new SkillsMpCatalog(new Context(), {})
-
-    await expect(catalog.catalog('query')).rejects.toMatchObject({ code, details: { status } })
-  })
-
-  it('distinguishes Cloudflare verification challenges from credential errors', async () => {
-    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
-    fetchMock.mockResolvedValue(new Response('<!DOCTYPE html><title>Just a moment...</title>', {
-      status: 403,
-      headers: { 'cf-mitigated': 'challenge', 'content-type': 'text/html; charset=UTF-8' },
-    }))
-    const catalog = new SkillsMpCatalog(new Context(), {})
-
-    await expect(catalog.taxonomy('zh')).rejects.toMatchObject({ code: 'skillsmp/challenge', details: { status: 403 } })
-  })
-
-  it.each([
-    ['/api/github-contents/token', 429, 'skillsmp/rate-limited'],
-    ['/api/github-contents', 503, 'skillsmp/source-unavailable'],
-  ])('returns a typed SkillsMP source failure for %s HTTP %s', async (path, status, code) => {
-    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
-    fetchMock.mockImplementation(async (input: URL | RequestInfo) => {
-      const url = requestUrl(input)
-      if (url.pathname === '/api/v1/skills/search') return response(SEARCH_RESPONSE)
-      if (url.pathname === '/api/github-contents/token') {
-        return url.pathname === path ? response({}, status) : response({ token: DOWNLOAD_TOKEN, target: DOWNLOAD_TARGET })
-      }
-      if (url.pathname === path) return response({}, status)
-      return response(SKILL_BYTES)
-    })
-    const catalog = new SkillsMpCatalog(new Context(), {})
-
-    await catalog.catalog('query')
-    await expect(catalog.detail('https://github.com/owner/repo/tree/main/skill')).rejects.toMatchObject({ code, details: { status } })
-  })
-
-  it('rejects redirects from the SkillsMP endpoint', async () => {
+  it('rejects redirects from upstream endpoints', async () => {
     lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
     fetchMock.mockResolvedValueOnce(response({}, 302, { location: 'https://raw.githubusercontent.com/attacker/repo/main/file' }))
-    const catalog = new SkillsMpCatalog(new Context(), {})
+    const catalog = new SkillCatalog(new Context(), {})
 
-    await expect(catalog.catalog('query')).rejects.toThrow('redirect')
+    await expect(catalog.catalog('query', 'skills-sh')).rejects.toThrow('redirects are not allowed')
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 
-  it('keeps search credentials and temporary download tokens on SkillsMP only', async () => {
+  it.each([
+    [429, 'skill-catalog/rate-limited', 'skills-sh'],
+    [503, 'skill-catalog/source-unavailable', 'skills-sh'],
+  ])('maps skills.sh HTTP %s failures to typed errors', async (status, code, source) => {
+    lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
+    fetchMock.mockResolvedValue(response({}, status))
+    const catalog = new SkillCatalog(new Context(), {})
+
+    await expect(catalog.catalog('query', 'skills-sh')).rejects.toMatchObject({ code, details: { source, status } })
+  })
+
+  it('keeps configured GitHub credentials scoped exclusively to api.github.com', async () => {
     lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
     fetchMock.mockImplementation(async (input: URL | RequestInfo) => {
       const url = requestUrl(input)
-      if (url.pathname === '/api/v1/skills/search') return response(SEARCH_RESPONSE)
-      if (url.pathname === '/api/github-contents/token') return response({ token: DOWNLOAD_TOKEN, target: DOWNLOAD_TARGET })
-      if (url.pathname === '/api/github-contents') return response(DOWNLOAD_MANIFEST)
-      if (url.hostname === 'raw.githubusercontent.com') return response(SKILL_BYTES)
+      if (url.origin === 'https://raw.githubusercontent.com' && url.pathname.endsWith('/skills_index.json')) return response(INDEX_RESPONSE)
+      if (url.origin === 'https://skills.sh' && url.pathname === '/api/search') return response(SKILLS_SH_RESPONSE)
+      if (url.origin === 'https://api.github.com' && url.pathname.includes('/commits/')) return response({ sha: COMMIT })
+      if (url.origin === 'https://api.github.com' && url.pathname.includes('/contents/')) {
+        return response([{ name: 'SKILL.md', path: 'skills/seo/SKILL.md', type: 'file', size: SKILL_BYTES.byteLength }])
+      }
+      if (url.origin === 'https://raw.githubusercontent.com') return response(SKILL_BYTES)
       return response({}, 404)
     })
     const ctx = new Context()
-    const resolveCredential = vi.fn(async (_reference: string) => ({
-      value: 'private-skillsmp-key',
-      source: 'test',
-    }))
+    const resolveCredential = vi.fn(async (_reference: string) => ({ value: 'ghp_secret_token_value', source: 'test' }))
     ctx.provide('credentials', { resolve: resolveCredential } as never)
-    const catalog = new SkillsMpCatalog(ctx, { skillsmpCredentialKey: 'SKILLSMP_API_KEY' })
+    const catalog = new SkillCatalog(ctx, { githubCredentialKey: 'GITHUB_TOKEN' })
 
-    await catalog.catalog('query')
-    await catalog.detail('https://github.com/owner/repo/tree/main/skill')
-    expect(resolveCredential.mock.calls.map(([reference]) => reference)).toEqual(['SKILLSMP_API_KEY'])
+    await catalog.catalog('seo', 'all')
+    await catalog.detail('github:sickn33/agentic-awesome-skills/skills/seo')
+
+    expect(resolveCredential.mock.calls.map(([ref]) => ref)).toEqual(['GITHUB_TOKEN', 'GITHUB_TOKEN'])
     for (const [input, init] of fetchMock.mock.calls) {
       const url = requestUrl(input)
       const headers = new Headers(init?.headers)
-      if (url.pathname === '/api/v1/skills/search') expect(headers.get('authorization')).toBe('Bearer private-skillsmp-key')
+      if (url.origin === 'https://api.github.com') expect(headers.get('authorization')).toBe('Bearer ghp_secret_token_value')
       else expect(headers.has('authorization')).toBe(false)
-      if (url.origin === 'https://raw.githubusercontent.com') expect(headers.has('x-skillsmp-download-token')).toBe(false)
-      if (url.pathname === '/api/github-contents') expect(headers.get('x-skillsmp-download-token')).toBe(DOWNLOAD_TOKEN)
     }
     await ctx.fiber.dispose()
   })
 
-  it('fails clearly when a configured SkillsMP credential reference is unavailable', async () => {
+  it('fails clearly when a configured GitHub credential reference is unavailable', async () => {
     lookupMock.mockResolvedValue([{ address: '93.184.216.34', family: 4 }])
-    fetchMock.mockResolvedValue(response(SEARCH_RESPONSE))
+    fetchMock.mockImplementation(async (input: URL | RequestInfo) => {
+      const url = requestUrl(input)
+      if (url.origin === 'https://raw.githubusercontent.com' && url.pathname.endsWith('/skills_index.json')) return response(INDEX_RESPONSE)
+      return response({}, 404)
+    })
     const ctx = new Context()
     ctx.provide('credentials', { resolve: async () => undefined } as never)
-    const catalog = new SkillsMpCatalog(ctx, { skillsmpCredentialKey: 'MISSING_SKILLSMP_API_KEY' })
+    const catalog = new SkillCatalog(ctx, { githubCredentialKey: 'MISSING_GITHUB_TOKEN' })
 
-    await expect(catalog.catalog('query')).rejects.toThrow('configured SkillsMP credential reference is unavailable')
-    expect(fetchMock).not.toHaveBeenCalled()
+    await catalog.catalog('seo', 'github-index')
+    await expect(catalog.detail('github:sickn33/agentic-awesome-skills/skills/seo')).rejects.toThrow('configured GitHub credential reference is unavailable')
     await ctx.fiber.dispose()
   })
-
 })

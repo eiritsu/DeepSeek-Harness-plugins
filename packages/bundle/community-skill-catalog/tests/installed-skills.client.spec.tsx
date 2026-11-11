@@ -20,21 +20,47 @@ const translate: TranslateNS<'skillCatalog'> = (key, values) => Object.entries(v
   en[key as keyof typeof en] ?? key,
 )
 
+function makeStoreProps(installRevision = 0, open = vi.fn()) {
+  const useStore = <S,>(selector: (state: { open: boolean; installRevision: number }) => S): S => selector({ open: false, installRevision })
+  return { useStore, actions: { open, close: vi.fn(), notifyInstalled: vi.fn() } }
+}
+
 afterEach(cleanup)
 
-it('shows the global skill list in the official Plugins item and matches the visible copy snapshot', async () => {
+it('lists global installed skills and lets the user jump into the community skill catalog', async () => {
   const api = {
-    listInstalledSkills: vi.fn().mockResolvedValue({ ok: true, value: [
-      { id: '%40publisher%2Fcatalog-skill', name: '@publisher/catalog-skill' },
-      { id: 'local-skill', name: 'local-skill' },
-    ] }),
+    listInstalledSkills: vi.fn().mockResolvedValue({
+      ok: true,
+      value: [
+        { id: '%40publisher%2Fcatalog-skill', name: '@publisher/catalog-skill' },
+        { id: 'local-skill', name: 'local-skill' },
+      ],
+    }),
     removeInstalledSkill: vi.fn(),
   }
-  render(<InstalledSkillsPage {...globalProps} view="page" api={api} t={translate} />)
+  const open = vi.fn()
+  const storeProps = makeStoreProps(0, open)
+  render(<InstalledSkillsPage {...globalProps} view="page" api={api} {...storeProps} t={translate} />)
   const region = await screen.findByRole('region', { name: en.managerTitle })
   await screen.findByText('@publisher/catalog-skill')
-  expect(region.textContent).toMatchInlineSnapshot('"SkillsThis list contains directories with SKILL.md files in the global DSH skills folder. Removing a skill permanently deletes its files from this computer.Refresh@publisher/catalog-skillRemovelocal-skillRemove"')
   expect(within(region).getAllByRole('button', { name: en.removeSkill })).toHaveLength(2)
+
+  fireEvent.click(within(region).getByRole('button', { name: en.browseCatalog }))
+  expect(open).toHaveBeenCalledOnce()
+})
+
+it('refreshes the installed skills list when installRevision increments', async () => {
+  const api = {
+    listInstalledSkills: vi.fn()
+      .mockResolvedValueOnce({ ok: true, value: [{ id: 'first', name: 'first' }] })
+      .mockResolvedValueOnce({ ok: true, value: [{ id: 'first', name: 'first' }, { id: 'second', name: 'second' }] }),
+    removeInstalledSkill: vi.fn(),
+  }
+  const view = render(<InstalledSkillsPage {...globalProps} view="page" api={api} {...makeStoreProps(0)} t={translate} />)
+  await screen.findByText('first')
+  view.rerender(<InstalledSkillsPage {...globalProps} view="page" api={api} {...makeStoreProps(1)} t={translate} />)
+  await screen.findByText('second')
+  expect(api.listInstalledSkills).toHaveBeenCalledTimes(2)
 })
 
 it('removes a skill only after the user acknowledges the destructive action', async () => {
@@ -42,7 +68,7 @@ it('removes a skill only after the user acknowledges the destructive action', as
     listInstalledSkills: vi.fn().mockResolvedValue({ ok: true, value: [{ id: 'local-skill', name: 'local-skill' }] }),
     removeInstalledSkill: vi.fn().mockResolvedValue({ ok: true, value: 'local-skill' }),
   }
-  render(<InstalledSkillsPage {...globalProps} view="page" api={api} t={translate} />)
+  render(<InstalledSkillsPage {...globalProps} view="page" api={api} {...makeStoreProps(0)} t={translate} />)
   const region = await screen.findByRole('region', { name: en.managerTitle })
   fireEvent.click(within(region).getByRole('button', { name: en.removeSkill }))
 

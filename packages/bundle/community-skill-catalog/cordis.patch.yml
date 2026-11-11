@@ -1,4 +1,4 @@
-# Optional SkillsMP GitHub skills directory. No default profile includes this bundle.
+# Optional dual-source GitHub & skills.sh community skills directory. No default profile includes this bundle.
 - insert:
     - id: community-skill-catalog
       name: '@deepseek-ai/dsh-community-skill-catalog'

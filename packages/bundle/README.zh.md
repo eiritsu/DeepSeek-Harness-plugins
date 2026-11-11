@@ -29,7 +29,7 @@ kind: "package-group"
 | [`sdk-app`](sdk-app/README.zh.md) | 基于 base 的 SDK JSON-RPC stdio 应用 | 挂载 SDK 服务器 |
 | [`sdk-minimal`](sdk-minimal/README.zh.md) | 不使用 base 或 Web 的独立极简 SDK 应用 | —（完整 patch 树） |
 | [`community-plugin-catalog`](community-plugin-catalog/README.zh.md) | profile 的可选社区插件目录 | 加入独立 Host Remote 与 Client 入口 |
-| [`community-skill-catalog`](community-skill-catalog/README.zh.md) | 可选 SkillHub 发现与审核安装 | 加入独立 Host Remote 与 Client 入口 |
+| [`community-skill-catalog`](community-skill-catalog/README.zh.md) | 可选 GitHub 与 `skills.sh` 双源技能目录及固定 Commit 安装 | 加入独立 Host Remote 与 Client 入口 |
 | [`lark-integration`](lark-integration/README.zh.md) | 可选 Lark/飞书私聊集成和设置页面 | 加入默认禁用的 Host 行和 Client 页面 |
 | [`copy-session-id`](copy-session-id/README.zh.md) | 可选会话标题栏 Session ID 操作 | 加入 Client 插件行 |
 | [`turn-process-shimmer`](turn-process-shimmer/README.zh.md) | 可选 Web 运行中状态文本效果 | 替换指定的 Client 渲染器 |

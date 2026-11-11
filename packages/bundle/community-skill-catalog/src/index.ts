@@ -1,8 +1,8 @@
-/** Host SkillsMP Remote supplied by this standalone bundle. */
+/** Host dual-source skill catalog Remote supplied by this standalone bundle. */
 import type { Plugin } from '@deepseek-ai/cordis'
-import { SkillsMpCatalog } from './host/skillsmp-catalog.ts'
+import { SkillCatalog } from './host/skill-catalog.ts'
 
-/** Loader namespace: the SkillsMP Remote registered under its own name. */
-const plugin: Plugin = SkillsMpCatalog
+/** Loader namespace: the skill catalog Remote registered under its own name. */
+const plugin: Plugin = SkillCatalog
 
 export default plugin
