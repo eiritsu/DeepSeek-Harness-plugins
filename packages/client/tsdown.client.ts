@@ -505,6 +505,54 @@ function asyncChunkRequirePlugin(): TsdownPlugin {
   }
 }
 
+/** Pattern matching Rolldown `#region` comments emitted for virtual stylesheet loaders. */
+const CSS_REGION_PREFIX = /^([ \t]*\/\/#region (?:\\0|\0)dsh-(?:global-|inline-)?css:)([^\r\n]+)$/gmu
+
+/**
+ * Normalize an absolute virtual stylesheet module id onto a repository-relative path or basename.
+ * @param rawPath - Raw module id suffix after the virtual CSS loader prefix.
+ * @returns Sanitized path without any host-local home or workspace directory prefix.
+ */
+function sanitizeCssRegionPath(rawPath: string): string {
+  const hasSuffix = rawPath.endsWith(CSS_VIRTUAL_SUFFIX)
+  const body = hasSuffix ? rawPath.slice(0, -CSS_VIRTUAL_SUFFIX.length) : rawPath
+  const isWindowsAbsolute = /^[A-Za-z]:[\\/]/u.test(body)
+  if (!isAbsolute(body) && !isWindowsAbsolute) return rawPath
+  let normalized: string
+  if (isAbsolute(body) && !isWindowsAbsolute) {
+    const repoRel = relative(REPOSITORY_ROOT, body).split(sep).join('/')
+    normalized = repoRel !== '' && !repoRel.startsWith('..') && !isAbsolute(repoRel)
+      ? repoRel
+      : posix.basename(body.replaceAll('\\', '/'))
+  } else {
+    normalized = posix.basename(body.replaceAll('\\', '/'))
+  }
+  return hasSuffix ? `${normalized}${CSS_VIRTUAL_SUFFIX}` : normalized
+}
+
+/**
+ * Rebase virtual CSS `#region` comments emitted in client chunks onto repository-relative paths.
+ * @returns Plugin rewriting virtual CSS `#region` comments so built artifacts do not leak local host paths.
+ */
+function sanitizeCssRegionCommentsPlugin(): TsdownPlugin {
+  return {
+    name: 'dsh-css-region-path-sanitize',
+    renderChunk(code) {
+      let transformed: InstanceType<typeof Rolldown.RolldownMagicString> | undefined
+      for (const match of code.matchAll(CSS_REGION_PREFIX)) {
+        const prefix = match[1]
+        const rawPath = match[2]
+        const nextPath = sanitizeCssRegionPath(rawPath)
+        if (nextPath === rawPath) continue
+        transformed ??= new Rolldown.RolldownMagicString(code)
+        const pathStart = match.index + prefix.length
+        transformed.overwrite(pathStart, pathStart + rawPath.length, nextPath)
+      }
+      return transformed ?? null
+    },
+  }
+}
+
 /** Emitted asset directory below the browser config's `lib` outDir, published as {@link PACKAGE_ASSET_FILES_ENTRY}. */
 const ASSET_OUTPUT_DIR = posix.relative('lib', PACKAGE_ASSET_FILES_ENTRY)
 
@@ -914,7 +962,7 @@ function clientConfig(
         const { code } = transform({ filename: fileId, code: source, minify: true, ...stylesheetAssets.options })
         return styleInjectionModule(id, fileId, stylesheetSource(code.toString(), stylesheetAssets.references))
       },
-    }, assets.plugin],
+    }, assets.plugin, sanitizeCssRegionCommentsPlugin()],
     outputOptions: {
       entryFileNames: dualClient ? 'client.browser.js' : 'client.js',
       // The imported source basename becomes the published chunk name; package

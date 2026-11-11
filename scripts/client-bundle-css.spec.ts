@@ -35,7 +35,7 @@ interface BundlePlugin {
   renderChunk?: (code: string, chunk: unknown, outputOptions: { format: string }) => { toString(): string } | null
 }
 
-type PluginName = 'dsh-css-modules-inline' | 'dsh-css-global-inline' | 'dsh-css-text-inline' | 'dsh-package-asset'
+type PluginName = 'dsh-css-modules-inline' | 'dsh-css-global-inline' | 'dsh-css-text-inline' | 'dsh-package-asset' | 'dsh-css-region-path-sanitize'
 
 const PACKAGE_NAME = '@deepseek-ai/dsh-client-asset-fixture'
 const ASSET_EXPORTS = { './client': './lib/client.js', './assets/*': './lib/assets/*' }
@@ -542,5 +542,30 @@ describe('client bundle asset output', () => {
     await writeBundle.call({ meta: { watchMode: true } }, { dir: out }, { 'client.js': {}, 'assets/whale-111111111111.png': {} })
 
     expect(existsSync(join(out, 'assets/whale-000000000000.png'))).toBe(true)
+  })
+})
+
+describe('client bundle CSS region sanitization', () => {
+  it('rebases absolute repository and host-local CSS module #region comments without altering non-region lines', () => {
+    const repoRoot = join(import.meta.dirname, '..')
+    const plugin = bundlePlugin('dsh-css-region-path-sanitize')
+    const { renderChunk } = plugin
+    if (renderChunk === undefined) throw new Error('dsh-css-region-path-sanitize has no renderChunk hook')
+
+    const repoCss = join(repoRoot, 'packages/bundle/community-skill-catalog/src/client/SkillCatalogPage.module.css')
+    const input = [
+      `\t\t//#region \\0dsh-css:${repoCss}.mjs`,
+      '\t\t//#region \\0dsh-global-css:/Users/example-user/outside/theme.css.mjs',
+      '\t\t//#region \\0dsh-inline-css:C:\\Users\\alice\\App.css.mjs',
+      '\t\tconst untouched = "//#region \\0dsh-css:/Users/not-a-region";',
+    ].join('\n')
+
+    const rendered = renderChunk(input, {}, { format: 'cjs' })
+    expect(rendered?.toString()).toBe([
+      '\t\t//#region \\0dsh-css:packages/bundle/community-skill-catalog/src/client/SkillCatalogPage.module.css.mjs',
+      '\t\t//#region \\0dsh-global-css:theme.css.mjs',
+      '\t\t//#region \\0dsh-inline-css:App.css.mjs',
+      '\t\tconst untouched = "//#region \\0dsh-css:/Users/not-a-region";',
+    ].join('\n'))
   })
 })
