@@ -6,11 +6,7 @@ This repository distributes optional DeepSeek Harness plugins maintained by Eiri
 
 ## Install a plugin
 
-Every published bundle below has a Release install URL in the last column. Copy that URL and paste it into **Plugins → Install** in the Web or Desktop app, which installs it as given. The Source column is for reading code: a GitHub directory URL is neither a git repository nor a tarball, so the installer rejects it. The current skill catalog installs from:
-
-```text
-https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-community-skill-catalog-0.2.2-rc.1.tgz
-```
+Every published bundle below has a Release install URL in the last column. Copy that URL and paste it into **Plugins → Install** in the Web or Desktop app, which installs it as given. The Source column is for reading code: a GitHub directory URL is neither a git repository nor a tarball, so the installer rejects it.
 
 Quit and reopen the app after updating an installed bundle: an open app keeps serving what it loaded before the update. Desktop installs and updates bundles from its own Plugins page, and the CLI form below applies only to profiles the CLI manages:
 
@@ -48,14 +44,13 @@ pnpm dsh web
 
 ## Installable bundles
 
-Each row gives the source directory for reading the code and the exact install URL to copy. These seven are the plugins this repository maintains and publishes on their own, compatible with `0.2.2-rc.1`, `0.2.2-alpha.2`, `0.2.1-rc.5`, and `0.2.1-rc.3` as well as `0.2.1-alpha.1` and `0.2.1-alpha.2`; historical experimental packages are not listed as current standalone install items. All seven have version `0.2.2-rc.1`.
+Each row gives the source directory for reading the code and the exact install URL to copy. These six are the plugins this repository maintains and publishes on their own, compatible with `0.2.2-rc.1`, `0.2.2-alpha.2`, `0.2.1-rc.5`, and `0.2.1-rc.3` as well as `0.2.1-alpha.1` and `0.2.1-alpha.2`; `@deepseek-ai/dsh-community-skill-catalog` has been withdrawn from release distribution because SkillsMP restricted access, and historical experimental packages are not listed as current standalone install items. All six have version `0.2.2-rc.1`.
 
 | Add-on | Package | Feature and surface | Source (browsing only) | Install URL |
 |---|---|---|---|---|
 | Superagent | `@deepseek-ai/dsh-superagent` | DeepSeek official proactive coding agent prototype with GitHub/Feishu listeners, policy evaluation, task session dispatch, and built-in UI management panel; Web and Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/superagent> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-superagent-0.2.2-rc.1.tgz> |
 | Calendar | `@deepseek-ai/dsh-calendar` | Calendar view over Schedule automations, local entries, and user-supplied iCalendar subscriptions; Web and Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/calendar> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-calendar-0.2.2-rc.1.tgz> |
 | Community plugin catalog | `@deepseek-ai/dsh-community-plugin-catalog` | Browse and install community plugin packages; Web and Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/community-plugin-catalog> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-community-plugin-catalog-0.2.2-rc.1.tgz> |
-| Community skill catalog | `@deepseek-ai/dsh-community-skill-catalog` | Search SkillsMP and install GitHub skills pinned to a commit; Web and Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/community-skill-catalog> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-community-skill-catalog-0.2.2-rc.1.tgz> |
 | IM Integration | `@deepseek-ai/dsh-im-integration` | Multi-platform IM gateway (Lark/Feishu, DingTalk, WeCom, WeChat, QQ, Telegram, Discord) with per-platform config, whitelist access control, and full-autonomy / moderation toggle; Web and Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/im-integration> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-im-integration-0.2.2-rc.1.tgz> |
 | Tools and connections | `@deepseek-ai/dsh-tools-connections` | Add Brave and Tavily search providers, Firecrawl extraction, and settings; Web and Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/tools-connections> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-tools-connections-0.2.2-rc.1.tgz> |
 | macOS Computer Use | `@deepseek-ai/dsh-cua-bundle` | macOS Computer Use (self-contained bundle): includes prebuilt native helper and permission management panel, with automatic PTC runtime and system permission checks; Desktop (macOS) | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/cua-bundle> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-cua-bundle-0.2.2-rc.1.tgz> |
