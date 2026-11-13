@@ -12,6 +12,13 @@
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { homedir, platform as osPlatform } from 'node:os'
 import { delimiter, isAbsolute, join, resolve, sep } from 'node:path'
+import {
+  DEFAULT_CONTAINER_NAME,
+  ensureSandboxShims,
+  getDockerLaunchCommand,
+  getSandboxShimsDir,
+  inspectDockerSandbox,
+} from './sandbox.js'
 
 /** 配置文件路径。 */
 export function configPathOf(root) {
@@ -53,11 +60,14 @@ export const TOOL_CATALOG = [
 
 const EMPTY = () => ({
   version: 1,
-  /* auto | windows | linux —— auto 跟 Node process.platform */
+  /* auto | macos | windows | linux —— auto 跟 Node process.platform */
   platform: 'auto',
+  /* docker (隔离沙箱，推荐) | ssh (远程机) | host (本机原生) */
+  executionMode: 'docker',
+  containerName: DEFAULT_CONTAINER_NAME,
   toolkitDir: '',
   nucleiTemplatesDir: '',
-  /* 额外搜索目录：用户自己的 Kali 工具包 / 绿色版工具夹 */
+  /* 额外搜索目录：用户自己的 Kali/macOS/Windows 工具包 / 绿色版工具夹 */
   binDirs: [],
   /* id → 绝对路径；空字符串表示未指定 */
   tools: Object.fromEntries(TOOL_CATALOG.map((t) => [t.id, ''])),
@@ -65,6 +75,12 @@ const EMPTY = () => ({
     FOFA_KEY: '',
     REDTEAM_VPS_HOST: '',
     REDTEAM_VPS_KEY: '',
+  },
+  ssh: {
+    host: '',
+    port: 22,
+    user: 'root',
+    keyPath: '',
   },
   notes: '',
   /* 用户确认「暂不配置工具」后允许正常对话 */
@@ -74,11 +90,22 @@ const EMPTY = () => ({
   updated_at: null,
 })
 
-function isWinLike(cfg) {
+export function effectivePlatform(cfg) {
   const p = (cfg && cfg.platform) || 'auto'
-  if (p === 'windows') return true
-  if (p === 'linux') return false
-  return osPlatform() === 'win32'
+  if (p === 'windows') return 'windows'
+  if (p === 'macos') return 'macos'
+  if (p === 'linux') return 'linux'
+  if (osPlatform() === 'win32') return 'windows'
+  if (osPlatform() === 'darwin') return 'macos'
+  return 'linux'
+}
+
+function isWinLike(cfg) {
+  return effectivePlatform(cfg) === 'windows'
+}
+
+function isMacLike(cfg) {
+  return effectivePlatform(cfg) === 'macos'
 }
 
 export function loadPlatformConfig(root) {
@@ -89,12 +116,18 @@ export function loadPlatformConfig(root) {
     const raw = JSON.parse(readFileSync(file, 'utf8'))
     const tools = Object.assign({}, base.tools, raw.tools && typeof raw.tools === 'object' ? raw.tools : {})
     const env = Object.assign({}, base.env, raw.env && typeof raw.env === 'object' ? raw.env : {})
+    const ssh = Object.assign({}, base.ssh, raw.ssh && typeof raw.ssh === 'object' ? raw.ssh : {})
     const binDirs = Array.isArray(raw.binDirs)
       ? raw.binDirs.map((x) => String(x || '').trim()).filter(Boolean)
       : []
+    const executionMode = ['docker', 'ssh', 'host'].includes(raw.executionMode) ? raw.executionMode : 'docker'
+    const containerName = typeof raw.containerName === 'string' && raw.containerName.trim() ? raw.containerName.trim() : DEFAULT_CONTAINER_NAME
     return {
       version: Number(raw.version) || 1,
-      platform: ['auto', 'windows', 'linux'].includes(raw.platform) ? raw.platform : 'auto',
+      platform: ['auto', 'macos', 'windows', 'linux'].includes(raw.platform) ? raw.platform : 'auto',
+      executionMode,
+      containerName,
+      ssh,
       toolkitDir: typeof raw.toolkitDir === 'string' ? raw.toolkitDir.trim() : '',
       nucleiTemplatesDir: typeof raw.nucleiTemplatesDir === 'string' ? raw.nucleiTemplatesDir.trim() : '',
       binDirs,
@@ -122,7 +155,10 @@ export function savePlatformConfig(patch, root) {
   const prev = loadPlatformConfig(dir)
   const next = {
     version: 1,
-    platform: ['auto', 'windows', 'linux'].includes(patch.platform) ? patch.platform : (prev.platform || 'auto'),
+    platform: ['auto', 'macos', 'windows', 'linux'].includes(patch.platform) ? patch.platform : (prev.platform || 'auto'),
+    executionMode: ['docker', 'ssh', 'host'].includes(patch.executionMode) ? patch.executionMode : (prev.executionMode || 'docker'),
+    containerName: typeof patch.containerName === 'string' && patch.containerName.trim() ? patch.containerName.trim() : (prev.containerName || DEFAULT_CONTAINER_NAME),
+    ssh: Object.assign({}, prev.ssh || {}, patch.ssh && typeof patch.ssh === 'object' ? patch.ssh : {}),
     toolkitDir: typeof patch.toolkitDir === 'string' ? patch.toolkitDir.trim() : (prev.toolkitDir || ''),
     nucleiTemplatesDir: typeof patch.nucleiTemplatesDir === 'string'
       ? patch.nucleiTemplatesDir.trim()
@@ -143,6 +179,9 @@ export function savePlatformConfig(patch, root) {
   for (const t of TOOL_CATALOG) {
     if (next.tools[t.id] === undefined || next.tools[t.id] === null) next.tools[t.id] = ''
     else next.tools[t.id] = String(next.tools[t.id]).trim()
+  }
+  if (next.executionMode === 'docker') {
+    try { ensureSandboxShims(dir, next.containerName) } catch { /* ignore */ }
   }
   const file = configPathOf(dir)
   writeFileSync(file, JSON.stringify(next, null, 2), 'utf8')
@@ -239,6 +278,57 @@ function findOnPath(names, env = process.env, options = {}) {
   return null
 }
 
+/** macOS 常见工具安装与包管理器目录（Homebrew arm64/Intel、MacPorts、Go、本地工具夹）。 */
+function macosFallbackDirs(env = process.env) {
+  const home = env.HOME || homedir()
+  const dirs = [
+    '/opt/homebrew/bin',
+    '/opt/homebrew/sbin',
+    '/usr/local/bin',
+    '/usr/local/sbin',
+    '/opt/local/bin',
+    '/opt/local/sbin',
+    '/usr/bin',
+    '/bin',
+    '/usr/sbin',
+    '/sbin',
+  ]
+  if (home) {
+    dirs.push(
+      join(home, 'go', 'bin'),
+      join(home, '.pdtm', 'go', 'bin'),
+      join(home, '.local', 'bin'),
+      join(home, 'bin'),
+      join(home, 'tools'),
+      join(home, 'pentest-tools'),
+    )
+  }
+  return dirs
+}
+
+/** Windows 常见工具安装与包管理器目录（Chocolatey、Scoop、Go、典型工具目录）。 */
+function windowsFallbackDirs(env = process.env) {
+  const home = env.USERPROFILE || homedir()
+  const systemDrive = env.SystemDrive || 'C:'
+  const dirs = [
+    join(systemDrive, 'tools'),
+    join(systemDrive, 'pentest-tools'),
+    join(systemDrive, 'ProgramData', 'chocolatey', 'bin'),
+    join(systemDrive, 'Program Files', 'Git', 'usr', 'bin'),
+    join(systemDrive, 'Program Files', 'Nmap'),
+  ]
+  if (home) {
+    dirs.push(
+      join(home, 'go', 'bin'),
+      join(home, '.pdtm', 'go', 'bin'),
+      join(home, 'scoop', 'shims'),
+      join(home, 'tools'),
+      join(home, 'pentest-tools'),
+    )
+  }
+  return dirs
+}
+
 /** dsh 的 PATH 经常比登录 shell 短。Linux 再补发行版和用户目录。 */
 function linuxFallbackDirs(env = process.env) {
   const home = env.HOME || homedir()
@@ -248,14 +338,17 @@ function linuxFallbackDirs(env = process.env) {
       join(home, 'go', 'bin'),
       join(home, '.local', 'bin'),
       join(home, '.pdtm', 'go', 'bin'),
+      join(home, 'tools'),
+      join(home, 'pentest-tools'),
     )
   }
   return dirs
 }
 
 /**
- * 解析单个工具：用户指定路径 → toolkit → binDirs → PATH。
- * @returns `{ id, label, path, source: 'config'|'toolkit'|'binDir'|'path'|'missing', names }`
+ * 解析单个工具：用户指定路径 → toolkit → binDirs → PATH → 平台补充目录。
+ * 当启用 Docker 沙箱模式时，优先解析为沙箱代理 shim。
+ * @returns `{ id, label, path, source: 'config'|'toolkit'|'binDir'|'path'|'docker-sandbox'|'missing', names }`
  */
 export function resolveTool(id, options = {}) {
   const root = options.root || redteamRoot()
@@ -265,6 +358,29 @@ export function resolveTool(id, options = {}) {
   if (!def) {
     return { id, label: id, path: null, source: 'missing', names: [] }
   }
+
+  // 1. 如果启用了 Docker 隔离沙箱模式：优先使用沙箱代理 shims
+  if (cfg.executionMode === 'docker') {
+    const shimsDir = getSandboxShimsDir(root)
+    const cmdName = def.names[def.names.length - 1].replace(/\.exe$/i, '')
+    const shimFile = join(shimsDir, process.platform === 'win32' ? `${cmdName}.cmd` : cmdName)
+    if (!existsSync(shimFile)) {
+      try { ensureSandboxShims(root, cfg.containerName) } catch { /* ignore */ }
+    }
+    if (existsSync(shimFile)) {
+      return {
+        id,
+        label: def.label,
+        path: shimFile,
+        source: 'docker-sandbox',
+        names: def.names,
+        sandbox: true,
+        container: cfg.containerName || DEFAULT_CONTAINER_NAME,
+      }
+    }
+  }
+
+  // 2. 本机原生（Linux / macOS / Windows）
   const configured = cfg.tools && typeof cfg.tools[id] === 'string' ? cfg.tools[id].trim() : ''
   if (configured) {
     const abs = isAbsolute(configured) ? configured : resolve(configured)
@@ -286,7 +402,17 @@ export function resolveTool(id, options = {}) {
   const fromPath = findOnPath(def.names, env, findOpts)
   if (fromPath) return { id, label: def.label, path: fromPath, source: 'path', names: def.names }
 
-  if (!isWinLike(cfg)) {
+  if (isMacLike(cfg)) {
+    for (const dir of macosFallbackDirs(env)) {
+      const hit = findInDir(dir, def.names, findOpts)
+      if (hit) return { id, label: def.label, path: hit, source: 'path', names: def.names }
+    }
+  } else if (isWinLike(cfg)) {
+    for (const dir of windowsFallbackDirs(env)) {
+      const hit = findInDir(dir, def.names, findOpts)
+      if (hit) return { id, label: def.label, path: hit, source: 'path', names: def.names }
+    }
+  } else {
     for (const dir of linuxFallbackDirs(env)) {
       const hit = findInDir(dir, def.names, findOpts)
       if (hit) return { id, label: def.label, path: hit, source: 'path', names: def.names }
@@ -320,7 +446,9 @@ export function mergeConfigEnv(effectiveEnv, cfg) {
  */
 export function platformSummary(root) {
   const cfg = loadPlatformConfig(root)
-  const win = isWinLike(cfg)
+  const eff = effectivePlatform(cfg)
+  const win = eff === 'windows'
+  const mac = eff === 'macos'
   const tools = resolveAllTools({ root, config: cfg })
   const found = tools.filter((t) => t.path)
   const missing = tools.filter((t) => !t.path)
@@ -328,14 +456,49 @@ export function platformSummary(root) {
   const nuclei = nucleiTemplatesDirOf(cfg, root)
     || (existsSync(join(toolkit, 'nuclei-templates')) ? join(toolkit, 'nuclei-templates') : null)
   const adapt = envAdaptStatus(root)
+  const isDockerMode = cfg.executionMode === 'docker'
+  const dockerInfo = inspectDockerSandbox(cfg.containerName)
+  let hint = ''
+  if (isDockerMode) {
+    if (dockerInfo.running) {
+      hint = `Docker 隔离沙箱运行中（容器：${cfg.containerName || DEFAULT_CONTAINER_NAME}）。所有扫描工具将在容器内安全隔离执行，宿主机零污染。`
+    } else if (dockerInfo.dockerInstalled) {
+      hint = `已选择 Docker 沙箱模式，但容器尚未启动。请在终端执行一键启动命令：${getDockerLaunchCommand(cfg.containerName)}`
+    } else {
+      hint = `已选择 Docker 沙箱模式，未检测到 docker 命令行。建议安装 Docker Desktop 或 OrbStack，或在下方切换为「本机原生」。`
+    }
+  } else if (cfg.executionMode === 'ssh') {
+    hint = '已选择远程隔离机 (SSH) 模式。请配置远程主机的连接凭据，命令将透传到远程演练机执行。'
+  } else {
+    // 本机原生 (Linux / macOS / Windows)
+    if (adapt.kali) {
+      hint = '已检测到 Kali。系统包按发行版文件名认：impacket-secretsdump、httpx-toolkit（不把 Python 的 /usr/bin/httpx 当成扫描器）。fscan、gogo、suo5、frp、chisel、dnsx、subfinder、ksubdomain 不是 Kali 自带命令，放进 /usr/bin 或 ~/go/bin 就会自动识别。'
+    } else if (mac) {
+      hint = '当前按 macOS 本机原生适配：支持 Homebrew (brew)、Go (go install) 或专用工具包。可用 brew install nmap nuclei ffuf 等装常用工具，也可在本页填工具路径或整包文件夹自动分配。出网代理看下方「出网状态」。'
+    } else if (win) {
+      hint = '当前按 Windows 本机原生适配：支持直接配置 .exe 工具路径或整包文件夹自动分配（例如 D:\\pentest-tools）。出网代理看下方「出网状态」。'
+    } else {
+      hint = '当前按 Linux 本机原生适配：可用 setup.sh 装工具箱，也可在本页手填或整包文件夹自动分配。出网代理看下方「出网状态」。'
+    }
+  }
   return {
     ok: true,
     config: cfg,
     runtime: {
       nodePlatform: osPlatform(),
-      effective: win ? 'windows' : 'linux',
+      effective: eff,
       windows: win,
-      sep,
+      macos: mac,
+      linux: eff === 'linux',
+      sep: win ? '\\' : '/',
+    },
+    sandbox: {
+      executionMode: cfg.executionMode || 'docker',
+      containerName: cfg.containerName || DEFAULT_CONTAINER_NAME,
+      docker: dockerInfo,
+      launchCommand: getDockerLaunchCommand(cfg.containerName),
+      shimsDir: getSandboxShimsDir(root),
+      ssh: cfg.ssh || {},
     },
     toolkitDir: toolkit,
     toolkitExists: existsSync(toolkit),
@@ -347,11 +510,7 @@ export function platformSummary(root) {
       items: tools,
     },
     adapt,
-    hint: adapt.kali
-      ? '已检测到 Kali。系统包按发行版文件名认：impacket-secretsdump、httpx-toolkit（不把 Python 的 /usr/bin/httpx 当成扫描器）。fscan、gogo、suo5、frp、chisel、dnsx、subfinder、ksubdomain 不是 Kali 自带命令，没放进 /usr/bin 或 ~/go/bin 就会显示未找到。'
-      : (win
-        ? '当前按 Windows 适配：建议在 Kali 虚拟机里跑，或在本页填工具路径/整包文件夹自动分配。出网代理看下方「出网状态」。'
-        : '当前按 Linux 适配：可用 setup.sh 装工具箱，也可在本页手填或整包文件夹自动分配。出网代理看下方「出网状态」。'),
+    hint,
     egress: {
       http_proxy: process.env.HTTP_PROXY || process.env.http_proxy || '',
       https_proxy: process.env.HTTPS_PROXY || process.env.https_proxy || '',
@@ -537,7 +696,50 @@ export function envAdaptStatus(root) {
   const missingItems = tools.filter((t) => !t.path)
   const found = foundItems.length
   const skipped = !!cfg.envAdaptSkip
-  /* 只有记下的路径算已配置。单独的 envAdaptConfigured 可能是空的自动初始化。 */
+
+  // 1. Docker 隔离沙箱模式
+  if (cfg.executionMode === 'docker') {
+    const dockerInfo = inspectDockerSandbox(cfg.containerName)
+    let ready = false
+    let reason = 'docker-sandbox-needed'
+    let message = ''
+    if (dockerInfo.running) {
+      ready = true
+      reason = 'docker-sandbox-running'
+      message = `Docker 隔离沙箱（${cfg.containerName || DEFAULT_CONTAINER_NAME}）运行中，所有 15 款攻防工具将在容器内部安全隔离执行，宿主机零污染。`
+    } else if (skipped) {
+      ready = true
+      reason = 'skipped'
+      message = '你已确认暂不启动沙箱/配置工具，可正常对话（扫描类技能可能不可用）。'
+    } else {
+      ready = false
+      reason = 'docker-sandbox-needed'
+      message = dockerInfo.dockerInstalled
+        ? `Docker 沙箱容器未启动。请在终端执行一键启动命令：${getDockerLaunchCommand(cfg.containerName)}；启动后点击上方「刷新」即可就绪。`
+        : `未检测到 docker 命令行。建议安装 Docker / OrbStack 并启动容器，或切换执行模式；也可点击「暂不配置」后继续对话。`
+    }
+    return {
+      ok: true,
+      ready,
+      reason,
+      message,
+      executionMode: 'docker',
+      containerName: cfg.containerName || DEFAULT_CONTAINER_NAME,
+      docker: dockerInfo,
+      kali: false,
+      skipped,
+      configured: true,
+      found: dockerInfo.running ? tools.length : 0,
+      missing: dockerInfo.running ? 0 : tools.length,
+      total: tools.length,
+      foundIds: dockerInfo.running ? tools.map((t) => t.id) : [],
+      missingIds: dockerInfo.running ? [] : tools.map((t) => t.id),
+      tools,
+      updated_at: cfg.updated_at,
+    }
+  }
+
+  // 2. 本机原生（Linux / macOS / Windows）或远程 SSH
   const savedPaths = !!(cfg.toolkitDir && String(cfg.toolkitDir).trim())
     || (cfg.binDirs && cfg.binDirs.length > 0)
     || TOOL_CATALOG.some((t) => cfg.tools && cfg.tools[t.id] && String(cfg.tools[t.id]).trim())
@@ -565,7 +767,14 @@ export function envAdaptStatus(root) {
   } else {
     ready = false
     reason = 'need-config'
-    message = '未检测到 Kali，且工具未配置。请打开 dsh-purge → 环境适配，填写路径或选整包文件夹自动分配；也可确认暂不配置后继续对话。'
+    const eff = effectivePlatform(cfg)
+    if (eff === 'macos') {
+      message = '当前为 macOS 环境，未检测到配置的渗透工具。支持 brew/Go 安装的工具，请打开 dsh-purge → 环境适配填写路径或选整包文件夹自动分配；也可点击暂不配置后继续对话。'
+    } else if (eff === 'windows') {
+      message = '当前为 Windows 环境，未检测到配置的渗透工具。请打开 dsh-purge → 环境适配，填写工具路径或选整包文件夹自动分配；也可确认暂不配置后继续对话。'
+    } else {
+      message = '未检测到 Kali，且工具未配置。请打开 dsh-purge → 环境适配，填写路径或选整包文件夹自动分配；也可确认暂不配置后继续对话。'
+    }
   }
 
   return {
@@ -573,6 +782,8 @@ export function envAdaptStatus(root) {
     ready,
     reason,
     message,
+    executionMode: cfg.executionMode || 'host',
+    containerName: cfg.containerName || DEFAULT_CONTAINER_NAME,
     kali: !!kaliInfo.kali,
     kaliSource: kaliInfo.source,
     kaliDetail: kaliInfo.detail,
@@ -583,6 +794,8 @@ export function envAdaptStatus(root) {
     total: tools.length,
     foundIds: foundItems.map((t) => t.id),
     missingIds: missingItems.map((t) => t.id),
+    tools,
+    updated_at: cfg.updated_at,
   }
 }
 

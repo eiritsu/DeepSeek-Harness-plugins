@@ -542,16 +542,26 @@ export function apply(ctx) {
       const hasVps = existsSync(vpsKey)
       const missing = []
       if (fofaKey === '') missing.push('FOFA_KEY（资产测绘：在「环境适配」页填写，或写进 $DSH_HOME/.env）')
+      const isWin = Boolean(plat.runtime && (plat.runtime.windows || plat.runtime.effective === 'windows'))
+      const isMac = Boolean(plat.runtime && (plat.runtime.macos || plat.runtime.effective === 'macos'))
       if (!hasVps) {
-        missing.push(plat.runtime.windows
-          ? 'VPS 私钥（在「环境适配」填写 REDTEAM_VPS_KEY 路径与 REDTEAM_VPS_HOST；Windows 不依赖 setup.sh）'
+        missing.push(isWin || isMac
+          ? 'VPS 私钥（在「环境适配」填写 REDTEAM_VPS_KEY 路径与 REDTEAM_VPS_HOST；' + (isWin ? 'Windows 不依赖 setup.sh' : 'macOS 可配置本地私钥') + '）'
           : 'VPS 登录方式——私钥放到 ' + vpsKey + '，并设 REDTEAM_VPS_HOST（步骤见技能 redteam-setup，或演练台「环境适配」）')
       }
       const fofaShown = fofaKey.length > 8 ? fofaKey.slice(0, 4) + '…' + fofaKey.slice(-4) : '(已配置)'
-      const runtimeHint = plat.runtime.windows
-        ? '当前为 **Windows 适配**：请在演练台「环境适配」页配置工具路径/搜索目录与 FOFA/VPS；不要假设存在 Kali/`bash setup.sh`。仍建议用专用演练机，勿在日常办公机上落私钥与扫描器。'
-        : '本模式建议在**专供演练的 Kali 虚拟机**里运行，不要跑在日常办公电脑/宿主机上'
-          + '（本机落 VPS 私钥与 WebShell 马，扫描流量也从常用出口 IP 出去；演练完虚拟机可直接丢弃）。'
+      const isDocker = Boolean(plat.sandbox && plat.sandbox.executionMode === 'docker')
+      const isSsh = Boolean(plat.sandbox && plat.sandbox.executionMode === 'ssh')
+      const runtimeHint = isDocker
+        ? '当前为 **Docker 容器沙箱模式**：核心攻防工具与扫描流量在 Kali 容器 (' + (plat.sandbox.containerName || 'dsh-kali-sandbox') + ') 内安全隔离执行，宿主机保持零污染。'
+        : (isSsh
+          ? '当前为 **远程隔离机 (SSH) 模式**：所有工具调用透传至远程演练机执行，宿主机不直接对外发包。'
+          : (isWin
+            ? '当前为 **Windows 适配**：请在演练台「环境适配」页配置工具路径/搜索目录与 FOFA/VPS；不要假设存在 Kali/`bash setup.sh`。仍建议用专用演练机，勿在日常办公机上落私钥与扫描器。'
+            : (isMac
+              ? '当前为 **macOS 适配**：请在演练台「环境适配」页配置工具路径或搜索目录（如 Homebrew `/opt/homebrew/bin`、Go `~/go/bin`）与 FOFA/VPS。建议使用专用演练环境，勿在日常办公机上落私钥与扫描器。'
+              : '本模式建议在**专供演练的 Kali 虚拟机**里运行，不要跑在日常办公电脑/宿主机上'
+                + '（本机落 VPS 私钥与 WebShell 马，扫描流量也从常用出口 IP 出去；演练完虚拟机可直接丢弃）。')))
 
       let checked = []
       let allBroken = []

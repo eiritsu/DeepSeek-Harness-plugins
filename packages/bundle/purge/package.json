@@ -42,6 +42,7 @@
     "presets",
     "skills",
     "scripts",
+    "sandbox",
     "client.js",
     "cordis.patch.yml",
     "screenshots.json",

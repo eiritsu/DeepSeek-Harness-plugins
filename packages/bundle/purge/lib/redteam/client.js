@@ -2620,10 +2620,11 @@ window.__ModuleLoader__.load({
           h('span', null, '全局共享（跨靶标）｜ 落盘：pocs/<code>/ ｜ 只收录通用可复用的 POC/EXP，靶标专用脚本走「攻击文件」')))
     }
 
-    /* ---------------------------------------------------------- 环境适配（Windows / 非 Kali） */
+    /* ---------------------------------------------------------- 环境适配（容器沙箱 / SSH / 本机原生） */
     /**
-     * 借鉴 Z3r0 的「系统配置」思路：路径与密钥进集中配置，不靠 bash/ps1。
-     * 落盘 $DSH_HOME/redteam/config.json —— 用户填工具绝对路径或整包搜索目录。
+     * 集中环境适配配置：支持 Docker Kali 隔离沙箱、远程 SSH 演练机与本机原生（Linux/macOS/Windows）。
+     * 默认推荐 Docker 隔离沙箱模式，宿主机零污染。
+     * 配置文件持久化到 $DSH_HOME/redteam/config.json。
      */
     function EnvTab(props) {
       const refreshKey = props.refreshKey || 0
@@ -2633,11 +2634,34 @@ window.__ModuleLoader__.load({
       const [msg, setMsg] = React.useState(null)
       const [busy, setBusy] = React.useState(false)
       const [folderPath, setFolderPath] = React.useState('')
+      const [copiedKey, setCopiedKey] = React.useState(null)
+
+      const copyText = (key, text) => {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text)
+          } else {
+            const ta = document.createElement('textarea')
+            ta.value = text
+            ta.style.position = 'fixed'
+            ta.style.opacity = '0'
+            document.body.appendChild(ta)
+            ta.select()
+            document.execCommand('copy')
+            document.body.removeChild(ta)
+          }
+          setCopiedKey(key)
+          setTimeout(() => setCopiedKey(null), 2000)
+        } catch { /* ignore */ }
+      }
 
       const applyDraftFrom = (r) => {
         const c = (r && r.config) || {}
         setDraft({
           platform: c.platform || 'auto',
+          executionMode: c.executionMode || 'docker',
+          containerName: c.containerName || 'dsh-kali-sandbox',
+          ssh: Object.assign({ host: '', port: 22, user: 'root', keyPath: '' }, c.ssh || {}),
           toolkitDir: c.toolkitDir || '',
           nucleiTemplatesDir: c.nucleiTemplatesDir || '',
           binDirsText: (c.binDirs || []).join('\n'),
@@ -2664,6 +2688,9 @@ window.__ModuleLoader__.load({
         setBusy(true); setMsg(null)
         const config = {
           platform: draft.platform,
+          executionMode: draft.executionMode,
+          containerName: draft.containerName,
+          ssh: draft.ssh,
           toolkitDir: draft.toolkitDir,
           nucleiTemplatesDir: draft.nucleiTemplatesDir,
           binDirs: String(draft.binDirsText || '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean),
@@ -2700,129 +2727,303 @@ window.__ModuleLoader__.load({
 
       const setTool = (id, value) => setDraft((d) => d ? Object.assign({}, d, { tools: Object.assign({}, d.tools, { [id]: value }) }) : d)
       const setEnv = (key, value) => setDraft((d) => d ? Object.assign({}, d, { env: Object.assign({}, d.env, { [key]: value }) }) : d)
+      const setSsh = (key, value) => setDraft((d) => d ? Object.assign({}, d, { ssh: Object.assign({}, d.ssh, { [key]: value }) }) : d)
 
       const runtime = (data && data.runtime) || {}
       const adapt = (data && data.adapt) || {}
+      const sandbox = (data && data.sandbox) || {}
+      const dockerInfo = (sandbox && sandbox.docker) || (adapt && adapt.docker) || {}
       const tools = (data && data.tools && data.tools.items) || []
       const found = tools.filter((t) => t.path).length
       const defaultToolkit = (data && data.toolkitDir) || '$DSH_HOME/redteam/toolkit'
       const defaultNuclei = (data && data.nucleiTemplatesDir) || (defaultToolkit + '/nuclei-templates')
+      const currentMode = (draft && draft.executionMode) || (adapt && adapt.executionMode) || 'docker'
+      const containerName = (draft && draft.containerName) || 'dsh-kali-sandbox'
+      const dockerLaunchCmd = `docker run -d --name ${containerName} --restart unless-stopped -v ~/.dsh/redteam:/root/.dsh/redteam -w /root/.dsh/redteam kalilinux/kali-rolling sleep infinity`
+      const dockerDestroyCmd = `docker rm -f ${containerName}`
 
       return h('div', { className: 'rt-main' },
         h('div', { className: 'rt-toolbar' },
           h('span', { style: { fontWeight: 600 } }, '环境适配'),
-          h('span', { className: 'rt-tag' }, runtime.effective === 'windows' ? 'Windows' : 'Linux/Kali'),
-          adapt.kali ? h('span', { className: 'rt-tag rt-tag-live' }, 'Kali') : null,
+          currentMode === 'docker'
+            ? h('span', { className: 'rt-tag rt-tag-live' }, '隔离沙箱 (Docker)')
+            : currentMode === 'ssh'
+              ? h('span', { className: 'rt-tag' }, '远程机 (SSH)')
+              : h('span', { className: 'rt-tag' }, '本机原生 · ' + (runtime.effective === 'windows' ? 'Windows' : runtime.effective === 'macos' ? 'macOS' : 'Linux/Kali')),
+          adapt.kali && currentMode === 'host' ? h('span', { className: 'rt-tag rt-tag-live' }, 'Kali') : null,
           h('span', { className: 'rt-tag' + (adapt.ready ? ' rt-tag-live' : ' rt-tag-warn') },
             adapt.ready ? ('就绪 · ' + (adapt.reason || '')) : '待配置'),
-          h('span', { className: 'rt-tag' + (found ? ' rt-tag-live' : ' rt-tag-warn') }, '工具 ' + found + '/' + tools.length),
+          currentMode === 'docker'
+            ? h('span', { className: 'rt-tag' + (dockerInfo.running ? ' rt-tag-live' : ' rt-tag-warn') },
+                dockerInfo.running ? '容器运行中' : (dockerInfo.dockerInstalled ? '容器未启动' : '未检测到 Docker'))
+            : h('span', { className: 'rt-tag' + (found ? ' rt-tag-live' : ' rt-tag-warn') }, '工具 ' + found + '/' + tools.length),
           h('div', { className: 'rt-spacer' }),
           h('button', { className: 'rt-btn', disabled: busy, onClick: load }, busy ? '读取中…' : '刷新'),
           h('button', { className: 'rt-btn rt-btn-primary', disabled: busy || !draft, onClick: save }, '保存')),
         h('div', { className: 'rt-pane', style: { minHeight: 0 } },
-        err ? h('div', { className: 'rt-err' }, err) : null,
-        msg ? h('div', { className: msg.err ? 'rt-err' : 'rt-foot' }, msg.err || msg.ok) : null,
-        h('div', { className: 'rt-card', style: { margin: '0 0 8px', fontSize: 12, lineHeight: 1.6 } },
-          adapt.message
-            || '均可选填：留空则用默认路径/自动查找。填了的覆盖默认。密钥类只在需要测绘/反弹时才填。'),
-        h('div', { className: 'rt-card', style: { margin: '0 0 8px', fontSize: 12, lineHeight: 1.6 } },
-          h('div', { style: { fontWeight: 600, marginBottom: 6 } }, '整包文件夹 → 自动分配工具'),
-          h('div', { style: { marginBottom: 8, opacity: 0.9 } },
-            '工具都在同一个文件夹（含子目录）时，填路径后点「自动分配」：会写入 toolkitDir，并按文件名匹配 nmap / nuclei / fscan 等填到下方。'),
-          h('div', { style: { display: 'flex', gap: 8, alignItems: 'center' } },
-            h('input', {
-              className: 'rt-input', style: { flex: 1 },
-              placeholder: '例如 D:\\pentest-tools 或 /opt/toolkit',
-              value: folderPath,
-              onChange: (e) => setFolderPath(e.target.value),
-              onKeyDown: (e) => { if (e.key === 'Enter') assignFolder() },
-            }),
-            h('button', {
-              className: 'rt-btn rt-btn-primary', disabled: busy,
-              onClick: assignFolder,
-            }, busy ? '扫描中…' : '自动分配'))),
-        data && data.hint ? h('div', { className: 'rt-card', style: { margin: '0 0 8px', fontSize: 12, lineHeight: 1.6 } }, data.hint) : null,
-        data && data.egress ? h('div', { className: 'rt-card', style: { margin: '0 0 8px', fontSize: 12, lineHeight: 1.55 } },
-          h('div', { style: { fontWeight: 600, marginBottom: 6 } }, '出网状态（借鉴 Z3r0 egress，只读）'),
-          h('div', { className: 'rt-mono', style: { fontSize: 11 } }, 'HTTP_PROXY=' + (data.egress.http_proxy || '(空)')),
-          h('div', { className: 'rt-mono', style: { fontSize: 11 } }, 'HTTPS_PROXY=' + (data.egress.https_proxy || '(空)')),
-          h('div', { className: 'rt-mono', style: { fontSize: 11 } }, 'ALL_PROXY=' + (data.egress.all_proxy || '(空)')),
-          h('div', { className: 'rt-mono', style: { fontSize: 11 } }, 'NO_PROXY=' + (data.egress.no_proxy || '(空)')),
-          h('div', { style: { marginTop: 6, opacity: 0.85 } }, data.egress.note || '')) : null,
-        !draft ? h('div', { className: 'rt-empty' }, '加载中…') : h('div', null,
-          h('div', { className: 'rt-card' },
-            h('h4', null, '平台与目录'),
-            h('div', { style: { display: 'grid', gap: 8 } },
-              h('label', { style: { fontSize: 12 } }, '平台模式',
-                h('select', {
-                  className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
-                  value: draft.platform,
-                  onChange: (e) => setDraft(Object.assign({}, draft, { platform: e.target.value })),
-                },
-                  h('option', { value: 'auto' }, 'auto（跟随本机，默认）'),
-                  h('option', { value: 'windows' }, 'windows'),
-                  h('option', { value: 'linux' }, 'linux'))),
-              h('label', { style: { fontSize: 12 } }, '工具箱目录 toolkitDir（留空＝默认）',
-                h('input', {
-                  className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
-                  placeholder: '默认：' + defaultToolkit,
-                  value: draft.toolkitDir,
-                  onChange: (e) => setDraft(Object.assign({}, draft, { toolkitDir: e.target.value })),
-                })),
-              h('label', { style: { fontSize: 12 } }, 'nuclei 模板目录（留空＝自动：toolkit/nuclei-templates）',
-                h('input', {
-                  className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
-                  placeholder: '默认：' + defaultNuclei,
-                  value: draft.nucleiTemplatesDir,
-                  onChange: (e) => setDraft(Object.assign({}, draft, { nucleiTemplatesDir: e.target.value })),
-                })),
-              h('label', { style: { fontSize: 12 } }, '工具搜索目录 binDirs（留空＝只搜 toolkit + PATH；每行一个）',
-                h('textarea', {
-                  className: 'rt-input', rows: 4, style: { display: 'block', width: '100%', marginTop: 4, fontFamily: 'var(--dsw-font-mono, monospace)' },
-                  placeholder: '可选。例如：' + String.fromCharCode(10) + 'D:\\tools' + String.fromCharCode(10) + 'D:\\pentest-bin',
-                  value: draft.binDirsText,
-                  onChange: (e) => setDraft(Object.assign({}, draft, { binDirsText: e.target.value })),
-                })))),
-          h('div', { className: 'rt-card' },
-            h('h4', null, '密钥与 VPS（留空＝不覆盖；进程环境变量优先）'),
-            h('div', { style: { display: 'grid', gap: 8 } },
-              ['FOFA_KEY', 'REDTEAM_VPS_HOST', 'REDTEAM_VPS_KEY'].map((k) => h('label', { key: k, style: { fontSize: 12 } }, k + '（可选）',
-                h('input', {
-                  className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
-                  type: k === 'FOFA_KEY' ? 'password' : 'text',
-                  placeholder: k === 'REDTEAM_VPS_KEY' ? '留空；需要时填私钥绝对路径' : (k === 'REDTEAM_VPS_HOST' ? '留空；需要时填 user@host' : '留空；测绘时再填'),
-                  value: (draft.env && draft.env[k]) || '',
-                  onChange: (e) => setEnv(k, e.target.value),
-                }))))),
-          h('div', { className: 'rt-card' },
-            h('h4', null, '工具可执行文件（留空＝自动查找）'),
-            h('div', { style: { fontSize: 11.5, color: 'var(--dsw-alias-label-secondary)', marginBottom: 8 } },
-              '解析顺序：本表绝对路径 → toolkitDir → binDirs → PATH。留空即走默认查找。'),
-            tools.map((t) => h('div', { key: t.id, style: { marginBottom: 8 } },
-              h('div', { style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 } },
-                h('span', { style: { fontWeight: 600, minWidth: 88 } }, t.label || t.id),
-                t.path
-                  ? h('span', { className: 'rt-tag rt-tag-live', title: t.path }, t.source + ' · 已找到')
-                  : h('span', { className: 'rt-tag rt-tag-warn' }, '未找到（可留空等装好）')),
-              h('input', {
-                className: 'rt-input', style: { width: '100%' },
-                placeholder: '留空自动找：' + (t.names || []).slice(0, 3).join(' / '),
-                value: (draft.tools && draft.tools[t.id]) || '',
-                onChange: (e) => setTool(t.id, e.target.value),
-              }),
-              t.path ? h('div', { className: 'rt-mono', style: { fontSize: 10.5, marginTop: 2, opacity: 0.8 } }, t.path) : null))),
-          h('div', { className: 'rt-card' },
-            h('h4', null, '备注'),
-            h('textarea', {
-              className: 'rt-input', rows: 3, style: { width: '100%' },
-              placeholder: '可选。例如：工具来自某某绿色包',
-              value: draft.notes,
-              onChange: (e) => setDraft(Object.assign({}, draft, { notes: e.target.value })),
-            })),
-          h('div', { className: 'rt-foot' },
-            h('span', null,
-              '配置文件：' + ((data && data.config && data.config.path) || '$DSH_HOME/redteam/config.json')
-              + ' | 留空字段全部走默认')))))
+          err ? h('div', { className: 'rt-err' }, err) : null,
+          msg ? h('div', { className: msg.err ? 'rt-err' : 'rt-foot' }, msg.err || msg.ok) : null,
+          h('div', { className: 'rt-card', style: { margin: '0 0 8px', fontSize: 12, lineHeight: 1.6 } },
+            adapt.message || '环境适配支持三种执行隔离模式。建议首选 Docker 容器沙箱，确保宿主机环境零污染与防 EDR 拦截。'),
+          /* 1. 执行模式切换单选卡片 */
+          !draft ? h('div', { className: 'rt-empty' }, '加载中…') : h('div', null,
+            h('div', { className: 'rt-card', style: { margin: '0 0 10px', padding: 12 } },
+              h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
+                h('span', { style: { fontWeight: 600, fontSize: 13 } }, '执行模式与环境隔离'),
+                h('span', { style: { fontSize: 11, color: 'var(--dsw-alias-label-secondary)' } }, '切换后点击右上方「保存」生效')),
+              h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 } },
+                [
+                  {
+                    id: 'docker',
+                    name: '隔离沙箱 (Docker / 容器)',
+                    badge: '推荐 · 零污染',
+                    badgeCls: 'rt-tag-live',
+                    desc: '私钥/马/扫描流量全落容器内，随时 docker rm -f 一键销毁，宿主机零残留。',
+                  },
+                  {
+                    id: 'ssh',
+                    name: '远程隔离机 (SSH)',
+                    badge: '远程演练机',
+                    badgeCls: '',
+                    desc: '命令通过 SSH 透传至远程独立 VPS 或专用 Kali 主机执行，保护本地网络。',
+                  },
+                  {
+                    id: 'host',
+                    name: '本机原生 (Linux / macOS / Windows)',
+                    badge: '不推荐',
+                    badgeCls: 'rt-tag-warn',
+                    desc: '直接调用宿主机二进制；扫描流量和中间文件落在宿主机，适合虚拟机环境。',
+                  },
+                ].map((m) => {
+                  const active = currentMode === m.id
+                  return h('div', {
+                    key: m.id,
+                    onClick: () => setDraft(Object.assign({}, draft, { executionMode: m.id })),
+                    style: {
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      border: '1px solid ' + (active ? 'var(--dsw-alias-brand-primary, #6dbf8c)' : 'var(--dsw-alias-border-l1)'),
+                      background: active ? 'color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 12%, transparent)' : 'var(--dsw-alias-bg-layer-2)',
+                      transition: 'all 0.15s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                    },
+                  },
+                    h('div', { style: { display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, fontSize: 12.5 } },
+                      h('span', { style: { color: active ? 'var(--dsw-alias-brand-primary, #6dbf8c)' : 'var(--dsw-alias-label-secondary)', fontSize: 13 } }, active ? '●' : '○'),
+                      h('span', null, m.name),
+                      h('span', { className: 'rt-tag ' + m.badgeCls }, m.badge)),
+                    h('div', { style: { fontSize: 11, color: 'var(--dsw-alias-label-secondary)', lineHeight: 1.4 } }, m.desc))
+                }))),
+
+            /* 2. 隔离沙箱 (Docker) 模式详情 */
+            currentMode === 'docker' ? h('div', null,
+              h('div', { className: 'rt-card', style: { margin: '0 0 10px' } },
+                h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
+                  h('h4', { style: { margin: 0 } }, 'Docker 容器沙箱状态'),
+                  dockerInfo.running
+                    ? h('span', { className: 'rt-tag rt-tag-live', style: { padding: '2px 8px', fontSize: 12 } }, '● 容器运行中 · 已就绪')
+                    : (dockerInfo.dockerInstalled
+                      ? h('span', { className: 'rt-tag rt-tag-warn', style: { padding: '2px 8px', fontSize: 12 } }, '○ 容器未启动')
+                      : h('span', { className: 'rt-tag rt-tag-warn', style: { padding: '2px 8px', fontSize: 12 } }, '未检测到 Docker'))),
+                h('div', { style: { fontSize: 12, lineHeight: 1.6, marginBottom: 10, color: 'var(--dsw-alias-label-secondary)' } },
+                  '宿主机只保留 DSH Web / 桌面客户端的纯净交互；所有的私钥、马、扫描流量、产物全部落在沙箱容器内，用完随时一键销毁，真正做到零污染。'),
+                h('div', { style: { display: 'grid', gap: 8, marginBottom: 12 } },
+                  h('label', { style: { fontSize: 12 } }, '沙箱容器名称 containerName（默认：dsh-kali-sandbox）',
+                    h('input', {
+                      className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
+                      value: draft.containerName || 'dsh-kali-sandbox',
+                      onChange: (e) => setDraft(Object.assign({}, draft, { containerName: e.target.value })),
+                    }))),
+                h('div', { style: { marginBottom: 10 } },
+                  h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 } },
+                    h('span', { style: { fontSize: 12, fontWeight: 600 } }, '① 后台一键拉起沙箱容器（终端执行）'),
+                    h('button', {
+                      className: 'rt-btn rt-btn-primary', style: { fontSize: 11, padding: '2px 8px' },
+                      onClick: () => copyText('start', dockerLaunchCmd),
+                    }, copiedKey === 'start' ? '✓ 已复制到剪贴板' : '复制启动命令')),
+                  h('div', {
+                    className: 'rt-mono',
+                    style: { fontSize: 11, padding: '8px 10px', background: 'var(--dsw-alias-bg-base)', border: '1px solid var(--dsw-alias-border-l1)', borderRadius: 6, wordBreak: 'break-all', userSelect: 'all' },
+                  }, dockerLaunchCmd)),
+                h('div', { style: { marginBottom: 10 } },
+                  h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 } },
+                    h('span', { style: { fontSize: 12, fontWeight: 600 } }, '② 演练结束一键销毁（宿主机零残留）'),
+                    h('button', {
+                      className: 'rt-btn', style: { fontSize: 11, padding: '2px 8px' },
+                      onClick: () => copyText('stop', dockerDestroyCmd),
+                    }, copiedKey === 'stop' ? '✓ 已复制到剪贴板' : '复制销毁命令')),
+                  h('div', {
+                    className: 'rt-mono',
+                    style: { fontSize: 11, padding: '8px 10px', background: 'var(--dsw-alias-bg-base)', border: '1px solid var(--dsw-alias-border-l1)', borderRadius: 6, wordBreak: 'break-all', userSelect: 'all' },
+                  }, dockerDestroyCmd)),
+                h('div', { style: { fontSize: 11.5, color: 'var(--dsw-alias-label-secondary)', lineHeight: 1.5, background: 'var(--dsw-alias-bg-layer-2)', padding: '8px 10px', borderRadius: 6 } },
+                  '💡 插件 sandbox/ 目录内预置了官方 Dockerfile 与 docker-compose.yml（预编译包含 fscan、suo5 等 15 款核心工具）。如需完整构建镜像，可进入插件 sandbox 目录执行 docker compose up -d。')),
+              h('div', { className: 'rt-card' },
+                h('h4', null, '沙箱容器透明代理工具列表 (15 款)'),
+                h('div', { style: { fontSize: 11.5, color: 'var(--dsw-alias-label-secondary)', marginBottom: 8 } },
+                  '在沙箱模式下，智能体调用以下任意工具均会自动路由至容器内部（docker exec -i ' + containerName + ' <tool> "$@"），无需宿主机安装任何渗透工具：'),
+                h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 6 } },
+                  tools.map((t) => h('div', {
+                    key: t.id,
+                    style: { padding: '6px 8px', borderRadius: 6, border: '1px solid var(--dsw-alias-border-l1)', background: 'var(--dsw-alias-bg-layer-2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+                  },
+                    h('span', { style: { fontWeight: 500, fontSize: 12 } }, t.label || t.id),
+                    dockerInfo.running
+                      ? h('span', { className: 'rt-tag rt-tag-live', style: { margin: 0, fontSize: 10 } }, '容器就绪')
+                      : h('span', { className: 'rt-tag rt-tag-warn', style: { margin: 0, fontSize: 10 } }, '待起容器'))))))
+            : null,
+
+            /* 3. 远程隔离机 (SSH) 模式详情 */
+            currentMode === 'ssh' ? h('div', { className: 'rt-card', style: { margin: '0 0 10px' } },
+              h('h4', null, '远程隔离机 (SSH) 配置'),
+              h('div', { style: { fontSize: 12, color: 'var(--dsw-alias-label-secondary)', marginBottom: 8 } },
+                '将扫描探测与漏洞利用命令透传至远程专用演练主机执行，流量直接从远程主机发出，避免本地 IP 暴露。'),
+              h('div', { style: { display: 'grid', gap: 8 } },
+                h('label', { style: { fontSize: 12 } }, '远程主机地址 (IP 或域名)',
+                  h('input', {
+                    className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
+                    placeholder: '例如 10.0.0.1 或 vps.example.com',
+                    value: (draft.ssh && draft.ssh.host) || '',
+                    onChange: (e) => setSsh('host', e.target.value),
+                  })),
+                h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
+                  h('label', { style: { fontSize: 12 } }, 'SSH 端口 (默认 22)',
+                    h('input', {
+                      className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
+                      type: 'number',
+                      placeholder: '22',
+                      value: (draft.ssh && draft.ssh.port) || 22,
+                      onChange: (e) => setSsh('port', Number(e.target.value) || 22),
+                    })),
+                  h('label', { style: { fontSize: 12 } }, 'SSH 用户名 (默认 root)',
+                    h('input', {
+                      className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
+                      placeholder: 'root',
+                      value: (draft.ssh && draft.ssh.user) || 'root',
+                      onChange: (e) => setSsh('user', e.target.value),
+                    }))),
+                h('label', { style: { fontSize: 12 } }, 'SSH 私钥绝对路径',
+                  h('input', {
+                    className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
+                    placeholder: '例如 ~/.ssh/id_rsa 或 D:\\keys\\id_rsa',
+                    value: (draft.ssh && draft.ssh.keyPath) || '',
+                    onChange: (e) => setSsh('keyPath', e.target.value),
+                  }))))
+            : null,
+
+            /* 4. 本机原生 (Linux / macOS / Windows) 模式详情 */
+            currentMode === 'host' ? h('div', null,
+              h('div', { className: 'rt-hint', style: { margin: '0 0 10px' } },
+                h('b', null, '安全提示：'), '本机原生模式将直接在当前宿主机上运行扫描器和 PoC 脚本。产生的所有流量、扫描痕迹与临时木马直接落在宿主机，建议仅在独立虚拟机中使用。'),
+              h('div', { className: 'rt-card', style: { margin: '0 0 8px', fontSize: 12, lineHeight: 1.6 } },
+                h('div', { style: { fontWeight: 600, marginBottom: 6 } }, '整包文件夹 → 自动分配工具'),
+                h('div', { style: { marginBottom: 8, opacity: 0.9 } },
+                  '工具都在同一个文件夹（含子目录）时，填路径后点「自动分配」：会写入 toolkitDir，并按文件名匹配 nmap / nuclei / fscan 等填到下方。'),
+                h('div', { style: { display: 'flex', gap: 8, alignItems: 'center' } },
+                  h('input', {
+                    className: 'rt-input', style: { flex: 1 },
+                    placeholder: runtime.effective === 'macos' ? '例如 /opt/homebrew/bin 或 ~/toolkit' : runtime.effective === 'windows' ? '例如 D:\\pentest-tools 或 C:\\toolkit' : '例如 /opt/toolkit 或 /usr/local/bin',
+                    value: folderPath,
+                    onChange: (e) => setFolderPath(e.target.value),
+                    onKeyDown: (e) => { if (e.key === 'Enter') assignFolder() },
+                  }),
+                  h('button', {
+                    className: 'rt-btn rt-btn-primary', disabled: busy,
+                    onClick: assignFolder,
+                  }, busy ? '扫描中…' : '自动分配'))),
+              h('div', { className: 'rt-card' },
+                h('h4', null, '平台与目录'),
+                h('div', { style: { display: 'grid', gap: 8 } },
+                  h('label', { style: { fontSize: 12 } }, '平台模式',
+                    h('select', {
+                      className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
+                      value: draft.platform,
+                      onChange: (e) => setDraft(Object.assign({}, draft, { platform: e.target.value })),
+                    },
+                      h('option', { value: 'auto' }, 'auto（跟随本机系统）'),
+                      h('option', { value: 'macos' }, 'macOS'),
+                      h('option', { value: 'windows' }, 'Windows'),
+                      h('option', { value: 'linux' }, 'Linux'))),
+                  h('label', { style: { fontSize: 12 } }, '工具箱目录 toolkitDir（留空＝默认）',
+                    h('input', {
+                      className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
+                      placeholder: '默认：' + defaultToolkit,
+                      value: draft.toolkitDir,
+                      onChange: (e) => setDraft(Object.assign({}, draft, { toolkitDir: e.target.value })),
+                    })),
+                  h('label', { style: { fontSize: 12 } }, 'nuclei 模板目录（留空＝自动：toolkit/nuclei-templates）',
+                    h('input', {
+                      className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
+                      placeholder: '默认：' + defaultNuclei,
+                      value: draft.nucleiTemplatesDir,
+                      onChange: (e) => setDraft(Object.assign({}, draft, { nucleiTemplatesDir: e.target.value })),
+                    })),
+                  h('label', { style: { fontSize: 12 } }, '工具搜索目录 binDirs（留空＝只搜 toolkit + PATH；每行一个）',
+                    h('textarea', {
+                      className: 'rt-input', rows: 3, style: { display: 'block', width: '100%', marginTop: 4, fontFamily: 'var(--dsw-font-mono, monospace)' },
+                      placeholder: runtime.effective === 'macos'
+                        ? '可选。例如：' + String.fromCharCode(10) + '/opt/homebrew/bin' + String.fromCharCode(10) + '~/go/bin'
+                        : '可选。例如：' + String.fromCharCode(10) + 'D:\\tools' + String.fromCharCode(10) + 'D:\\pentest-bin',
+                      value: draft.binDirsText,
+                      onChange: (e) => setDraft(Object.assign({}, draft, { binDirsText: e.target.value })),
+                    })))),
+              h('div', { className: 'rt-card' },
+                h('h4', null, '工具可执行文件（留空＝自动查找）'),
+                h('div', { style: { fontSize: 11.5, color: 'var(--dsw-alias-label-secondary)', marginBottom: 8 } },
+                  '解析顺序：本表绝对路径 → toolkitDir → binDirs → PATH。留空即走默认查找。'),
+                tools.map((t) => h('div', { key: t.id, style: { marginBottom: 8 } },
+                  h('div', { style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 } },
+                    h('span', { style: { fontWeight: 600, minWidth: 88 } }, t.label || t.id),
+                    t.path
+                      ? h('span', { className: 'rt-tag rt-tag-live', title: t.path }, t.source + ' · 已找到')
+                      : h('span', { className: 'rt-tag rt-tag-warn' }, '未找到（可留空等装好）')),
+                  h('input', {
+                    className: 'rt-input', style: { width: '100%' },
+                    placeholder: '留空自动找：' + (t.names || []).slice(0, 3).join(' / '),
+                    value: (draft.tools && draft.tools[t.id]) || '',
+                    onChange: (e) => setTool(t.id, e.target.value),
+                  }),
+                  t.path ? h('div', { className: 'rt-mono', style: { fontSize: 10.5, marginTop: 2, opacity: 0.8 } }, t.path) : null))))
+            : null,
+
+            /* 5. 通用配置：密钥与 VPS */
+            h('div', { className: 'rt-card' },
+              h('h4', null, '密钥与 VPS（留空＝不覆盖；进程环境变量优先）'),
+              h('div', { style: { display: 'grid', gap: 8 } },
+                ['FOFA_KEY', 'REDTEAM_VPS_HOST', 'REDTEAM_VPS_KEY'].map((k) => h('label', { key: k, style: { fontSize: 12 } }, k + '（可选）',
+                  h('input', {
+                    className: 'rt-input', style: { display: 'block', width: '100%', marginTop: 4 },
+                    type: k === 'FOFA_KEY' ? 'password' : 'text',
+                    placeholder: k === 'REDTEAM_VPS_KEY' ? '留空；需要时填私钥绝对路径' : (k === 'REDTEAM_VPS_HOST' ? '留空；需要时填 user@host' : '留空；测绘时再填'),
+                    value: (draft.env && draft.env[k]) || '',
+                    onChange: (e) => setEnv(k, e.target.value),
+                  }))))),
+
+            /* 6. 通用配置：出网状态 */
+            data && data.egress ? h('div', { className: 'rt-card', style: { margin: '0 0 8px', fontSize: 12, lineHeight: 1.55 } },
+              h('div', { style: { fontWeight: 600, marginBottom: 6 } }, '出网状态（借鉴 Z3r0 egress，只读）'),
+              h('div', { className: 'rt-mono', style: { fontSize: 11 } }, 'HTTP_PROXY=' + (data.egress.http_proxy || '(空)')),
+              h('div', { className: 'rt-mono', style: { fontSize: 11 } }, 'HTTPS_PROXY=' + (data.egress.https_proxy || '(空)')),
+              h('div', { className: 'rt-mono', style: { fontSize: 11 } }, 'ALL_PROXY=' + (data.egress.all_proxy || '(空)')),
+              h('div', { className: 'rt-mono', style: { fontSize: 11 } }, 'NO_PROXY=' + (data.egress.no_proxy || '(空)')),
+              h('div', { style: { marginTop: 6, opacity: 0.85 } }, data.egress.note || '')) : null,
+
+            /* 7. 备注与页脚 */
+            h('div', { className: 'rt-card' },
+              h('h4', null, '备注'),
+              h('textarea', {
+                className: 'rt-input', rows: 3, style: { width: '100%' },
+                placeholder: '可选。例如：使用 Docker Kali 隔离沙箱环境运行',
+                value: draft.notes,
+                onChange: (e) => setDraft(Object.assign({}, draft, { notes: e.target.value })),
+              })),
+            h('div', { className: 'rt-foot' },
+              h('span', null,
+                '配置文件：' + ((data && data.config && data.config.path) || '$DSH_HOME/redteam/config.json')
+                + ' | 留空字段全部走默认')))))
     }
 
     /* ---------------------------------------------------------- 得分目标 */

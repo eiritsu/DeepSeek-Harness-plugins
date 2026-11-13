@@ -1783,7 +1783,7 @@ function findAiBaseDesktop() {
   const owned = exe
     ? desktop.resolveDesktopAiBase({
       execPath: exe,
-      resourcesPath: path.join(path.dirname(exe), "resources"),
+      resourcesPath: desktop.resourcesDirForExecutable(exe) || path.join(path.dirname(exe), "resources"),
       argv: [],
       env: {},
     })
@@ -2284,7 +2284,7 @@ export function restartSealedDesktopIfNeeded(input = {}) {
   rememberDesktopInstallForHandoff(handoff);
   // input.ctx 透传给桌面层:restartOfficialHarness 内部 desktopRuntimeOf(ctx) 拿到 runtime
   // 用于 gracefulExit 优雅握手重启,降低宿主"host 退出 = crash"弹窗概率(#64)。
-  if (process.platform === "win32" && desktop.isOfficialHarnessExecutable(handoff.exe)) {
+  if (desktop.isOfficialHarnessExecutable(handoff.exe)) {
     const restarted = desktop.restartOfficialHarness({ exe: handoff.exe, asar: handoff.asar, ctx: input.ctx });
     return { needed: true, renamed: false, asarSwap: true, ...restarted };
   }
@@ -2472,15 +2472,17 @@ const COMPLETE_PROMPT_WATERFALL_INJECT =
   "\t\tconst transformed = await this.ctx.waterfall(scopeTarget(this, scope), \"system-prompt/assemble\", assembly, context, () => Promise.resolve(assembly));\n" +
   "\t\tconst dshPurgeSections = (transformed.sections || []).filter((s) => String(s && s.name || \"\").startsWith(\"dsh-purge\") && String(s.text || \"\").length > 0);\n" +
   "\t\tconst dshPurgeRest = (transformed.sections || []).filter((s) => !String(s && s.name || \"\").startsWith(\"dsh-purge\"));\n" +
-  "\t\tif (completeSection === void 0 && !runtimeContextSuppressed) return { ...transformed, sections: [...dshPurgeSections, ...dshPurgeRest] }; // [dsh-purge] every mode keeps system inject\n" +
+  "\t\tconst requiredContexts = typeof contextByName !== \"undefined\" ? new Set([...contextByName.values()].filter((entry) => entry.required === true).map((entry) => entry.name)) : null;\n" +
+  "\t\tif (completeSection === void 0 && !runtimeContextSuppressed) return { ...transformed, ...(typeof tools !== \"undefined\" ? { tools } : {}), sections: [...dshPurgeSections, ...dshPurgeRest] }; // [dsh-purge] every mode keeps system inject\n" +
   "\t\treturn {\n" +
   "\t\t\t...transformed,\n" +
+  "\t\t\t...(typeof tools !== \"undefined\" ? { tools } : {}),\n" +
   "\t\t\tsections: completeSection === void 0 ? [...dshPurgeSections, ...dshPurgeRest] : (function (complete, purge, rest) {\n" +
   "\t\t\t\tconst base = { ...complete };\n" +
   "\t\t\t\tconst tail = rest.filter((s) => String(s?.name || \"\") !== String(base.name || \"\"));\n" +
-  "\t\t\t\treturn [...purge, ...tail, base]; // [dsh-purge] complete prompt keeps inject + agent-instructions\n" +
+  "\t\t\t\treturn [...purge, ...tail, base]; // [dsh-purge] complete prompt keeps waterfall inject\n" +
   "\t\t\t})(completeSection, dshPurgeSections, dshPurgeRest),\n" +
-  "\t\t\tcontexts: runtimeContextSuppressed ? [] : transformed.contexts\n" +
+  "\t\t\tcontexts: runtimeContextSuppressed ? (requiredContexts ? transformed.contexts.filter((entry) => requiredContexts.has(entry.name)) : []) : transformed.contexts\n" +
   "\t\t};";
 
 function clearShellNetworkBan(pattern) {
@@ -3819,6 +3821,11 @@ const NEW_TOOL_PATCHES = [
     desc: "complete 预设仍保留 dsh-purge 注入 / keep inject after complete prompt",
     file: ["system-prompt", "system-prompt-nested"],
     replacements: [
+      {
+        // DSH 0.2.2-rc.1: 带 tools 与 requiredContexts 的 assemble 返回
+        pattern: /[ \t]*const transformed = await this\.ctx\.waterfall\(scopeTarget\(this, scope\), "system-prompt\/assemble", assembly, context, \(\) => Promise\.resolve\(assembly\)\);\r?\n[ \t]*if \(completeSection === void 0 && !runtimeContextSuppressed\) return \{\r?\n[ \t]*\.\.\.transformed,\r?\n[ \t]*tools\r?\n[ \t]*\};\r?\n[ \t]*const requiredContexts = new Set\(\[\.\.\.contextByName\.values\(\)\]\.filter\(\(entry\) => entry\.required === true\)\.map\(\(entry\) => entry\.name\)\);\r?\n[ \t]*return \{\r?\n[ \t]*\.\.\.transformed,\r?\n[ \t]*tools,\r?\n[ \t]*sections: completeSection === void 0 \? transformed\.sections : \[completeSection\],\r?\n[ \t]*contexts: runtimeContextSuppressed \? transformed\.contexts\.filter\(\(entry\) => requiredContexts\.has\(entry\.name\)\) : transformed\.contexts\r?\n[ \t]*\};/,
+        replace: COMPLETE_PROMPT_WATERFALL_INJECT,
+      },
       {
         // 缩进不固定。0.2 有的构建用 tab，有的用空格；只认 tab 时匹配为 0，重启校验会说没写进宿主。
         pattern: /[ \t]*const transformed = await this\.ctx\.waterfall\(scopeTarget\(this, scope\), "system-prompt\/assemble", assembly, context, \(\) => Promise\.resolve\(assembly\)\);\n[ \t]*if \(completeSection === void 0 && !runtimeContextSuppressed\) return transformed;\n[ \t]*return \{\n[ \t]*\.\.\.transformed,\n[ \t]*sections: completeSection === void 0 \? transformed\.sections : \[completeSection\],\n[ \t]*contexts: runtimeContextSuppressed \? \[\] : transformed\.contexts\n[ \t]*\};/,

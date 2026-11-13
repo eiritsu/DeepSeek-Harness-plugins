@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  kali-sandbox:
+    container_name: dsh-kali-sandbox
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dsh-kali-sandbox:latest
+    restart: unless-stopped
+    # host 网络模式使 nmap / 端口扫描能够直接利用主机网络发包并接收响应
+    # 在 macOS / Windows Docker Desktop 下映射常用端口或使用 bridge 网络
+    network_mode: host
+    volumes:
+      # 将宿主机 redteam 目录挂载进容器内部，共享输出战果、runs 日志与临时凭据
+      - ~/.dsh/redteam:/root/.dsh/redteam
+    working_dir: /root/.dsh/redteam
+    command: sleep infinity
