@@ -41,9 +41,10 @@ window.__ModuleLoader__.load({
 .rt-btn{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);color:inherit;
   border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .rt-btn:hover{border-color:var(--dsw-alias-border-l2)}
-.rt-btn-primary{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:#fff}
-.rt-btn-primary:hover{opacity:.9}
-.rt-btn:disabled{opacity:.5;cursor:default}
+.rt-btn:disabled{opacity:.45;cursor:not-allowed}
+.rt-btn-primary{background:var(--dsw-alias-state-business-primary,#3b82f6);border-color:var(--dsw-alias-state-business-primary,#3b82f6);color:#ffffff!important;font-weight:500}
+.rt-btn-primary:hover:not(:disabled){background:#2563eb;border-color:#2563eb;color:#ffffff!important}
+.rt-btn-primary:disabled{background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#3b82f6) 45%,transparent);border-color:transparent;color:rgba(255,255,255,0.65)!important;cursor:not-allowed}
 .rt-tabs{display:flex;flex-wrap:wrap;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--dsw-alias-border-l1)}
 .rt-tab{padding:8px 10px 7px;border-radius:0;cursor:pointer;font-size:12.5px;color:var(--dsw-alias-label-secondary);
   display:inline-flex;align-items:center;gap:5px;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent}
@@ -90,7 +91,7 @@ window.__ModuleLoader__.load({
 .rt-kv{display:flex;gap:8px;margin-bottom:3px;align-items:baseline}
 .rt-kv b{color:var(--dsw-alias-label-primary);font-weight:600;min-width:64px;flex:none}
 /* 图谱视图已移除（见 AssetsTab：资产关系由「域名维度」与 redteam_attack_path 工具承担） */
-.rt-pane{flex:1;min-height:0;overflow:auto;padding:12px}
+.rt-pane{flex:1;min-height:0;overflow:auto;padding:12px 14px 28px}
 .rt-card{border:1px solid color-mix(in srgb,var(--dsw-alias-border-l1,#444) 75%,transparent);border-radius:8px;padding:10px;margin-bottom:10px;
   background:color-mix(in srgb,var(--dsw-alias-bg-layer-2,#2a2a2a) 48%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .rt-card h4{margin:0 0 6px;font-size:13px}
@@ -107,7 +108,7 @@ window.__ModuleLoader__.load({
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .rt-empty{padding:24px;text-align:center;color:var(--dsw-alias-label-secondary);font-size:12.5px}
 .rt-err{color:var(--dsw-alias-state-error-primary);font-size:12px;padding:6px 10px}
-.rt-foot{padding:8px 12px;border-top:1px solid var(--dsw-alias-border-l1);font-size:11px;
+.rt-foot{padding:8px 36px 8px 14px;border-top:1px solid var(--dsw-alias-border-l1);font-size:11px;
   color:var(--dsw-alias-label-secondary);display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .rt-icon-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;border:1px solid var(--dsw-alias-border-l1);
   background:transparent;color:inherit;border-radius:6px;padding:6px 8px;cursor:pointer;font-family:inherit;font-size:12.5px}

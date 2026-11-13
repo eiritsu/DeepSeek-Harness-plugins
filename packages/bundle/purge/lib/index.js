@@ -1457,6 +1457,11 @@ export function apply(ctx, config) {
     purgeLog("boot", { enabled: false });
     return;
   }
+  if (ctx.systemPrompt && typeof ctx.systemPrompt.variable === "function") {
+    try {
+      ctx.systemPrompt.variable("cwd", (context) => context.agent?.session?.header?.cwd || process.cwd());
+    } catch { /* ignore */ }
+  }
   purgeLog("boot", {
     enabled: true,
     surface: hostctl.currentSurface(),

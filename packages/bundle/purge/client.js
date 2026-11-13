@@ -134,6 +134,7 @@ const __dshPurgeFactory = (require) => {
 			"dock.inSession": "dsh-purge",
 			"dock.redteam": "红队模式",
 			"dock.full": "全面浏览",
+			"dock.restore": "还原",
 			"dock.close": "收起",
 			"dock.unauthorized": "未授权",
 			"welcome.title": "用户须知",
@@ -474,6 +475,7 @@ const __dshPurgeFactory = (require) => {
 			"dock.inSession": "dsh-purge",
 			"dock.redteam": "Red team",
 			"dock.full": "Full view",
+			"dock.restore": "Restore",
 			"dock.close": "Collapse",
 			"dock.unauthorized": "Unauthorized",
 			"welcome.title": "User notice",
@@ -983,12 +985,14 @@ body:not([data-ds-dark-theme]) .dshp-auth-warn{background:color-mix(in srgb,#f5e
 body:not([data-ds-dark-theme]) .dshp-auth-ops button{border-color:var(--dsw-alias-border-l1,#c9c3b6);color:var(--dsw-alias-label-primary,#1a1916);background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 88%,transparent)}
 body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--dsw-alias-brand-primary,#3f6b52);border-color:var(--dsw-alias-brand-primary,#3f6b52);color:#fff}
 .dshp-dock-resize,.dshp-dock-resize-l,.dshp-dock-resize-r,.dshp-dock-resize-b{position:absolute;z-index:60;pointer-events:auto;touch-action:none}
-.dshp-dock-resize{right:0;bottom:0;width:22px;height:22px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 46%,color-mix(in srgb,var(--dsw-alias-brand-primary,#6dbf8c) 75%,transparent) 46%);border-radius:0 0 12px 0;opacity:.95}
+.dshp-dock-resize{right:2px;bottom:2px;width:14px;height:14px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 60%,var(--dsw-alias-border-l1,#888) 60%,var(--dsw-alias-border-l1,#888) 70%,transparent 70%,transparent 80%,var(--dsw-alias-border-l1,#888) 80%,var(--dsw-alias-border-l1,#888) 90%,transparent 90%);opacity:.5;border-radius:0 0 8px 0}
+.dshp-dock-resize:hover{opacity:.9}
 .dshp-dock-resize-l{left:-2px;top:0;bottom:0;width:10px;cursor:ew-resize;background:color-mix(in srgb,var(--dsw-alias-brand-primary,#6dbf8c) 18%,transparent)}
 .dshp-dock-resize-l:hover,.dshp-dock-resize-r:hover{background:color-mix(in srgb,var(--dsw-alias-brand-primary,#6dbf8c) 42%,transparent)}
 .dshp-dock-resize-r{right:-2px;top:0;bottom:22px;width:10px;cursor:ew-resize;background:transparent}
 .dshp-dock-resize-b{left:10px;right:22px;bottom:-2px;height:10px;cursor:ns-resize;background:transparent}
 .dshp-dock-resize-b:hover{background:color-mix(in srgb,var(--dsw-alias-brand-primary,#6dbf8c) 35%,transparent)}
+.dshp-dock[data-maximized="1"] .dshp-dock-resize,.dshp-dock[data-maximized="1"] .dshp-dock-resize-l,.dshp-dock[data-maximized="1"] .dshp-dock-resize-r,.dshp-dock[data-maximized="1"] .dshp-dock-resize-b{display:none!important}
 .dshp-auth-mask{position:fixed;inset:0;z-index:10100;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:20px;pointer-events:auto}
 .dshp-env-gate{z-index:10200}
 .dshp-auth-modal{width:min(680px,100%);max-height:min(88vh,820px);display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--dsw-alias-border-l1,#333);border-radius:12px;background:var(--dsw-alias-bg-layer-1,#1a1a1a);color:var(--dsw-alias-label-primary,#eee)}
@@ -1033,9 +1037,13 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 .dshp-dock-body .rt-dock{font-size:14px!important;line-height:1.6!important;font-weight:500!important;color:var(--dshp-ink)!important;--rt-ink:var(--dshp-ink);--rt-mute:var(--dshp-mute);--rt-surf:color-mix(in srgb,var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-layer-1,#fff)) 40%,transparent);--rt-surf-2:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 62%,transparent);--rt-line:color-mix(in srgb,var(--dsw-alias-brand-primary,#6d8f78) 30%,transparent)}
 .dshp-dock-body .rt-title,.dshp-dock-body .rt-tab,.dshp-dock-body .rt-tab.on,.dshp-dock-body .rt-card,.dshp-dock-body .rt-card h4,.dshp-dock-body .rt-row,.dshp-dock-body .rt-vrow,.dshp-dock-body .rt-kv,.dshp-dock-body .rt-kv b,.dshp-dock-body .rt-kv span,.dshp-dock-body .rt-mono,.dshp-dock-body .rt-empty,.dshp-dock-body .rt-foot,.dshp-dock-body .rt-tag,.dshp-dock-body .rt-item,.dshp-dock-body .rt-item-name,.dshp-dock-body .rt-item-desc,.dshp-dock-body .rt-sec-sub,.dshp-dock-body .rt-kb-sub,.dshp-dock-body .rt-seg-cidr,.dshp-dock-body .rt-seg-meta,.dshp-dock-body .rt-section,.dshp-dock-body .rt-note,.dshp-dock-body .rt-hint{color:var(--dshp-ink)!important;text-shadow:none!important;opacity:1!important}
 .dshp-dock-body .rt-tab,.dshp-dock-body .rt-foot,.dshp-dock-body .rt-empty,.dshp-dock-body .rt-item-desc,.dshp-dock-body .rt-kb-sub,.dshp-dock-body .rt-kv span,.dshp-dock-body .rt-tag,.dshp-dock-body .rt-sec-sub{color:var(--dshp-mute)!important}
-.dshp-dock-body .rt-card,.dshp-dock-body .rt-pane,.dshp-dock-body .rt-side,.dshp-dock-body .rt-table,.dshp-dock-body .rt-toolbar,.dshp-dock-body .rt-embedded>.rt-head,.dshp-dock-body .rt-tabs{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 72%,transparent)!important;border-color:color-mix(in srgb,var(--dsw-alias-brand-primary,#6d8f78) 28%,transparent)!important;color:var(--dshp-ink)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 26%,transparent)!important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
+.dshp-dock-body .rt-card,.dshp-dock-body .rt-side,.dshp-dock-body .rt-table,.dshp-dock-body .rt-toolbar,.dshp-dock-body .rt-embedded>.rt-head,.dshp-dock-body .rt-tabs{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 72%,transparent)!important;border-color:color-mix(in srgb,var(--dsw-alias-brand-primary,#6d8f78) 28%,transparent)!important;color:var(--dshp-ink)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 26%,transparent)!important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
+.dshp-dock-body .rt-pane{min-height:0;overflow:auto!important;padding:12px 14px 28px!important}
+.dshp-dock-body .rt-foot{padding:8px 36px 8px 14px!important}
 .dshp-dock-body .rt-btn,.dshp-dock-body .rt-input,.dshp-dock-body .rt-eng-select,.dshp-dock-body textarea.rt-input{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 90%,transparent)!important;color:var(--dshp-ink)!important;border-color:color-mix(in srgb,var(--dsw-alias-border-l1,#888) 70%,transparent)!important}
-.dshp-dock-body .rt-btn-primary{background:var(--dsw-alias-brand-primary,#3f6b52)!important;border-color:var(--dsw-alias-brand-primary,#3f6b52)!important;color:#fff!important}
+.dshp-dock-body .rt-btn-primary{background:var(--dsw-alias-state-business-primary,#3b82f6)!important;border-color:var(--dsw-alias-state-business-primary,#3b82f6)!important;color:#ffffff!important;font-weight:500}
+.dshp-dock-body .rt-btn-primary:hover:not(:disabled){background:#2563eb!important;border-color:#2563eb!important;color:#ffffff!important}
+.dshp-dock-body .rt-btn-primary:disabled{background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#3b82f6) 45%,transparent)!important;border-color:transparent!important;color:rgba(255,255,255,0.65)!important;cursor:not-allowed!important}
 .dshp-dock[data-theme="white"] .dshp-dock-body .rt-eng-select option,.dshp-dock[data-theme="white"] .dshp-dock-body .rt-input option{background:#fff;color:#16140f}
 .dshp-dock[data-theme="dusk"] .dshp-dock-body .rt-eng-select option,.dshp-dock[data-theme="dusk"] .dshp-dock-body .rt-input option{background:#1b1d22;color:#f4f1ea}
 .dshp-dock-body .rt-err{font-weight:650}
@@ -3511,9 +3519,10 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 .rt-btn{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);color:inherit;
   border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .rt-btn:hover{border-color:var(--dsw-alias-border-l2)}
-.rt-btn-primary{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:#fff}
-.rt-btn-primary:hover{opacity:.9}
-.rt-btn:disabled{opacity:.5;cursor:default}
+.rt-btn:disabled{opacity:.45;cursor:not-allowed}
+.rt-btn-primary{background:var(--dsw-alias-state-business-primary,#3b82f6);border-color:var(--dsw-alias-state-business-primary,#3b82f6);color:#ffffff!important;font-weight:500}
+.rt-btn-primary:hover:not(:disabled){background:#2563eb;border-color:#2563eb;color:#ffffff!important}
+.rt-btn-primary:disabled{background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#3b82f6) 45%,transparent);border-color:transparent;color:rgba(255,255,255,0.65)!important;cursor:not-allowed}
 .rt-tabs{display:flex;flex-wrap:wrap;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--dsw-alias-border-l1)}
 .rt-tab{padding:8px 10px 7px;border-radius:0;cursor:pointer;font-size:12.5px;color:var(--dsw-alias-label-secondary);
   display:inline-flex;align-items:center;gap:5px;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent}
@@ -3560,7 +3569,7 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 .rt-kv{display:flex;gap:8px;margin-bottom:3px;align-items:baseline}
 .rt-kv b{color:var(--dsw-alias-label-primary);font-weight:600;min-width:64px;flex:none}
 /* 图谱视图已移除（见 AssetsTab：资产关系由「域名维度」与 redteam_attack_path 工具承担） */
-.rt-pane{flex:1;min-height:0;overflow:auto;padding:12px}
+.rt-pane{flex:1;min-height:0;overflow:auto;padding:12px 14px 28px}
 .rt-card{border:1px solid color-mix(in srgb,var(--dsw-alias-border-l1,#444) 75%,transparent);border-radius:8px;padding:10px;margin-bottom:10px;
   background:color-mix(in srgb,var(--dsw-alias-bg-layer-2,#2a2a2a) 48%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .rt-card h4{margin:0 0 6px;font-size:13px}
@@ -3577,7 +3586,7 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .rt-empty{padding:24px;text-align:center;color:var(--dsw-alias-label-secondary);font-size:12.5px}
 .rt-err{color:var(--dsw-alias-state-error-primary);font-size:12px;padding:6px 10px}
-.rt-foot{padding:8px 12px;border-top:1px solid var(--dsw-alias-border-l1);font-size:11px;
+.rt-foot{padding:8px 36px 8px 14px;border-top:1px solid var(--dsw-alias-border-l1);font-size:11px;
   color:var(--dsw-alias-label-secondary);display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .rt-icon-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;border:1px solid var(--dsw-alias-border-l1);
   background:transparent;color:inherit;border-radius:6px;padding:6px 8px;cursor:pointer;font-family:inherit;font-size:12.5px}
@@ -7936,7 +7945,7 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 				});
 		}
 
-		let dockBus = { open: false, tab: "clean", authOpen: false, pending: "tab", listeners: new Set() };
+		let dockBus = { open: false, tab: "clean", authOpen: false, pending: "tab", maximized: false, listeners: new Set() };
 		function getDock() { return dockBus; }
 		function setDock(patch) {
 			dockBus = Object.assign({}, dockBus, patch);
@@ -7962,12 +7971,10 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 				} catch { /* ignore */ }
 			};
 			if (readDrillAuth()) {
-				setDock({ open: true, tab: "drill", authOpen: false, pending: "tab" });
+				const nextMaximized = pending === "full" ? !dockBus.maximized : dockBus.maximized;
+				setDock({ open: true, tab: "drill", authOpen: false, pending: "tab", maximized: nextMaximized });
 				try { if (__dshPurgeDrill && __dshPurgeDrill.setUI) __dshPurgeDrill.setUI({ open: true }); } catch { /* ignore */ }
 				if (pending === "env") openEnv();
-				if (pending === "full") {
-					try { window.open(window.location.href.split("#")[0] + "#redteam-full", "_blank", "noopener"); } catch { /* ignore */ }
-				}
 				return;
 			}
 			/* 未授权：直接切到演练台页签并弹出授权窗（不再停在清洗页，避免像「没触发」） */
@@ -7982,7 +7989,7 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 			setDock({ open: true, tab: "clean", authOpen: false, pending: "tab" });
 		}
 		function toggleDock() {
-			if (dockBus.open) setDock({ open: false, authOpen: false, pending: "tab" });
+			if (dockBus.open) setDock({ open: false, authOpen: false, pending: "tab", maximized: false });
 			else openDockClean();
 		}
 		syncDrillGrant();
@@ -8650,6 +8657,15 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 				window.addEventListener("mousemove", move);
 				window.addEventListener("mouseup", up);
 			};
+			useEffect(() => {
+				if (!st.maximized) return;
+				const onKey = (e) => {
+					if (e.key === "Escape") setDock({ maximized: false });
+				};
+				window.addEventListener("keydown", onKey);
+				return () => window.removeEventListener("keydown", onKey);
+			}, [st.maximized]);
+
 			const body = st.tab === "clean"
 				? h(SettingsRoot, { t })
 				: (readDrillAuth() && __dshPurgeDrill.Panel
@@ -8659,22 +8675,33 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 				className: "dshp-dock",
 				"data-theme": dockTheme === "white" ? "white" : "dusk",
 				"data-open": st.open ? "1" : "0",
-				style: {
-					left: geom.x + "px",
-					top: geom.y + "px",
-					right: "auto",
-					bottom: "auto",
-					width: geom.w + "px",
-					height: geom.h + "px",
-				},
+				"data-maximized": st.maximized ? "1" : "0",
+				style: st.maximized
+					? {
+						left: "12px",
+						top: "12px",
+						right: "12px",
+						bottom: "12px",
+						width: "calc(100vw - 24px)",
+						height: "calc(100vh - 24px)",
+						zIndex: 10080,
+					}
+					: {
+						left: geom.x + "px",
+						top: geom.y + "px",
+						right: "auto",
+						bottom: "auto",
+						width: geom.w + "px",
+						height: geom.h + "px",
+					},
 			},
-				h("div", { className: "dshp-dock-head", onMouseDown: startDrag, title: "按住拖动面板" },
+				h("div", { className: "dshp-dock-head", onMouseDown: st.maximized ? undefined : startDrag, title: st.maximized ? undefined : "按住拖动面板" },
 					h("b", null, "dsh-purge"),
 					h("span", { style: { flex: 1 } }),
 					st.tab === "drill" && readDrillAuth()
-						? h("button", { type: "button", onClick: () => requestDrill("full") }, t("dock.full"))
+						? h("button", { type: "button", onClick: () => setDock({ maximized: !st.maximized }) }, st.maximized ? (t("dock.restore") || "还原") : t("dock.full"))
 						: null,
-					h("button", { type: "button", onClick: () => setDock({ open: false, authOpen: false, tab: "clean", pending: "tab" }) }, t("dock.close")),
+					h("button", { type: "button", onClick: () => setDock({ open: false, authOpen: false, tab: "clean", pending: "tab", maximized: false }) }, t("dock.close")),
 				),
 				h("div", { className: "dshp-dock-tabs", role: "tablist" },
 					h("button", {
@@ -8693,10 +8720,10 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 					}, t("dock.drill") + (readDrillAuth() ? "" : " · " + t("dock.unauthorized"))),
 				),
 				h("div", { className: "dshp-dock-body" }, body),
-				h("div", { className: "dshp-dock-resize-l", title: "拖动调整宽度", onMouseDown: startResizeLeft }),
-				h("div", { className: "dshp-dock-resize-r", title: "拖动调整宽度", onMouseDown: startResizeRight }),
-				h("div", { className: "dshp-dock-resize-b", title: "拖动调整高度", onMouseDown: startResizeBottom }),
-				h("div", { className: "dshp-dock-resize", title: "拖动调整大小", onMouseDown: startResize }),
+				st.maximized ? null : h("div", { className: "dshp-dock-resize-l", title: "拖动调整宽度", onMouseDown: startResizeLeft }),
+				st.maximized ? null : h("div", { className: "dshp-dock-resize-r", title: "拖动调整宽度", onMouseDown: startResizeRight }),
+				st.maximized ? null : h("div", { className: "dshp-dock-resize-b", title: "拖动调整高度", onMouseDown: startResizeBottom }),
+				st.maximized ? null : h("div", { className: "dshp-dock-resize", title: "拖动调整大小", onMouseDown: startResize }),
 			);
 			let portal = null;
 			let authPortal = null;
