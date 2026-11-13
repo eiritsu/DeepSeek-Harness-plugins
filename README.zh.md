@@ -48,7 +48,7 @@ pnpm dsh web
 
 ## 可安装组合包
 
-每行列出用于阅读源码的源码目录和可直接复制的安装 URL。以下七个是本仓库自行维护并单独发布的插件，同时兼容 `0.2.2-rc.1`、`0.2.2-alpha.2`、`0.2.1-rc.5`、`0.2.1-rc.3` 以及 `0.2.1-alpha.1` 与 `0.2.1-alpha.2`；历史实验包不再列为当前的独立安装项。七个插件的版本均为 `0.2.2-rc.1`。
+每行列出用于阅读源码的源码目录和可直接复制的安装 URL。以下八个是本仓库自行维护并单独发布的插件，同时兼容 `0.2.2-rc.1`、`0.2.2-alpha.2`、`0.2.1-rc.5`、`0.2.1-rc.3` 以及 `0.2.1-alpha.1` 与 `0.2.1-alpha.2`；历史实验包不再列为当前的独立安装项。八个插件的版本均为 `0.2.2-rc.1`。
 
 | 插件 | npm 包 | 功能和界面 | 源码（仅浏览） | 安装 URL |
 |---|---|---|---|---|
@@ -59,6 +59,7 @@ pnpm dsh web
 | IM 集成 | `@deepseek-ai/dsh-im-integration` | 多平台 IM 网关（飞书/Lark、钉钉、企业微信、微信、QQ、Telegram、Discord），支持各平台独立配置、白名单访问控制和完全放行/内容审核开关；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/im-integration> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-im-integration-0.2.2-rc.1.tgz> |
 | 工具与连接 | `@deepseek-ai/dsh-tools-connections` | 添加 Brave、Tavily 搜索提供者、Firecrawl 提取工具和设置页；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/tools-connections> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-tools-connections-0.2.2-rc.1.tgz> |
 | macOS Computer Use | `@deepseek-ai/dsh-cua-bundle` | macOS Computer Use（自包含版）：内置预编译原生系统助手与权限面板，自动配置 PTC 运行环境与系统权限检测，开箱即用；Desktop (macOS) | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/cua-bundle> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-cua-bundle-0.2.2-rc.1.tgz> |
+| 破甲与红队评测 | `@deepseek-ai/dsh-purge` | 提示词规则注入、安全演练与红队事实库评测套件，集成「清洗」与「演练」专属双端面板；Web 和 Desktop | <https://github.com/eiritsu/DeepSeek-Harness-plugins/tree/main/packages/bundle/purge> | <https://github.com/eiritsu/DeepSeek-Harness-plugins/releases/download/v0.2.2-rc.1.20261110.1/deepseek-ai-dsh-purge-0.2.2-rc.1.tgz> |
 
 `base`、`web-app`、`headless`、`sdk-app`、`sdk-minimal` 和 `acp-app` 是应用 profile 模板，不属于此处的用户扩展清单。
 

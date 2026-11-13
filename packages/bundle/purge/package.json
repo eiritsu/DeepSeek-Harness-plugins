@@ -1,0 +1,92 @@
+{
+  "name": "@deepseek-ai/dsh-purge",
+  "description": "DeepSeek Harness 破甲与红队安全演练套件 / DeepSeek Harness jailbreak, prompt override, and red-team cybersecurity evaluation bundle",
+  "version": "0.2.2-rc.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eiritsu/DeepSeek-Harness-plugins.git",
+    "directory": "packages/bundle/purge"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "icon": "./icon.svg",
+  "bin": {
+    "dsh-purge": "bin/dsh-purge.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./client.js",
+    "./redteam": "./lib/redteam/index.js",
+    "./redteam/store": "./lib/redteam/store.js",
+    "./redteam/ui": "./lib/redteam/ui.js",
+    "./redteam/tools": "./lib/redteam/tools.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "icon.svg",
+    "locale/*.json",
+    "lib",
+    "!lib/default-prompt-inject.md",
+    "bin",
+    "docs",
+    "presets",
+    "skills",
+    "scripts",
+    "client.js",
+    "cordis.patch.yml",
+    "screenshots.json",
+    "README.md",
+    "README.zh.md",
+    "README.i18n.yaml",
+    "LICENSE",
+    "MIRROR-NOTICE.md"
+  ],
+  "scripts": {
+    "test": "node ./tests/verify-tarball.mjs",
+    "test:packed-artifact": "node ./tests/verify-tarball.mjs"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.0-rc.2 <=0.2.2-rc.1 || >=0.2.0"
+  },
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-tools": "^0.2.1-alpha.1 || ^0.2.1-alpha.2 || ^0.2.1-rc.3 || ^0.2.2-rc.1 || >=0.2.0-rc.2 <0.3.0",
+    "@deepseek-ai/schemastery": "workspace:~"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/cordis-plugin-include": "workspace:~",
+    "@deepseek-ai/dsh-tools": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~",
+    "js-yaml": "^4.2.0",
+    "vitest": "^2.1.8"
+  },
+  "dshTarget": "0.2.2-rc.1"
+}

@@ -31,8 +31,9 @@ kind: "package-group"
 | [`community-plugin-catalog`](community-plugin-catalog/README.zh.md) | profile 的可选社区插件目录 | 加入独立 Host Remote 与 Client 入口 |
 | [`community-skill-catalog`](community-skill-catalog/README.zh.md) | 可选 GitHub 与 `skills.sh` 双源技能目录及固定 Commit 安装 | 加入独立 Host Remote 与 Client 入口 |
 | [`lark-integration`](lark-integration/README.zh.md) | 可选 Lark/飞书私聊集成和设置页面 | 加入默认禁用的 Host 行和 Client 页面 |
-| [`copy-session-id`](copy-session-id/README.zh.md) | 可选会话标题栏 Session ID 操作 | 加入 Client 插件行 |
-| [`turn-process-shimmer`](turn-process-shimmer/README.zh.md) | 可选 Web 运行中状态文本效果 | 替换指定的 Client 渲染器 |
+| [`purge`](purge/README.zh.md) | 可选网络安全评测、提示词规则注入与红队演练套件 | 加入「清洗」与「演练」双端面板、事实库与安全工具 |
+| [`copy-session-id`](copy-session-id/README.md) | 可选会话标题栏 Session ID 操作 | 加入 Client 插件行 |
+| [`turn-process-shimmer`](turn-process-shimmer/README.md) | 可选 Web 运行中状态文本效果 | 替换指定的 Client 渲染器 |
 
 内置组合包从 dsh 安装目录解析；树外（out-of-tree）组合包通过 `dsh plugin --profile <name> add <package>` 安装进 profile。
 

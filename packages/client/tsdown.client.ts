@@ -18,7 +18,7 @@
  */
 import { randomBytes } from 'node:crypto'
 import { readFile, readdir, rm, rmdir, stat, utimes } from 'node:fs/promises'
-import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { existsSync, globSync, readFileSync, realpathSync } from 'node:fs'
 import { createRequire, isBuiltin } from 'node:module'
 import { basename, dirname, isAbsolute, join, posix, relative, resolve as resolvePath, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -135,12 +135,12 @@ export function clientBundle(
   libEntry: readonly string[],
   options: ClientBundleOptions = {},
 ): BuildFaceConfig {
-  const manifest = readPackageManifest(packageDir)
+  const { manifest, realDir } = resolvePackageInfo(packageDir)
   const lib = clientLibraryConfig(manifest, libEntry, options.lib)
   return ({ env }) => {
     const face = buildFace(env?.DSH_BUILD_FACE)
     const clientEntry = face === undefined ? 'src/client/index.ts' : 'lib/types/client/index.js'
-    const client = clientConfig(manifest, packageDir, clientEntry, options.clientBanner, options.dualClient === true)
+    const client = clientConfig(manifest, realDir, clientEntry, options.clientBanner, options.dualClient === true)
     const node = [lib, ...(options.companions ?? [])]
     const clientFaces = options.dualClient === true
       ? [nodeClientConfig(manifest, clientEntry), client]
@@ -396,8 +396,24 @@ interface PackageManifest {
  * @returns the parsed manifest.
  * @throws {Error} when `package.json` is unreadable, is not JSON, or declares no string name.
  */
-function readPackageManifest(packageDir: string): PackageManifest {
-  const manifestPath = resolvePath(packageDir, 'package.json')
+function resolvePackageInfo(packageDir: string): { manifest: PackageManifest; realDir: string } {
+  let manifestPath = resolvePath(packageDir, 'package.json')
+  let realDir = resolvePath(packageDir)
+  if (!existsSync(manifestPath)) {
+    for (const rel of globSync('packages/*/*/package.json', { cwd: REPOSITORY_ROOT })) {
+      const candidatePath = resolvePath(REPOSITORY_ROOT, rel)
+      try {
+        const candidate = JSON.parse(readFileSync(candidatePath, 'utf8')) as { name?: string }
+        if (candidate.name === packageDir) {
+          manifestPath = candidatePath
+          realDir = dirname(candidatePath)
+          break
+        }
+      } catch {
+        // ignore unreadable candidates
+      }
+    }
+  }
   let parsed: unknown
   try {
     parsed = JSON.parse(readFileSync(manifestPath, 'utf8'))
@@ -410,7 +426,11 @@ function readPackageManifest(packageDir: string): PackageManifest {
   if (typeof parsed !== 'object' || parsed === null || !('name' in parsed) || typeof parsed.name !== 'string') {
     throw new Error(`tsdown: ${manifestPath} declares no string package name`)
   }
-  return parsed as PackageManifest
+  return { manifest: parsed as PackageManifest, realDir }
+}
+
+function readPackageManifest(packageDir: string): PackageManifest {
+  return resolvePackageInfo(packageDir).manifest
 }
 
 /**

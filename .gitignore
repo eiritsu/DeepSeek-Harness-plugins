@@ -17,6 +17,7 @@ apps/desktop/.env.macos
 .npmrc
 node_modules/
 lib/
+!packages/bundle/purge/lib/
 *.tsbuildinfo
 pnpm-debug.log
 .pnpm-store/
